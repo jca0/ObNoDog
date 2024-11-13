@@ -1,0 +1,142 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2024.1 (lin64) Build 5076996 Wed May 22 18:36:09 MDT 2024
+| Date         : Thu Oct 24 18:52:39 2024
+| Host         : eecs-digital-04 running 64-bit Ubuntu 24.04.1 LTS
+| Command      : report_timing -file obj/post_route_timing.rpt
+| Design       : top_level
+| Device       : 7s50-csga324
+| Speed File   : -1  PRODUCTION 1.23 2018-06-13
+| Design State : Routed
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Timing Report
+
+Slack (VIOLATED) :        -0.183ns  (required time - arrival time)
+  Source:                 genblk1[3].filterm/mconv/green_products_reg[2][2][0]/C
+                            (rising edge-triggered cell FDRE clocked by clk_pixel_cw_hdmi  {rise@0.000ns fall@6.734ns period=13.468ns})
+  Destination:            genblk1[3].filterm/mconv/green_sum_reg[21]/D
+                            (rising edge-triggered cell FDRE clocked by clk_pixel_cw_hdmi  {rise@0.000ns fall@6.734ns period=13.468ns})
+  Path Group:             clk_pixel_cw_hdmi
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            13.468ns  (clk_pixel_cw_hdmi rise@13.468ns - clk_pixel_cw_hdmi rise@0.000ns)
+  Data Path Delay:        13.455ns  (logic 8.043ns (59.778%)  route 5.412ns (40.222%))
+  Logic Levels:           21  (CARRY4=13 LUT2=8)
+  Clock Path Skew:        -0.048ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    -2.086ns = ( 11.382 - 13.468 ) 
+    Source Clock Delay      (SCD):    -2.465ns
+    Clock Pessimism Removal (CPR):    -0.427ns
+  Clock Uncertainty:      0.210ns  ((TSJ^2 + DJ^2)^1/2) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Discrete Jitter          (DJ):    0.414ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_pixel_cw_hdmi rise edge)
+                                                      0.000     0.000 r  
+    N15                                               0.000     0.000 r  clk_100mhz (IN)
+                         net (fo=0)                   0.000     0.000    wizard_migcam/clk_100mhz
+    N15                  IBUF (Prop_ibuf_I_O)         1.440     1.440 r  wizard_migcam/clkin1_ibufg/O
+                         net (fo=1, routed)           1.253     2.693    wizard_migcam/clk_in1_cw_fast
+    PLLE2_ADV_X0Y0       PLLE2_ADV (Prop_plle2_adv_CLKIN1_CLKOUT0)
+                                                     -8.486    -5.792 r  wizard_migcam/plle2_adv_inst/CLKOUT0
+                         net (fo=1, routed)           1.660    -4.132    wizard_migcam/clk_100_cw_fast
+    BUFGCTRL_X0Y6        BUFG (Prop_bufg_I_O)         0.096    -4.036 r  wizard_migcam/clkout1_buf/O
+                         net (fo=1, routed)           1.575    -2.461    wizard_hdmi/clk_100
+    MMCME2_ADV_X1Y0      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT0)
+                                                     -3.333    -5.793 r  wizard_hdmi/mmcm_adv_inst/CLKOUT0
+                         net (fo=1, routed)           1.661    -4.132    wizard_hdmi/clk_pixel_cw_hdmi
+    BUFGCTRL_X0Y0        BUFG (Prop_bufg_I_O)         0.096    -4.036 r  wizard_hdmi/clkout1_buf/O
+                         net (fo=3147, routed)        1.571    -2.465    genblk1[3].filterm/mconv/clk_pixel
+    SLICE_X48Y0          FDRE                                         r  genblk1[3].filterm/mconv/green_products_reg[2][2][0]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X48Y0          FDRE (Prop_fdre_C_Q)         0.456    -2.009 r  genblk1[3].filterm/mconv/green_products_reg[2][2][0]/Q
+                         net (fo=2, routed)           0.597    -1.412    genblk1[3].filterm/mconv/green_products_reg_n_0_[2][2][0]
+    SLICE_X48Y1          LUT2 (Prop_lut2_I0_O)        0.124    -1.288 r  genblk1[3].filterm/mconv/green_sum[31]_i_137/O
+                         net (fo=1, routed)           0.000    -1.288    genblk1[3].filterm/mconv/green_sum[31]_i_137_n_0
+    SLICE_X48Y1          CARRY4 (Prop_carry4_S[0]_O[3])
+                                                      0.606    -0.682 r  genblk1[3].filterm/mconv/green_sum_reg[31]_i_129/O[3]
+                         net (fo=1, routed)           0.784     0.102    genblk1[3].filterm/mconv/green_sum_reg[31]_i_129_n_4
+    SLICE_X47Y2          LUT2 (Prop_lut2_I1_O)        0.306     0.408 r  genblk1[3].filterm/mconv/green_sum[31]_i_125/O
+                         net (fo=1, routed)           0.000     0.408    genblk1[3].filterm/mconv/green_sum[31]_i_125_n_0
+    SLICE_X47Y2          CARRY4 (Prop_carry4_S[3]_CO[3])
+                                                      0.401     0.809 r  genblk1[3].filterm/mconv/green_sum_reg[31]_i_111/CO[3]
+                         net (fo=1, routed)           0.000     0.809    genblk1[3].filterm/mconv/green_sum_reg[31]_i_111_n_0
+    SLICE_X47Y3          CARRY4 (Prop_carry4_CI_O[0])
+                                                      0.222     1.031 r  genblk1[3].filterm/mconv/green_sum_reg[31]_i_96/O[0]
+                         net (fo=1, routed)           0.938     1.969    genblk1[3].filterm/mconv/green_sum_reg[31]_i_96_n_7
+    SLICE_X48Y7          LUT2 (Prop_lut2_I1_O)        0.299     2.268 r  genblk1[3].filterm/mconv/green_sum[31]_i_110/O
+                         net (fo=1, routed)           0.000     2.268    genblk1[3].filterm/mconv/green_sum[31]_i_110_n_0
+    SLICE_X48Y7          CARRY4 (Prop_carry4_S[0]_O[1])
+                                                      0.424     2.692 r  genblk1[3].filterm/mconv/green_sum_reg[31]_i_87/O[1]
+                         net (fo=1, routed)           0.717     3.409    genblk1[3].filterm/mconv/green_sum_reg[31]_i_87_n_6
+    SLICE_X52Y8          LUT2 (Prop_lut2_I1_O)        0.303     3.712 r  genblk1[3].filterm/mconv/green_sum[31]_i_77/O
+                         net (fo=1, routed)           0.000     3.712    genblk1[3].filterm/mconv/green_sum[31]_i_77_n_0
+    SLICE_X52Y8          CARRY4 (Prop_carry4_S[1]_CO[3])
+                                                      0.533     4.245 r  genblk1[3].filterm/mconv/green_sum_reg[31]_i_57/CO[3]
+                         net (fo=1, routed)           0.000     4.245    genblk1[3].filterm/mconv/green_sum_reg[31]_i_57_n_0
+    SLICE_X52Y9          CARRY4 (Prop_carry4_CI_O[0])
+                                                      0.219     4.464 r  genblk1[3].filterm/mconv/green_sum_reg[31]_i_40/O[0]
+                         net (fo=1, routed)           0.568     5.032    genblk1[3].filterm/mconv/green_sum_reg[31]_i_40_n_7
+    SLICE_X51Y9          LUT2 (Prop_lut2_I1_O)        0.295     5.327 r  genblk1[3].filterm/mconv/green_sum[31]_i_55/O
+                         net (fo=1, routed)           0.000     5.327    genblk1[3].filterm/mconv/green_sum[31]_i_55_n_0
+    SLICE_X51Y9          CARRY4 (Prop_carry4_S[1]_CO[3])
+                                                      0.550     5.877 r  genblk1[3].filterm/mconv/green_sum_reg[31]_i_38/CO[3]
+                         net (fo=1, routed)           0.000     5.877    genblk1[3].filterm/mconv/green_sum_reg[31]_i_38_n_0
+    SLICE_X51Y10         CARRY4 (Prop_carry4_CI_O[3])
+                                                      0.313     6.190 r  genblk1[3].filterm/mconv/green_sum_reg[31]_i_20/O[3]
+                         net (fo=4, routed)           0.589     6.779    genblk1[3].filterm/mconv/green_sum_reg[31]_i_20_n_4
+    SLICE_X50Y11         LUT2 (Prop_lut2_I0_O)        0.306     7.085 r  genblk1[3].filterm/mconv/green_sum[31]_i_22/O
+                         net (fo=1, routed)           0.000     7.085    genblk1[3].filterm/mconv/green_sum[31]_i_22_n_0
+    SLICE_X50Y11         CARRY4 (Prop_carry4_S[3]_CO[3])
+                                                      0.376     7.461 r  genblk1[3].filterm/mconv/green_sum_reg[31]_i_8/CO[3]
+                         net (fo=1, routed)           0.000     7.461    genblk1[3].filterm/mconv/green_sum_reg[31]_i_8_n_0
+    SLICE_X50Y12         CARRY4 (Prop_carry4_CI_O[1])
+                                                      0.323     7.784 r  genblk1[3].filterm/mconv/green_sum_reg[31]_i_6/O[1]
+                         net (fo=3, routed)           0.579     8.363    genblk1[3].filterm/mconv/green_sum_reg[31]_i_6_n_6
+    SLICE_X49Y12         LUT2 (Prop_lut2_I1_O)        0.306     8.669 r  genblk1[3].filterm/mconv/green_sum[31]_i_11/O
+                         net (fo=1, routed)           0.000     8.669    genblk1[3].filterm/mconv/green_sum[31]_i_11_n_0
+    SLICE_X49Y12         CARRY4 (Prop_carry4_S[1]_O[3])
+                                                      0.640     9.309 r  genblk1[3].filterm/mconv/green_sum_reg[31]_i_3/O[3]
+                         net (fo=3, routed)           0.640     9.949    genblk1[3].filterm/mconv/C__0[19]
+    SLICE_X47Y12         LUT2 (Prop_lut2_I1_O)        0.306    10.255 r  genblk1[3].filterm/mconv/green_sum[19]_i_3/O
+                         net (fo=1, routed)           0.000    10.255    genblk1[3].filterm/mconv/green_sum[19]_i_3_n_0
+    SLICE_X47Y12         CARRY4 (Prop_carry4_S[3]_CO[3])
+                                                      0.401    10.656 r  genblk1[3].filterm/mconv/green_sum_reg[19]_i_1/CO[3]
+                         net (fo=1, routed)           0.000    10.656    genblk1[3].filterm/mconv/green_sum_reg[19]_i_1_n_0
+    SLICE_X47Y13         CARRY4 (Prop_carry4_CI_O[1])
+                                                      0.334    10.990 r  genblk1[3].filterm/mconv/green_sum_reg[31]_i_1/O[1]
+                         net (fo=1, routed)           0.000    10.990    genblk1[3].filterm/mconv/green_sum1[21]
+    SLICE_X47Y13         FDRE                                         r  genblk1[3].filterm/mconv/green_sum_reg[21]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_pixel_cw_hdmi rise edge)
+                                                     13.468    13.468 r  
+    N15                                               0.000    13.468 r  clk_100mhz (IN)
+                         net (fo=0)                   0.000    13.468    wizard_migcam/clk_100mhz
+    N15                  IBUF (Prop_ibuf_I_O)         1.370    14.838 r  wizard_migcam/clkin1_ibufg/O
+                         net (fo=1, routed)           1.181    16.019    wizard_migcam/clk_in1_cw_fast
+    PLLE2_ADV_X0Y0       PLLE2_ADV (Prop_plle2_adv_CLKIN1_CLKOUT0)
+                                                     -7.753     8.266 r  wizard_migcam/plle2_adv_inst/CLKOUT0
+                         net (fo=1, routed)           1.582     9.848    wizard_migcam/clk_100_cw_fast
+    BUFGCTRL_X0Y6        BUFG (Prop_bufg_I_O)         0.091     9.939 r  wizard_migcam/clkout1_buf/O
+                         net (fo=1, routed)           1.457    11.396    wizard_hdmi/clk_100
+    MMCME2_ADV_X1Y0      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT0)
+                                                     -3.129     8.267 r  wizard_hdmi/mmcm_adv_inst/CLKOUT0
+                         net (fo=1, routed)           1.581     9.848    wizard_hdmi/clk_pixel_cw_hdmi
+    BUFGCTRL_X0Y0        BUFG (Prop_bufg_I_O)         0.091     9.939 r  wizard_hdmi/clkout1_buf/O
+                         net (fo=3147, routed)        1.443    11.382    genblk1[3].filterm/mconv/clk_pixel
+    SLICE_X47Y13         FDRE                                         r  genblk1[3].filterm/mconv/green_sum_reg[21]/C
+                         clock pessimism             -0.427    10.955    
+                         clock uncertainty           -0.210    10.746    
+    SLICE_X47Y13         FDRE (Setup_fdre_C_D)        0.062    10.808    genblk1[3].filterm/mconv/green_sum_reg[21]
+  -------------------------------------------------------------------
+                         required time                         10.808    
+                         arrival time                         -10.990    
+  -------------------------------------------------------------------
+                         slack                                 -0.183    
+
+
+
+
