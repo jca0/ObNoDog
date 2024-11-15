@@ -289,6 +289,8 @@ endmodule
 
 
 
+
+
 localparam FB_DEPTH = WIDTH*HEIGHT;
 localparam FB_SIZE = $clog2(FB_DEPTH);
 logic [FB_SIZE-1:0] addra; //used to specify address to write to in frame buffer
@@ -303,6 +305,9 @@ logic [FB_SIZE-1:0] addrb_3; //used to lookup address in memory for reading from
 logic [FB_SIZE-1:0] addra_4; //used to specify address to write to in frame buffer
 logic [FB_SIZE-1:0] addrb_4; //used to lookup address in memory for reading from buffer
 
+
+// logic to keep track of bram reads and writes
+// we have 4 brams because we need to read 8 pixels in a given cycle (neighbors), but we can only read from 2 ports at once with a single bram. during the store phase, we make 4 bram copies, then during the trace phase, read from all 4 to get 8 values simultaneously
 always_comb begin
 
      // while writing to the bram
