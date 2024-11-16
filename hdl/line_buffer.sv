@@ -17,7 +17,7 @@ module line_buffer (
   parameter HRES = 1280;
   parameter VRES = 720;
 
-  localparam KERNEL_SIZE = 3;
+  parameter KERNEL_SIZE = 3;
 
 
   logic [1:0] write_cnt;        // keep track of which buffer we're writing to
