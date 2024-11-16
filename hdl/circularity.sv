@@ -14,13 +14,13 @@ module circularity (
     output logic valid_out
     );
 
-    parameter HEIGHT = 1280; // changable parameter for height and width of screen
-    parameter WIDTH = 720;
+    parameter HEIGHT = 320; // changable parameter for height and width of screen
+    parameter WIDTH = 180;
 
-    enum {INTAKE, DIVIDE, OUTPUT} state;                        // state machine states
-
-    logic [$clog2(WIDTH*HEIGHT)+4:0] dividend;
-    logic [$clog2(WIDTH*HEIGHT)*2:0] divisor;
+    //logic [$clog2(WIDTH*HEIGHT)+4:0] dividend;
+    //logic [$clog2(WIDTH*HEIGHT)*2:0] divisor;
+    logic [31:0] dividend;
+    logic [31:0] divisor;
 
     logic [31:0] div_quotient; // outputs of divider
     logic [31:0] div_remainder;
@@ -35,7 +35,7 @@ module circularity (
             busy_out = 0;
 
         end else begin
-            dividend = 4 * 3 * area; // approximate pi = 3 (i know)
+            dividend = 4 * 3 * area * 100; // approximate pi = 3 (i know)
             divisor = perimeter * perimeter;
 
             valid_out = div_data_valid_out;
