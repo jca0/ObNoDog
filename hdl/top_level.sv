@@ -411,6 +411,7 @@ module top_level
   logic [10:0] x_com, x_com_calc; //long term x_com and output from module, resp
   logic [9:0] y_com, y_com_calc; //long term y_com and output from module, resp
   logic new_com; //used to know when to update x_com and y_com ...
+  logic [15:0] area; //area of mask=1 pixels
 
   //take lower 8 of full outputs.
   // treat cr and cb as signed numbers, invert the MSB to get an unsigned equivalent ( [-128,128) maps to [0,256) )
@@ -486,6 +487,7 @@ module top_level
     .tabulate_in((nf_hdmi)),
     .x_out(x_com_calc),
     .y_out(y_com_calc),
+    .area_out(area),
     .valid_out(new_com)
   );
   //grab logic for above
