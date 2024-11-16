@@ -62,7 +62,7 @@ module image_sprite_transparent #(
   assign red_out =    in_sprite ? color_data[23:16] : 0;
   assign green_out =  in_sprite ? color_data[15:8] : 0;
   assign blue_out =   in_sprite ? color_data[7:0]: 0;
-  assign draw_valid = (in_sprite && !(green_out == 63 && red_out == 0 && blue_out == 0));
+  assign draw_valid = (in_sprite && !(green_out == 63 && red_out == 31 && blue_out == 31));
   
 
   xilinx_single_port_ram_read_first #(
