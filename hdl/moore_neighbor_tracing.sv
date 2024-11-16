@@ -7,8 +7,8 @@ module moore_neighbor_tracing (
                          input wire [10:0] x_in,
                          input wire [9:0]  y_in,
                          input wire valid_in, // is this a valid pixel
-                         input wire masked, // is this pixel masked?
-                         input wire new_frame, // is this a new frame? 
+                         input wire masked_in, // is this pixel masked?
+                         input wire new_frame_in, // is this a new frame? 
 
                          output logic [$clog2(WIDTH*HEIGHT):0] perimeter,
                          output logic busy_out,
@@ -56,7 +56,7 @@ module moore_neighbor_tracing (
                     IDLE: begin
                          valid_out <= 0;
 
-                         if(new_frame) begin
+                         if(new_frame_in) begin
                               state <= STORE_FRAME;
                               busy_out <= 1;
                          end
@@ -343,7 +343,7 @@ module moore_neighbor_tracing (
      .addra(addra), //pixels are stored using this math
      .clka(clk_in),
      .wea(valid_in && state == STORE_FRAME),
-     .dina(masked),
+     .dina(masked_in),
      .ena(1'b1),
      .douta(adj_raw[0][0]), //never read from this side
      .addrb(addrb),//transformed lookup pixel
@@ -359,7 +359,7 @@ module moore_neighbor_tracing (
      .addra(addra_2), //pixels are stored using this math
      .clka(clk_in),
      .wea(valid_in && state == STORE_FRAME),
-     .dina(masked),
+     .dina(masked_in),
      .ena(1'b1),
      .douta(adj_raw[0][2]), //never read from this side
      .addrb(addrb_2),//transformed lookup pixel
@@ -375,7 +375,7 @@ module moore_neighbor_tracing (
      .addra(addra_3), //pixels are stored using this math
      .clka(clk_in),
      .wea(valid_in && state == STORE_FRAME),
-     .dina(masked),
+     .dina(masked_in),
      .ena(1'b1),
      .douta(adj_raw[2][2]), //never read from this side
      .addrb(addrb_3),//transformed lookup pixel
@@ -391,7 +391,7 @@ module moore_neighbor_tracing (
      .addra(addra_4), //pixels are stored using this math
      .clka(clk_in),
      .wea(valid_in && state == STORE_FRAME),
-     .dina(masked),
+     .dina(masked_in),
      .ena(1'b1),
      .douta(adj_raw[2][0]), //never read from this side
      .addrb(addrb_4),//transformed lookup pixel

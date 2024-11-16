@@ -8,6 +8,7 @@ from cocotb.clock import Clock
 from cocotb.triggers import Timer, ClockCycles, RisingEdge, FallingEdge, ReadOnly,with_timeout
 from cocotb.utils import get_sim_time as gst
 from cocotb.runner import get_runner
+from make_images import get_image_data
 
 
 @cocotb.test()
@@ -16,33 +17,19 @@ async def test_a(dut):
     dut._log.info("Starting...")
     cocotb.start_soon(Clock(dut.clk_in, 10, units="ns").start())
     dut.rst_in.value = 0
-    dut.data_in.value = 0
-    dut.hcount_in.value = 0
-    dut.vcount_in.value = 0
-    dut.data_valid_in.value = 0
-
-    await ClockCycles(dut.clk_in,1)
-    dut.rst_in.value = 1
-    await ClockCycles(dut.clk_in,5)
-    dut.rst_in.value = 0
-    await ClockCycles(dut.clk_in,5)
-
-    dut.data_valid_in.value = 1
-    dut.hcount_in.value = 1
-    dut.vcount_in.value = 1
-    dut.data_in.value = 0x111122223333
-    await ClockCycles(dut.clk_in,1)
-    dut.hcount_in.value = 2
-    dut.data_in.value = 0x444455556666
-    await ClockCycles(dut.clk_in,1)
-    dut.hcount_in.value = 3
-    dut.data_in.value = 0x777788889999
-    await ClockCycles(dut.clk_in,1)
-    
-    dut.data_valid_in.value = 0
-    dut.data_in.value = 0
-    await ClockCycles(dut.clk_in,100)
-
+    masked_arr = get_image_data("images/square.png")
+    for x in range(320):
+        for y in range(180):
+            await RisingEdge(dut.clk_in)
+            dut.x_in <= x
+            dut.y_in <= y
+            dut.rst_in <= 1
+            dut.masked_in <= masked_arr[y*320 + x]
+            dut.new_frame_in <= 0
+            await RisingEdge(dut.clk_in)
+            dut.rst_in <= 0
+            await RisingEdge(dut.clk_in)
+            dut._log.info(f"({x},{y}): {dut.out.value}")
 
 def is_runner():
     """Image Sprite Tester."""
@@ -51,6 +38,7 @@ def is_runner():
     proj_path = Path(__file__).resolve().parent.parent
     sys.path.append(str(proj_path / "sim" / "model"))
     sources = [proj_path / "hdl" / "moore_neighbor_tracing.sv"]
+    sources += [proj_path / "ip" / "blk_mem_gen_0" / "blk_mem_gen_0.xci"]
     build_test_args = ["-Wall"]
     parameters = {}
     sys.path.append(str(proj_path / "sim"))
