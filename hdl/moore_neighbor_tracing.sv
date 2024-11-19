@@ -7,8 +7,8 @@ module moore_neighbor_tracing (
                          input wire [10:0] x_in,
                          input wire [9:0]  y_in,
                          input wire valid_in, // is this a valid pixel
-                         input wire masked_in, // is this pixel masked?
-                         input wire new_frame_in, // is this a new frame? 
+                         input wire masked, // is this pixel masked?
+                         input wire new_frame, // is this a new frame? 
 
                          output logic [$clog2(WIDTH*HEIGHT):0] perimeter,
                          output logic busy_out,
@@ -56,7 +56,7 @@ module moore_neighbor_tracing (
                     IDLE: begin
                          valid_out <= 0;
 
-                         if(new_frame_in) begin
+                         if(new_frame) begin
                               state <= STORE_FRAME;
                               busy_out <= 1;
                          end
@@ -281,6 +281,15 @@ module moore_neighbor_tracing (
           end
      end
 
+
+
+
+
+
+
+
+
+
      localparam FB_DEPTH = WIDTH*HEIGHT;
      localparam FB_SIZE = $clog2(FB_DEPTH);
      logic [FB_SIZE-1:0] addra; //used to specify address to write to in frame buffer
@@ -302,7 +311,7 @@ module moore_neighbor_tracing (
 
           // while writing to the bram
           if(state != TRACING) begin
-               addra = x_in + v_in * WIDTH; // where to store values
+               addra = x_in + y_in * WIDTH; // where to store values
                addrb = scan_x + scan_y * WIDTH; // where to pull vcalues from
 
                addra_2 = addra;
@@ -314,6 +323,8 @@ module moore_neighbor_tracing (
 
           // COMBINATIONALLY PULL ALL ADJACENT PIXLES IF IN TRACING
           end else begin
+
+               adj_raw[0][1] = frame_buff_pixel;
 
                addra = (scan_x != 0 && scan_y != 0)? (scan_x-1) + (scan_y-1)*WIDTH : 0;                  // up left
                addrb = (scan_y != 0)? (scan_x) + (scan_y-1)*WIDTH : 0;                                   // up
@@ -338,69 +349,180 @@ module moore_neighbor_tracing (
           end
      end 
 
-     //frame buffer from IP
-     blk_mem_gen_0 frame_buffer_1 (
-     .addra(addra), //pixels are stored using this math
-     .clka(clk_in),
-     .wea(valid_in && state == STORE_FRAME),
-     .dina(masked_in),
-     .ena(1'b1),
-     .douta(adj_raw[0][0]), //never read from this side
-     .addrb(addrb),//transformed lookup pixel
-     .dinb(16'b0),
-     .clkb(clk_in),
-     .web(1'b0),
-     .enb(1'b1),
-     .doutb((state == TRACING)? adj_raw[0][1] : frame_buff_pixel)
-     );
+
+     xilinx_true_dual_port_read_first_2_clock_ram
+          #(.RAM_WIDTH(1),
+          .RAM_DEPTH(WIDTH*HEIGHT))
+          frame_buffer_1
+          (
+          // PORT A
+          .addra(addra), //pixels are stored using this math
+          .clka(clk_in),
+          .wea(valid_in && state == STORE_FRAME),
+          .dina(masked),
+          .ena(1'b1),
+          .douta(adj_raw[0][0]), //never read from this side
+          .rsta(rst_in),
+          .regcea(1'b1),
+
+          // PORT B
+          .addrb(addrb),//transformed lookup pixel
+          .dinb(16'b0),
+          .clkb(clk_in),
+          .web(1'b0),
+          .enb(1'b1),
+          .doutb(frame_buff_pixel),
+          .rstb(rst_in),
+          .regceb(1'b1)
+          );
 
 
-     blk_mem_gen_0 frame_buffer_2 (
-     .addra(addra_2), //pixels are stored using this math
-     .clka(clk_in),
-     .wea(valid_in && state == STORE_FRAME),
-     .dina(masked_in),
-     .ena(1'b1),
-     .douta(adj_raw[0][2]), //never read from this side
-     .addrb(addrb_2),//transformed lookup pixel
-     .dinb(16'b0),
-     .clkb(clk_in),
-     .web(1'b0),
-     .enb(1'b1),
-     .doutb(adj_raw[1][2])
-     );
+     xilinx_true_dual_port_read_first_2_clock_ram
+          #(.RAM_WIDTH(1),
+          .RAM_DEPTH(WIDTH*HEIGHT))
+          frame_buffer_2
+          (
+          // PORT A
+          .addra(addra_2), //pixels are stored using this math
+          .clka(clk_in),
+          .wea(valid_in && state == STORE_FRAME),
+          .dina(masked),
+          .ena(1'b1),
+          .douta(adj_raw[0][2]), //never read from this side
+          .rsta(rst_in),
+          .regcea(1'b1),
+
+          // PORT B
+          .addrb(addrb_2),//transformed lookup pixel
+          .dinb(16'b0),
+          .clkb(clk_in),
+          .web(1'b0),
+          .enb(1'b1),
+          .doutb(adj_raw[1][2]),
+          .rstb(rst_in),
+          .regceb(1'b1)
+          );
 
 
-     blk_mem_gen_0 frame_buffer_3 (
-     .addra(addra_3), //pixels are stored using this math
-     .clka(clk_in),
-     .wea(valid_in && state == STORE_FRAME),
-     .dina(masked_in),
-     .ena(1'b1),
-     .douta(adj_raw[2][2]), //never read from this side
-     .addrb(addrb_3),//transformed lookup pixel
-     .dinb(16'b0),
-     .clkb(clk_in),
-     .web(1'b0),
-     .enb(1'b1),
-     .doutb(adj_raw[2][1])
-     );
+     xilinx_true_dual_port_read_first_2_clock_ram
+          #(.RAM_WIDTH(1),
+          .RAM_DEPTH(WIDTH*HEIGHT))
+          frame_buffer_3
+          (
+          // PORT A
+          .addra(addra_3), //pixels are stored using this math
+          .clka(clk_in),
+          .wea(valid_in && state == STORE_FRAME),
+          .dina(masked),
+          .ena(1'b1),
+          .douta(adj_raw[2][2]), //never read from this side
+          .rsta(rst_in),
+          .regcea(1'b1),
+
+          // PORT B
+          .addrb(addrb_3),//transformed lookup pixel
+          .dinb(16'b0),
+          .clkb(clk_in),
+          .web(1'b0),
+          .enb(1'b1),`HEGIHT
+          .doutb(adj_raw[2][1]),
+          .rstb(rst_in),
+          .regceb(1'b1)
+          );
 
 
-     blk_mem_gen_0 frame_buffer_4 (
-     .addra(addra_4), //pixels are stored using this math
-     .clka(clk_in),
-     .wea(valid_in && state == STORE_FRAME),
-     .dina(masked_in),
-     .ena(1'b1),
-     .douta(adj_raw[2][0]), //never read from this side
-     .addrb(addrb_4),//transformed lookup pixel
-     .dinb(16'b0),
-     .clkb(clk_in),
-     .web(1'b0),
-     .enb(1'b1),
-     .doutb(adj_raw[1][0])
-     );
+     xilinx_true_dual_port_read_first_2_clock_ram
+          #(.RAM_WIDTH(1),
+          .RAM_DEPTH(WIDTH*HEIGHT))
+          frame_buffer_4
+          (
+          // PORT A
+          .addra(addra_4), //pixels are stored using this math
+          .clka(clk_in),
+          .wea(valid_in && state == STORE_FRAME),
+          .dina(masked),
+          .ena(1'b1),
+          .douta(adj_raw[2][0]), //never read from this side
+          .rsta(rst_in),
+          .regcea(1'b1),
+
+          // PORT B
+          .addrb(addrb_4),//transformed lookup pixel
+          .dinb(16'b0),
+          .clkb(clk_in),
+          .web(1'b0),
+          .enb(1'b1),
+          .doutb(adj_raw[1][0]),
+          .rstb(rst_in),
+          .regceb(1'b1)
+          );
+
+/*
+//frame buffer from IP
+blk_mem_gen_0 frame_buffer_1 (
+.addra(addra), //pixels are stored using this math
+.clka(clk_in),
+.wea(valid_in && state == STORE_FRAME),
+.dina(masked),
+.ena(1'b1),
+.douta(adj_raw[0][0]), //never read from this side
+.addrb(addrb),//transformed lookup pixel
+.dinb(16'b0),
+.clkb(clk_in),
+.web(1'b0),
+.enb(1'b1),
+.doutb((state == TRACING)? adj_raw[0][1] : frame_buff_pixel)
+);
+
+
+blk_mem_gen_0 frame_buffer_2 (
+.addra(addra_2), //pixels are stored using this math
+.clka(clk_in),
+.wea(valid_in && state == STORE_FRAME),
+.dina(masked),
+.ena(1'b1),
+.douta(adj_raw[0][2]), //never read from this side
+.addrb(addrb_2),//transformed lookup pixel
+.dinb(16'b0),
+.clkb(clk_in),
+.web(1'b0),
+.enb(1'b1),
+.doutb(adj_raw[1][2])
+);
+
+
+blk_mem_gen_0 frame_buffer_3 (
+.addra(addra_3), //pixels are stored using this math
+.clka(clk_in),
+.wea(valid_in && state == STORE_FRAME),
+.dina(masked),
+.ena(1'b1),
+.douta(adj_raw[2][2]), //never read from this side
+.addrb(addrb_3),//transformed lookup pixel
+.dinb(16'b0),
+.clkb(clk_in),
+.web(1'b0),
+.enb(1'b1),
+.doutb(adj_raw[2][1])
+);
+
+
+blk_mem_gen_0 frame_buffer_4 (
+.addra(addra_4), //pixels are stored using this math
+.clka(clk_in),
+.wea(valid_in && state == STORE_FRAME),
+.dina(masked),
+.ena(1'b1),
+.douta(adj_raw[2][0]), //never read from this side
+
+.addrb(addrb_4),//transformed lookup pixel
+.dinb(16'b0),
+.clkb(clk_in),
+.web(1'b0),
+.enb(1'b1),
+.doutb(adj_raw[1][0])
+);
+*/
 
 endmodule
 
