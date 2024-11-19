@@ -18,6 +18,7 @@ async def test_a(dut):
     cocotb.start_soon(Clock(dut.clk_in, 10, units="ns").start())
     dut.rst_in.value = 0
     masked_arr = get_image_data("images/square.png")
+    
     for x in range(320):
         for y in range(180):
             await RisingEdge(dut.clk_in)
@@ -38,7 +39,8 @@ def is_runner():
     proj_path = Path(__file__).resolve().parent.parent
     sys.path.append(str(proj_path / "sim" / "model"))
     sources = [proj_path / "hdl" / "moore_neighbor_tracing.sv"]
-    sources += [proj_path / "ip" / "blk_mem_gen_0" / "blk_mem_gen_0.xci"]
+    #sources += [proj_path / "ip" / "blk_mem_gen_0" / "blk_mem_gen_0.xci"]
+    sources += [proj_path / "hdl" / "xilinx_true_dual_port_read_first_2_clock_ram.v"]
     build_test_args = ["-Wall"]
     parameters = {}
     sys.path.append(str(proj_path / "sim"))
