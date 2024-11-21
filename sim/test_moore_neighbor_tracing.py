@@ -53,7 +53,7 @@ async def test_a(dut):
     dut.valid_in.value = 0
     #dut._log.info(f"")
 
-    await ClockCycles(dut.clk_in,80000)
+    await ClockCycles(dut.clk_in,30000)
 
 
 def is_runner():
