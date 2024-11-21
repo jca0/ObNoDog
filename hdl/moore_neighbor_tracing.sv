@@ -7,8 +7,8 @@ module moore_neighbor_tracing (
                          input wire [10:0] x_in,
                          input wire [9:0]  y_in,
                          input wire valid_in, // is this a valid pixel
-                         input wire masked, // is this pixel masked?
-                         input wire new_frame, // is this a new frame? 
+                         input wire masked_in, // is this pixel masked?
+                         input wire new_frame_in, // is this a new frame? 
 
                          output logic [$clog2(WIDTH*HEIGHT):0] perimeter,
                          output logic busy_out,
@@ -45,6 +45,12 @@ module moore_neighbor_tracing (
                from <= UP;
                trace_started <= 0;
 
+               scan_x <= 0;
+               scan_y <= 0;
+               trace_start_x <= 0;
+               trace_start_x <= 0;
+
+
                //outputs
                busy_out <= 0;
                valid_out <= 0;
@@ -56,7 +62,7 @@ module moore_neighbor_tracing (
                     IDLE: begin
                          valid_out <= 0;
 
-                         if(new_frame) begin
+                         if(new_frame_in) begin
                               state <= STORE_FRAME;
                               busy_out <= 1;
                          end
@@ -74,11 +80,18 @@ module moore_neighbor_tracing (
 
                     SEARCHING: begin
                          if(frame_buff_pixel == 1) begin
+                              state <= TRACING;
+                              perimeter <= 1; // start pixel
+                              from <= UP;
+                              trace_started <= 0;
 
+                              trace_start_x <= scan_x;
+                              trace_start_y <= scan_y;
                          end else begin
                               if(scan_x == WIDTH-1) begin
                                    if(scan_y == HEIGHT-1) begin
-                                        scan_y <= 0;
+                                        perimeter <= 0;
+                                        state <= OUTPUT;
                                    end else begin
                                         scan_y <= scan_y + 1;
                                    end
@@ -86,19 +99,6 @@ module moore_neighbor_tracing (
                                    scan_x <= 0;
                               end else begin
                                    scan_x <= scan_x + 1;
-                              end
-
-                              if(frame_buff_pixel == 1) begin
-                                   state <= TRACING;
-                                   perimeter <= 1; // start pixel
-                                   from <= UP;
-                                   trace_started <= 0;
-
-                                   trace_start_x <= scan_x;
-                                   trace_start_y <= scan_y;
-                              end else if (scan_x == WIDTH-1 && scan_y == HEIGHT-1) begin
-                                   perimeter <= 0;
-                                   state <= OUTPUT;
                               end
 
                          end
@@ -109,7 +109,7 @@ module moore_neighbor_tracing (
                     // THE ACTUAL MOORE NEIGHBOR ALGORITHM
                     TRACING: begin
                          
-                         perimeter <= (!(scan_x == trace_start_x && scan_y == trace_start_y))? perimeter + 1 : perimeter; // dont add if this is the second time we hit the starting pixel? *********************set perimeter to be 1 when we move to this state and only add if it's not the starting pixel
+                         perimeter <= perimeter + 1; //(!(scan_x == trace_start_x && scan_y == trace_start_y))? perimeter + 1 : perimeter; // dont add if this is the second time we hit the starting pixel? *********************set perimeter to be 1 when we move to this state and only add if it's not the starting pixel
 
 
                          if(trace_started && scan_x == trace_start_x && scan_y == trace_start_y) begin // if we're back to the start
@@ -308,6 +308,7 @@ module moore_neighbor_tracing (
      // logic to keep track of bram reads and writes
      // we have 4 brams because we need to read 8 pixels in a given cycle (neighbors), but we can only read from 2 ports at once with a single bram. during the store phase, we make 4 bram copies, then during the trace phase, read from all 4 to get 8 values simultaneously
      always_comb begin
+          adj_raw[1][1] = 1;
 
           // while writing to the bram
           if(state != TRACING) begin
@@ -352,14 +353,14 @@ module moore_neighbor_tracing (
 
      xilinx_true_dual_port_read_first_2_clock_ram
           #(.RAM_WIDTH(1),
-          .RAM_DEPTH(WIDTH*HEIGHT))
+          .RAM_DEPTH(FB_DEPTH))
           frame_buffer_1
           (
           // PORT A
           .addra(addra), //pixels are stored using this math
           .clka(clk_in),
           .wea(valid_in && state == STORE_FRAME),
-          .dina(masked),
+          .dina(masked_in),
           .ena(1'b1),
           .douta(adj_raw[0][0]), //never read from this side
           .rsta(rst_in),
@@ -379,14 +380,14 @@ module moore_neighbor_tracing (
 
      xilinx_true_dual_port_read_first_2_clock_ram
           #(.RAM_WIDTH(1),
-          .RAM_DEPTH(WIDTH*HEIGHT))
+          .RAM_DEPTH(FB_DEPTH))
           frame_buffer_2
           (
           // PORT A
           .addra(addra_2), //pixels are stored using this math
           .clka(clk_in),
           .wea(valid_in && state == STORE_FRAME),
-          .dina(masked),
+          .dina(masked_in),
           .ena(1'b1),
           .douta(adj_raw[0][2]), //never read from this side
           .rsta(rst_in),
@@ -406,14 +407,14 @@ module moore_neighbor_tracing (
 
      xilinx_true_dual_port_read_first_2_clock_ram
           #(.RAM_WIDTH(1),
-          .RAM_DEPTH(WIDTH*HEIGHT))
+          .RAM_DEPTH(FB_DEPTH))
           frame_buffer_3
           (
           // PORT A
           .addra(addra_3), //pixels are stored using this math
           .clka(clk_in),
           .wea(valid_in && state == STORE_FRAME),
-          .dina(masked),
+          .dina(masked_in),
           .ena(1'b1),
           .douta(adj_raw[2][2]), //never read from this side
           .rsta(rst_in),
@@ -433,14 +434,14 @@ module moore_neighbor_tracing (
 
      xilinx_true_dual_port_read_first_2_clock_ram
           #(.RAM_WIDTH(1),
-          .RAM_DEPTH(WIDTH*HEIGHT))
+          .RAM_DEPTH(FB_DEPTH))
           frame_buffer_4
           (
           // PORT A
           .addra(addra_4), //pixels are stored using this math
           .clka(clk_in),
           .wea(valid_in && state == STORE_FRAME),
-          .dina(masked),
+          .dina(masked_in),
           .ena(1'b1),
           .douta(adj_raw[2][0]), //never read from this side
           .rsta(rst_in),
@@ -463,7 +464,7 @@ blk_mem_gen_0 frame_buffer_1 (
 .addra(addra), //pixels are stored using this math
 .clka(clk_in),
 .wea(valid_in && state == STORE_FRAME),
-.dina(masked),
+.dina(masked_in),
 .ena(1'b1),
 .douta(adj_raw[0][0]), //never read from this side
 .addrb(addrb),//transformed lookup pixel
@@ -479,7 +480,7 @@ blk_mem_gen_0 frame_buffer_2 (
 .addra(addra_2), //pixels are stored using this math
 .clka(clk_in),
 .wea(valid_in && state == STORE_FRAME),
-.dina(masked),
+.dina(masked_in),
 .ena(1'b1),
 .douta(adj_raw[0][2]), //never read from this side
 .addrb(addrb_2),//transformed lookup pixel
@@ -495,7 +496,7 @@ blk_mem_gen_0 frame_buffer_3 (
 .addra(addra_3), //pixels are stored using this math
 .clka(clk_in),
 .wea(valid_in && state == STORE_FRAME),
-.dina(masked),
+.dina(masked_in),
 .ena(1'b1),
 .douta(adj_raw[2][2]), //never read from this side
 .addrb(addrb_3),//transformed lookup pixel
@@ -511,7 +512,7 @@ blk_mem_gen_0 frame_buffer_4 (
 .addra(addra_4), //pixels are stored using this math
 .clka(clk_in),
 .wea(valid_in && state == STORE_FRAME),
-.dina(masked),
+.dina(masked_in),
 .ena(1'b1),
 .douta(adj_raw[2][0]), //never read from this side
 
