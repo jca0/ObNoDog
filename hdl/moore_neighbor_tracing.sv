@@ -27,6 +27,8 @@ module moore_neighbor_tracing (
      logic [2:0][2:0] adj_raw;
      logic [2:0][2:0] adj;
 
+     logic [1:0] read_wait;
+
      enum {IDLE, STORE_FRAME, SEARCHING, TRACING, OUTPUT} state;                        // state machine states
      // Idle: waiting for a valid frame signal
      // store_frame: storign the frame to the frame buffer (do we need to do this? can we somehow get the frame from the buffer in toplevel?)
@@ -49,6 +51,8 @@ module moore_neighbor_tracing (
                scan_y <= 0;
                trace_start_x <= 0;
                trace_start_x <= 0;
+
+               read_wait <= 0;
 
 
                //outputs
@@ -81,12 +85,17 @@ module moore_neighbor_tracing (
                     SEARCHING: begin
                          if(frame_buff_pixel == 1) begin
                               state <= TRACING;
-                              perimeter <= 1; // start pixel
+                              perimeter <= 0; // start pixel
                               from <= UP;
                               trace_started <= 0;
+                              read_wait <= 0;
 
-                              trace_start_x <= scan_x;
-                              trace_start_y <= scan_y;
+
+                              scan_x <= (scan_x >= 2)? scan_x-2 : (WIDTH-2)+scan_x; // if we read frame_buff_pixel is high, then we know 2 cycles ago we saw a good pixel
+                              scan_y <= (scan_x >= 2)? scan_y : scan_y - 1;
+
+                              trace_start_x <= (scan_x >= 2)? scan_x-2 : (WIDTH-2)+scan_x;
+                              trace_start_y <= (scan_x >= 2)? scan_y : scan_y - 1;
                          end else begin
                               if(scan_x == WIDTH-1) begin
                                    if(scan_y == HEIGHT-1) begin
@@ -109,12 +118,17 @@ module moore_neighbor_tracing (
                     // THE ACTUAL MOORE NEIGHBOR ALGORITHM
                     TRACING: begin
                          
-                         perimeter <= perimeter + 1; //(!(scan_x == trace_start_x && scan_y == trace_start_y))? perimeter + 1 : perimeter; // dont add if this is the second time we hit the starting pixel? *********************set perimeter to be 1 when we move to this state and only add if it's not the starting pixel
+                         // perimeter <= perimeter + 1; //(!(scan_x == trace_start_x && scan_y == trace_start_y))? perimeter + 1 : perimeter; // dont add if this is the second time we hit the starting pixel? *********************set perimeter to be 1 when we move to this state and only add if it's not the starting pixel
 
 
                          if(trace_started && scan_x == trace_start_x && scan_y == trace_start_y) begin // if we're back to the start
                               state <= OUTPUT;
+                         end else if(read_wait < 2) begin // we need to wait 2 cycles to read from the buffer
+                              read_wait <= read_wait + 1;
                          end else begin
+                              perimeter <= perimeter + 1;
+                              read_wait <= 0;
+
                               trace_started <= 1; // we've started the trace
 
                               case(from) // based on where we came from, traversal order is different
@@ -336,16 +350,16 @@ module moore_neighbor_tracing (
                addra_4 = (scan_x != 0 && scan_y != HEIGHT-1)? (scan_x-1) + (scan_y+1)*WIDTH : 0;         // down right
                addrb_4 = (scan_x != 0)? (scan_x-1) + (scan_y)*WIDTH : 0;                                 // left
 
-               adj[0][0] = (scan_x != 0 && scan_y != 0)? adj_raw[0][0] : 0;                       // up left
-               adj[0][1] = (scan_y != 0)? adj_raw[0][1]  : 0;                                     // up
-               adj[0][2] = (scan_x != WIDTH-1 && scan_y != 0)? adj_raw[0][2]  : 0;                // up right
-               adj[1][2] = (scan_x != WIDTH-1)? adj_raw[1][2] : 0;                                // right
-               adj[2][2] = (scan_x != WIDTH-1 && scan_y != HEIGHT-1)? adj_raw[2][2]  : 0;         // down right
-               adj[2][1] = (scan_y != HEIGHT-1)? adj_raw[2][1] : 0;                               // down
-               adj[2][0] = (scan_x != 0 && scan_y != HEIGHT-1)? adj_raw[2][0] : 0;                // down right
-               adj[1][0] = (scan_x != 0)? adj_raw[1][0] : 0;                                      // left
-               
-               adj[1][1] = 0; // doesn't matter
+               adj[0][0] = (scan_x != 0 && scan_y != 0)? adj_raw[0][0] : 0;                              // up left
+               adj[0][1] = (scan_y != 0)? adj_raw[0][1] : 0;                                             // up
+               adj[0][2] = (scan_x != WIDTH-1 && scan_y != 0)? adj_raw[0][2] : 0;                        // up right
+               adj[1][2] = (scan_x != WIDTH-1)? adj_raw[1][2] : 0;                                       // right
+               adj[2][2] = (scan_x != WIDTH-1 && scan_y != HEIGHT-1)? adj_raw[2][2] : 0;                 // down right
+               adj[2][1] = (scan_y != HEIGHT-1)? adj_raw[2][1] : 0;                                      // down
+               adj[2][0] = (scan_x != 0 && scan_y != HEIGHT-1)? adj_raw[2][0] : 0;                       // down right
+               adj[1][0] = (scan_x != 0)? adj_raw[1][0] : 0;                                             // left
+
+               adj[1][1] = adj_raw[1][1]; // doesn't matter
 
           end
      end 
