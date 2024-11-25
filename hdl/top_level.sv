@@ -474,6 +474,37 @@ module top_level
   assign ss0_c = ss_c; //control upper four digit's cathodes!
   assign ss1_c = ss_c; //same as above but for lower four digits!
 
+  logic [15:0] perimeter;
+  logic [15:0] perimeter_temp;
+  logic [15:0] area;
+  logic [15:0] circularity;
+  logic both_valid;
+  logic ccl_valid;
+  logic ccl_temp;
+  logic moore_busy;
+  logic moore_valid;
+  logic moore_temp;
+  logic circularity_busy;
+  logic circularity_valid;
+
+  always_ff @(posedge clk_pixel)begin
+    if (ccl_valid) begin
+      ccl_temp <= 1;
+    end
+    if (moore_valid) begin
+      moore_temp <= 1;
+      perimeter_temp <= perimeter;
+    end
+    if (moore_temp && ccl_temp) begin
+      both_valid <= 1;
+      ccl_temp <= 0;
+      moore_temp <= 0;
+    end
+    if (both_valid) begin
+      both_valid <= 0;
+    end
+  end
+
   connected_components #(
     .HRES(320),
     .VRES(180),
@@ -495,25 +526,25 @@ module top_level
   moore_neighbor_tracing mnt (
     .clk_in(clk_pixel),
     .rst_in(sys_rst_pixel),
-    .x_in(fmux_hcount),
-    .y_in(fmux_vcount),
-    .valid_in(fmux_valid),
+    .x_in(hcount_hdmi >> 2),
+    .y_in(vcount_hdmi >> 2),
+    .valid_in(active_draw_hdmi),
     .masked_in(mask),
-    .new_frame_in(frame_signal),
-    .perimeter_out(),
-    .busy_out(),
-    .valid_out()
+    .new_frame_in(hcount_hdmi == 0 && vcount_hdmi == 0),
+    .perimeter_out(perimeter),
+    .busy_out(moore_busy),
+    .valid_out(moore_valid)
   )
 
   circularity circularity_m (
     .clk_in(clk_pixel),
     .rst_in(sys_rst_pixel),
-    .area(),
-    .perimeter(),
-    .data_valid_in(),
-    .circularity()
-    .busy_out(),
-    .valid_out()
+    .area(area),
+    .perimeter(perimeter_temp),
+    .data_valid_in(both_valid),
+    .circularity(circularity)
+    .busy_out(circularity_busy),
+    .valid_out(circularity_valid)
   )
 
   // shape detector stuff
