@@ -12,27 +12,40 @@ from cocotb.runner import get_runner
 
 
 @cocotb.test()
-async def y_stays_same(dut):
+async def test_a(dut):
     """cocotb test for seven segment controller"""
     dut._log.info("Starting...")
     cocotb.start_soon(Clock(dut.clk_in, 10, units="ns").start())
     dut._log.info("Holding reset...")
     await FallingEdge(dut.clk_in)
     dut.rst_in.value = 1
-    dut.cluster_id = 2
-    await ClockCycles(dut.clk_in, 3, rising = False) #wait three clock cycles
-    dut.rst_in.value = 0 #un reset device
-    await ClockCycles(dut.clk_in, 1, rising = False)
+    await ClockCycles(dut.clk_in, 3, rising = False)
+    dut.rst_in.value = 0
     dut.valid_in.value = 1
-    for i in range(10):
-        dut.x_in.value = i
-        dut.y_in.value = 10
-        await ClockCycles(dut.clk_in, 1, rising = False)
-    dut.tabulate_in.value = 1
-    dut.valid_in.value = 0
     await ClockCycles(dut.clk_in, 1, rising = False)
-    dut.tabulate_in.value = 0
+    mask = [1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0]
+    for i in range(4):
+        for j in range(4):
+            dut.hcount_in.value = i
+            dut.vcount_in.value = j
+            dut.mask_in.value = mask[i*4+j]
+            await ClockCycles(dut.clk_in, 1, rising = False)
+    dut.valid_in.value = 0
     await ClockCycles(dut.clk_in, 100, rising = False)
+    # dut.cluster_id = 2
+    # await ClockCycles(dut.clk_in, 3, rising = False) #wait three clock cycles
+    # dut.rst_in.value = 0 #un reset device
+    # await ClockCycles(dut.clk_in, 1, rising = False)
+    # dut.valid_in.value = 1
+    # for i in range(10):
+    #     dut.x_in.value = i
+    #     dut.y_in.value = 10
+    #     await ClockCycles(dut.clk_in, 1, rising = False)
+    # dut.tabulate_in.value = 1
+    # dut.valid_in.value = 0
+    # await ClockCycles(dut.clk_in, 1, rising = False)
+    # dut.tabulate_in.value = 0
+    # await ClockCycles(dut.clk_in, 100, rising = False)
     
 
 def is_runner():
@@ -44,7 +57,7 @@ def is_runner():
     sources = [proj_path / "hdl" / "connected_components.sv"]
     sources += [proj_path / "hdl" / "line_buffer_above.sv"]
     build_test_args = ["-Wall"]
-    parameters = {}
+    parameters = {'HRES': 4, 'VRES': 4, 'MAX_LABELS': 3, 'MIN_AREA': 1}
     sys.path.append(str(proj_path / "sim"))
     runner = get_runner(sim)
     runner.build(
