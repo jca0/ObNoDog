@@ -1,6 +1,6 @@
 `default_nettype none
 
-module line_buffer (
+module line_buffer_above (
             input wire clk_in, // System clock
             input wire rst_in, // System reset
 

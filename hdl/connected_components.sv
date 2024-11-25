@@ -23,7 +23,7 @@ module connected_components #(
     logic [15:0] above_row_pixel;
 
     // Line buffer instantiation
-    line_buffer #(
+    line_buffer_above #(
         .HRES(HRES),
         .VRES(VRES)
     ) line_buffer_inst (
