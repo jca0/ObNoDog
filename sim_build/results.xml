@@ -1,0 +1,6 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1732493965" />
+    <testcase name="y_stays_same" classname="test_kmeans" file="/Users/jingcao/Desktop/ObNoDog/sim/test_kmeans.py" lineno="14" time="0.007498979568481445" sim_time_ns="1155.001" ratio_time="154021.08906317363" />
+  </testsuite>
+</testsuites>

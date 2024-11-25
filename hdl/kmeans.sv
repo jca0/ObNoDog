@@ -1,7 +1,7 @@
 `default_nettype none
 
 module kmeans #(
-    parameter K = 4,  // Number of clusters
+    parameter K = 4,  // number of clusters
     parameter WIDTH = 32
 )(
     input wire clk_in,

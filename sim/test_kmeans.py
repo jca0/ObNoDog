@@ -19,6 +19,7 @@ async def y_stays_same(dut):
     dut._log.info("Holding reset...")
     await FallingEdge(dut.clk_in)
     dut.rst_in.value = 1
+    dut.cluster_id = 2
     await ClockCycles(dut.clk_in, 3, rising = False) #wait three clock cycles
     dut.rst_in.value = 0 #un reset device
     await ClockCycles(dut.clk_in, 1, rising = False)
@@ -41,7 +42,7 @@ def is_runner():
     proj_path = Path(__file__).resolve().parent.parent
     sys.path.append(str(proj_path / "sim" / "model"))
     sources = [proj_path / "hdl" / "kmeans.sv"]
-    sources += [proj_path / "hdl" / "kernels.sv"]
+    sources += [proj_path / "hdl" / "divider.sv"]
     build_test_args = ["-Wall"]
     parameters = {}
     sys.path.append(str(proj_path / "sim"))
