@@ -54,6 +54,8 @@ module connected_components #(
         neighbor_labels[1] = label_memory[hcount_in]; // Above
     end
 
+    
+
     // Label assignment logic
     always_ff @(posedge clk_in) begin
         if (valid_in) begin

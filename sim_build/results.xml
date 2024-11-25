@@ -1,6 +1,6 @@
 <testsuites name="results">
   <testsuite name="all" package="all">
-    <property name="random_seed" value="1732506575" />
-    <testcase name="test_a" classname="test_connected_components" file="/Users/jingcao/Desktop/ObNoDog/sim/test_connected_components.py" lineno="14" time="0.005799055099487305" sim_time_ns="1205.001" ratio_time="207792.645409859" />
+    <property name="random_seed" value="1732509253" />
+    <testcase name="test_a" classname="test_connected_components" file="/Users/jingcao/Desktop/ObNoDog/sim/test_connected_components.py" lineno="14" time="0.0055539608001708984" sim_time_ns="1205.001" ratio_time="216962.46036934963" />
   </testsuite>
 </testsuites>
