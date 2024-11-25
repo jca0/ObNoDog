@@ -103,7 +103,7 @@ module top_level
   // hook it up to buffered inputs.
   //same as it ever was.
 
-  pixel_reconstruct
+  pixel_reconstruct mod
     (.clk_in(clk_camera),
      .rst_in(sys_rst_camera),
      .camera_pclk_in(cam_pclk_buf[0]),
@@ -505,23 +505,23 @@ module top_level
     end
   end
 
-  connected_components #(
-    .HRES(320),
-    .VRES(180),
-    .MAX_LABELS(20),
-    .MIN_AREA(40)
-  ) cc(
-    .clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .hcount_in(fmux_hcount),
-    .vcount_in(fmux_vcount),
-    .mask_in(mask),
-    .valid_in(fmux_valid),
-    .label_out(),
-    .hcount_out(),
-    .vcount_out(),
-    .valid_out()
-  );
+  // connected_components #(
+  //   .HRES(320),
+  //   .VRES(180),
+  //   .MAX_LABELS(20),
+  //   .MIN_AREA(40)
+  // ) cc(
+  //   .clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .hcount_in(fmux_hcount),
+  //   .vcount_in(fmux_vcount),
+  //   .mask_in(mask),
+  //   .valid_in(fmux_valid),
+  //   .label_out(),
+  //   .hcount_out(),
+  //   .vcount_out(),
+  //   .valid_out()
+  // );
 
   moore_neighbor_tracing mnt (
     .clk_in(clk_pixel),
@@ -534,7 +534,7 @@ module top_level
     .perimeter_out(perimeter),
     .busy_out(moore_busy),
     .valid_out(moore_valid)
-  )
+  );
 
   circularity circularity_m (
     .clk_in(clk_pixel),
@@ -542,10 +542,10 @@ module top_level
     .area(area),
     .perimeter(perimeter_temp),
     .data_valid_in(both_valid),
-    .circularity(circularity)
+    .circularity(circularity),
     .busy_out(circularity_busy),
     .valid_out(circularity_valid)
-  )
+  );
 
   // shape detector stuff
 
