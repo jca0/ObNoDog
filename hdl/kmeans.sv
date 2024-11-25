@@ -1,6 +1,6 @@
 `default_nettype none
 
-module kmeans_center_of_mass #(
+module kmeans #(
     parameter K = 4,  // Number of clusters
     parameter WIDTH = 32
 )(
@@ -33,6 +33,8 @@ module kmeans_center_of_mass #(
     logic div_valid_y [K-1:0];
     logic valid_x_reg [K-1:0];
     logic valid_y_reg [K-1:0];
+
+    logic all_valid;
 
     enum {IDLE, ADDING, DIVIDING} state;
 
@@ -138,7 +140,11 @@ module kmeans_center_of_mass #(
                     end
 
                     // Return to IDLE if all clusters are processed
-                    if (&valid_out) begin
+                    all_valid = 1;
+                    for (int i = 0; i < K; i++) begin
+                        all_valid = all_valid && valid_out[i];
+                    end
+                    if (all_valid) begin
                         state <= IDLE;
                     end
                 end

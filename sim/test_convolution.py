@@ -44,15 +44,6 @@ async def test_a(dut):
     dut.data_in.value = 0
     await ClockCycles(dut.clk_in,100)
 
-
-
-
-
-
-
-
-
-
 def is_runner():
     """Image Sprite Tester."""
     hdl_toplevel_lang = os.getenv("HDL_TOPLEVEL_LANG", "verilog")
