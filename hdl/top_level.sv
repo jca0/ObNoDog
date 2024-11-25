@@ -474,13 +474,76 @@ module top_level
   assign ss0_c = ss_c; //control upper four digit's cathodes!
   assign ss1_c = ss_c; //same as above but for lower four digits!
 
+  connected_components #(
+    .HRES(320),
+    .VRES(180),
+    .MAX_LABELS(20),
+    .MIN_AREA(40)
+  ) cc(
+    .clk_in(clk_pixel),
+    .rst_in(sys_rst_pixel),
+    .hcount_in(fmux_hcount),
+    .vcount_in(fmux_vcount),
+    .mask_in(mask),
+    .valid_in(fmux_valid),
+    .label_out(),
+    .hcount_out(),
+    .vcount_out(),
+    .valid_out()
+  );
+
+  moore_neighbor_tracing mnt (
+    .clk_in(clk_pixel),
+    .rst_in(sys_rst_pixel),
+    .x_in(fmux_hcount),
+    .y_in(fmux_vcount),
+    .valid_in(fmux_valid),
+    .masked_in(mask),
+    .new_frame_in(frame_signal),
+    .perimeter_out(),
+    .busy_out(),
+    .valid_out()
+  )
+
+  circularity circularity_m (
+    .clk_in(clk_pixel),
+    .rst_in(sys_rst_pixel),
+    .area(),
+    .perimeter(),
+    .data_valid_in(),
+    .circularity()
+    .busy_out(),
+    .valid_out()
+  )
+
+  // shape detector stuff
+
+  image_sprite_transparent #(
+    .WIDTH(320),
+    .HEIGHT(180)
+  ) sprite(
+    .pixel_clk_in(clk_pixel),
+    .rst_in(sys_rst_pixel),
+    .x_in(fmux_hcount),
+    .y_in(fmux_vcount),
+    .hcount_in(fmux_hcount),
+    .vcount_in(fmux_vcount),
+    .red_out(img_red),
+    .green_out(img_green),
+    .blue_out(img_blue),
+    .draw_valid(new_frame_hdmi)
+  );
+
   // NEW MODULES
   // CONNECTED COMPONENTS LABELLING MODULE
   //  * Takes in a binary mask, labels k connected components, finds center of mass of each component
   // MOORE NEIGHBORHOOD MODULE
   //  * Takes in a binary mask and returns perimeter of connected component
+  // CIRCULARITY MODULE
+  //  * Takes in a perimater and area and returns circularity of connected component
   // SHAPE DETECTOR LOGIC
   //  * could be purely combinational?
+  // SPRITE OVERLAY LOGIC 
 
   //Center of Mass Calculation: (you need to do)
   //using x_com_calc and y_com_calc values
