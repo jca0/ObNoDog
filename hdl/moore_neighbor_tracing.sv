@@ -1,7 +1,8 @@
 `timescale 1ns / 1ps
 `default_nettype none
 
-module moore_neighbor_tracing (
+module moore_neighbor_tracing #(
+     parameter WIDTH=320, HEIGHT=180) (
                          input wire clk_in,
                          input wire rst_in,
                          input wire [10:0] x_in,
@@ -14,8 +15,8 @@ module moore_neighbor_tracing (
                          output logic busy_out,
                          output logic valid_out);
 	
-     parameter WIDTH = 320;
-     parameter HEIGHT = 180;
+     // parameter WIDTH = 320;
+     // parameter HEIGHT = 180;
 
      logic [10:0] scan_x;
      logic [9:0] scan_y;
@@ -439,7 +440,7 @@ module moore_neighbor_tracing (
           .dinb(16'b0),
           .clkb(clk_in),
           .web(1'b0),
-          .enb(1'b1),`HEGIHT
+          .enb(1'b1),
           .doutb(adj_raw[2][1]),
           .rstb(rst_in),
           .regceb(1'b1)
