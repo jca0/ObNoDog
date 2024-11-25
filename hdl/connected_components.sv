@@ -18,7 +18,7 @@ module connected_components #(
     output logic [9:0]   vcount_out,      // Vertical pixel coordinate output
     output logic         valid_out,       // Valid output signal
     output logic [15:0]  blob_labels[MAX_LABELS], // Array of distinct blob labels
-    output logic [31:0]  num_blobs,        // Number of distinct blobs
+    output logic [31:0]  num_blobs        // Number of distinct blobs
     // output logic [15:0] area
 );
 
