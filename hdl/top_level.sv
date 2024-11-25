@@ -360,10 +360,17 @@ module top_level
   logic [15:0] frame_buff_raw; //data out of frame buffer (565)
   logic [FB_SIZE-1:0] addrb; //used to lookup address in memory for reading from buffer
   logic good_addrb; //used to indicate within valid frame for scaling
-  //brought in from lab 5...just do 4X upscale
+
   always_ff @(posedge clk_pixel)begin
-    addrb <= (319-(hcount_hdmi >> 2)) + 320*(vcount_hdmi >> 2);
-    good_addrb <= (hcount_hdmi<1280)&&(vcount_hdmi<720);
+
+    if(!btn[2]) begin // 4x upsampling
+      addrb <= (319-(hcount_hdmi >> 2)) + 320*(vcount_hdmi >> 2);
+      good_addrb <= (hcount_hdmi<1280)&&(vcount_hdmi<720);
+    end else begin //1X scaling from frame buffer
+      addrb <= (319-hcount_hdmi) + 320*vcount_hdmi;
+      good_addrb <= (hcount_hdmi<320) && (vcount_hdmi<180);
+    end
+
   end
 
   //--------------------------END NEW STUFF-------------------
@@ -502,10 +509,38 @@ module top_level
 
   //image_sprite output:
   logic [7:0] img_red, img_green, img_blue;
-  assign img_red =0;
-  assign img_green =0;
-  assign img_blue =0;
+  //assign img_red =0;
+  //assign img_green =0;
+  //assign img_blue =0;
+  logic draw_sprite;
+  //assign draw_sprite = 0;
   //image sprite removed to keep builds focused.
+
+  always_comb begin
+    img_red = draw_sprite? 0 : fb_red;
+    img_green = draw_sprite? 255 : fb_green;
+    img_blue = draw_sprite? 0 : fb_blue;
+
+  end
+
+  image_sprite_transparent #(
+    .WIDTH(256),
+    .HEIGHT(256),
+    .NUM_IMGS(4))
+    com_sprite_m (
+    .pixel_clk_in(clk_pixel),
+    .rst_in(sys_rst_pixel),
+    .hcount_in(hcount_hdmi),   //: needs to use pipelined signal (PS1) //***DONE*** does it?
+    .vcount_in(vcount_hdmi),   //: needs to use pipelined signal (PS1) //***DONE***
+    .x_in(x_com>128 ? x_com-128 : 0),
+    .y_in(y_com>128 ? y_com-128 : 0),
+    .shape(sw[1:0]),
+    .draw_out(draw_sprite));
+
+
+
+
+
 
 
   //crosshair output:
@@ -542,7 +577,7 @@ module top_level
   logic [1:0] target_choice;
 
   assign display_choice = sw[6:5]; //was [5:4]; not anymore
-  assign target_choice =  {1'b0,sw[7]}; //was [7:6]; not anymore
+  assign target_choice =  {1'b1,sw[7]}; //was [7:6]; not anymore
 
   //choose what to display from the camera:
   // * 'b00:  normal camera out
