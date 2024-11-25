@@ -474,6 +474,14 @@ module top_level
   assign ss0_c = ss_c; //control upper four digit's cathodes!
   assign ss1_c = ss_c; //same as above but for lower four digits!
 
+  // NEW MODULES
+  // CONNECTED COMPONENTS LABELLING MODULE
+  //  * Takes in a binary mask, labels k connected components, finds center of mass of each component
+  // MOORE NEIGHBORHOOD MODULE
+  //  * Takes in a binary mask and returns perimeter of connected component
+  // SHAPE DETECTOR LOGIC
+  //  * could be purely combinational?
+
   //Center of Mass Calculation: (you need to do)
   //using x_com_calc and y_com_calc values
   //Center of Mass:
