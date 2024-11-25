@@ -35,7 +35,7 @@ module circularity (
             busy_out = 0;
 
         end else begin
-            dividend = 4 * 3 * area * 100; // approximate pi = 3 (i know)
+            dividend = 4 * area * 314; // pi = 3.14 * 100 (so we get an integer 0-100)
             divisor = perimeter * perimeter;
 
             valid_out = div_data_valid_out;
