@@ -1,8 +1,8 @@
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 ---------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2024.1 (lin64) Build 5076996 Wed May 22 18:36:09 MDT 2024
-| Date         : Tue Nov 26 00:56:04 2024
-| Host         : eecs-digital-18 running 64-bit Ubuntu 24.04.1 LTS
+| Date         : Tue Nov 26 03:14:30 2024
+| Host         : eecs-digital-07 running 64-bit Ubuntu 24.04.1 LTS
 | Command      : report_utilization -file obj/post_synth_util.rpt -hierarchical -hierarchical_depth 4
 | Design       : top_level
 | Device       : xc7s50csga324-1
@@ -22,8 +22,8 @@ Table of Contents
 +----------------------------------------------+-----------------------------------------------------------------+------------+------------+---------+------+------+--------+--------+------------+
 |                   Instance                   |                              Module                             | Total LUTs | Logic LUTs | LUTRAMs | SRLs |  FFs | RAMB36 | RAMB18 | DSP Blocks |
 +----------------------------------------------+-----------------------------------------------------------------+------------+------------+---------+------+------+--------+--------+------------+
-| top_level                                    |                                                           (top) |       2805 |       2759 |       0 |   46 | 4167 |     29 |     37 |          8 |
-|   (top_level)                                |                                                           (top) |          0 |          0 |       0 |    0 |  150 |      0 |      0 |          1 |
+| top_level                                    |                                                           (top) |       2943 |       2876 |       0 |   67 | 4191 |     37 |     37 |          9 |
+|   (top_level)                                |                                                           (top) |          0 |          0 |       0 |    0 |  150 |      0 |      0 |          2 |
 |   blue_ser                                   |                                                 tmds_serializer |          0 |          0 |       0 |    0 |    0 |      0 |      0 |          0 |
 |   cdc_fifo                                   |                                                            fifo |         39 |         39 |       0 |    0 |   82 |      1 |      0 |          0 |
 |     (cdc_fifo)                               |                                                            fifo |          0 |          0 |       0 |    0 |    0 |      0 |      0 |          0 |
@@ -83,14 +83,14 @@ Table of Contents
 |       genblk1[2].line_buffer_ram             |                 xilinx_true_dual_port_read_first_1_clock_ram_21 |          1 |          1 |       0 |    0 |    0 |      0 |      1 |          0 |
 |       genblk1[3].line_buffer_ram             |                 xilinx_true_dual_port_read_first_1_clock_ram_22 |         17 |         17 |       0 |    0 |    0 |      0 |      1 |          0 |
 |     mconv                                    |                                     convolution__parameterized1 |        270 |        264 |       0 |    6 |  474 |      0 |      0 |          0 |
-|   genblk1[3].filterm                         |                                          filter__parameterized2 |        404 |        404 |       0 |    0 |  626 |      0 |      4 |          0 |
+|   genblk1[3].filterm                         |                                          filter__parameterized2 |        399 |        399 |       0 |    0 |  626 |      0 |      4 |          0 |
 |     m_lbuff                                  |                                                  line_buffer_13 |         53 |         53 |       0 |    0 |    2 |      0 |      4 |          0 |
 |       (m_lbuff)                              |                                                  line_buffer_13 |          1 |          1 |       0 |    0 |    2 |      0 |      0 |          0 |
 |       genblk1[0].line_buffer_ram             |                 xilinx_true_dual_port_read_first_1_clock_ram_14 |         17 |         17 |       0 |    0 |    0 |      0 |      1 |          0 |
 |       genblk1[1].line_buffer_ram             |                 xilinx_true_dual_port_read_first_1_clock_ram_15 |         17 |         17 |       0 |    0 |    0 |      0 |      1 |          0 |
 |       genblk1[2].line_buffer_ram             |                 xilinx_true_dual_port_read_first_1_clock_ram_16 |          1 |          1 |       0 |    0 |    0 |      0 |      1 |          0 |
 |       genblk1[3].line_buffer_ram             |                 xilinx_true_dual_port_read_first_1_clock_ram_17 |         17 |         17 |       0 |    0 |    0 |      0 |      1 |          0 |
-|     mconv                                    |                                     convolution__parameterized2 |        351 |        351 |       0 |    0 |  624 |      0 |      0 |          0 |
+|     mconv                                    |                                     convolution__parameterized2 |        346 |        346 |       0 |    0 |  624 |      0 |      0 |          0 |
 |   genblk1[4].filterm                         |                                          filter__parameterized3 |        272 |        272 |       0 |    0 |  454 |      0 |      4 |          0 |
 |     m_lbuff                                  |                                                   line_buffer_8 |         37 |         37 |       0 |    0 |    2 |      0 |      4 |          0 |
 |       (m_lbuff)                              |                                                   line_buffer_8 |          1 |          1 |       0 |    0 |    2 |      0 |      0 |          0 |
@@ -111,15 +111,18 @@ Table of Contents
 |   mcs                                        |                                                  channel_select |          8 |          8 |       0 |    0 |    0 |      0 |      0 |          0 |
 |   mod                                        |                                               pixel_reconstruct |         22 |         22 |       0 |    0 |   49 |      0 |      0 |          0 |
 |   mssc                                       |                                                       lab05_ssc |         35 |         35 |       0 |    0 |   25 |      0 |      0 |          0 |
-|   mt                                         |                                                       threshold |          1 |          1 |       0 |    0 |    1 |      0 |      0 |          0 |
-|   mvm                                        |                                                       video_mux |         36 |         36 |       0 |    0 |    0 |      0 |      0 |          0 |
+|   mt                                         |                                                       threshold |         56 |         56 |       0 |    0 |    1 |      0 |      0 |          0 |
+|   mvm                                        |                                                       video_mux |         40 |         40 |       0 |    0 |    0 |      0 |      0 |          0 |
 |   red_ser                                    |                                               tmds_serializer_1 |          1 |          1 |       0 |    0 |    1 |      0 |      0 |          0 |
 |   registers                                  |               xilinx_single_port_ram_read_first__parameterized0 |          6 |          6 |       0 |    0 |    0 |      0 |      1 |          0 |
-|   rgbtoycrcb_m                               |                                                    rgb_to_ycrcb |        160 |        160 |       0 |    0 |   50 |      0 |      0 |          7 |
-|   tmds_blue                                  |                                                    tmds_encoder |          3 |          3 |       0 |    0 |   14 |      0 |      0 |          0 |
+|   rgbtoycrcb_m                               |                                                    rgb_to_ycrcb |        176 |        176 |       0 |    0 |   50 |      0 |      0 |          7 |
+|   sprite                                     |                                        image_sprite_transparent |         81 |         60 |       0 |   21 |   24 |      8 |      0 |          0 |
+|     (sprite)                                 |                                        image_sprite_transparent |         64 |         43 |       0 |   21 |   21 |      0 |      0 |          0 |
+|     pixel_BROM                               |                               xilinx_single_port_ram_read_first |         17 |         17 |       0 |    0 |    3 |      8 |      0 |          0 |
+|   tmds_blue                                  |                                                    tmds_encoder |          2 |          2 |       0 |    0 |   14 |      0 |      0 |          0 |
 |   tmds_green                                 |                                                  tmds_encoder_2 |          1 |          1 |       0 |    0 |   14 |      0 |      0 |          0 |
-|   tmds_red                                   |                                                  tmds_encoder_3 |          1 |          1 |       0 |    0 |   14 |      0 |      0 |          0 |
-|   vsg                                        |                                                   video_sig_gen |        146 |        146 |       0 |    0 |   22 |      0 |      0 |          0 |
+|   tmds_red                                   |                                                  tmds_encoder_3 |         12 |         12 |       0 |    0 |   14 |      0 |      0 |          0 |
+|   vsg                                        |                                                   video_sig_gen |        125 |        125 |       0 |    0 |   22 |      0 |      0 |          0 |
 |   wizard_hdmi                                |                                                 cw_hdmi_clk_wiz |          0 |          0 |       0 |    0 |    0 |      0 |      0 |          0 |
 |   wizard_migcam                              |                                                 cw_fast_clk_wiz |          0 |          0 |       0 |    0 |    0 |      0 |      0 |          0 |
 +----------------------------------------------+-----------------------------------------------------------------+------------+------------+---------+------+------+--------+--------+------------+

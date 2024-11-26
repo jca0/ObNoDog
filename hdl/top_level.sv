@@ -362,8 +362,13 @@ module top_level
   logic good_addrb; //used to indicate within valid frame for scaling
   //brought in from lab 5...just do 4X upscale
   always_ff @(posedge clk_pixel)begin
-    addrb <= (319-(hcount_hdmi >> 2)) + 320*(vcount_hdmi >> 2);
-    good_addrb <= (hcount_hdmi<1280)&&(vcount_hdmi<720);
+    if(!btn[2]) begin // 4x upsampling
+      addrb <= (319-(hcount_hdmi >> 2)) + 320*(vcount_hdmi >> 2);
+      good_addrb <= (hcount_hdmi<1280)&&(vcount_hdmi<720);
+    end else begin //1X scaling from frame buffer
+      addrb <= (319-hcount_hdmi) + 320*vcount_hdmi;
+      good_addrb <= (hcount_hdmi<320) && (vcount_hdmi<180);
+    end
   end
 
   //--------------------------END NEW STUFF-------------------
@@ -579,18 +584,27 @@ module top_level
     end
   end
 
+  //image_sprite output:
+  logic [7:0] img_red, img_green, img_blue;
+  assign img_red =0;
+  assign img_green =0;
+  assign img_blue =0;
+  logic draw_sprite;
+  //image sprite removed to keep builds focused.
+
   image_sprite_transparent #(
-    .WIDTH(320),
-    .HEIGHT(180)
+    .WIDTH(256),
+    .HEIGHT(256),
+    .NUM_IMGS(4)
   ) sprite(
     .pixel_clk_in(clk_pixel),
     .rst_in(sys_rst_pixel),
-    .x_in(fmux_hcount),
-    .y_in(fmux_vcount),
-    .hcount_in(fmux_hcount),
-    .vcount_in(fmux_vcount),
+    .x_in(x_com>128 ? x_com-128 : 0),
+    .y_in(y_com>128 ? y_com-128 : 0),
+    .hcount_in(hcount_hdmi),
+    .vcount_in(vcount_hdmi),
     .shape(shape),
-    .draw_out(new_frame_hdmi)
+    .draw_out(draw_sprite)
   );
 
   // NEW MODULES
@@ -615,13 +629,6 @@ module top_level
       y_com <= y_com_calc;
     end
   end
-
-  //image_sprite output:
-  logic [7:0] img_red, img_green, img_blue;
-  assign img_red =0;
-  assign img_green =0;
-  assign img_blue =0;
-  //image sprite removed to keep builds focused.
 
 
   //crosshair output:
@@ -658,7 +665,7 @@ module top_level
   logic [1:0] target_choice;
 
   assign display_choice = sw[6:5]; //was [5:4]; not anymore
-  assign target_choice =  {1'b0,sw[7]}; //was [7:6]; not anymore
+  assign target_choice =  {1'b1,sw[7]}; //was [7:6]; not anymore
 
   //choose what to display from the camera:
   // * 'b00:  normal camera out
@@ -681,6 +688,7 @@ module top_level
     .thresholded_pixel_in(mask), //one bit mask signal TODO: needs (PS4)
     .crosshair_in({ch_red, ch_green, ch_blue}), //TODO: needs (PS8)
     .com_sprite_pixel_in({img_red, img_green, img_blue}), //TODO: needs (PS9) maybe?
+    .draw_sprite(draw_sprite), //draw sprite signal
     .pixel_out({red,green,blue}) //output to tmds
   );
 
