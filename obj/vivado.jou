@@ -3,22 +3,22 @@
 # SW Build 5076996 on Wed May 22 18:36:09 MDT 2024
 # IP Build 5075265 on Wed May 22 21:45:21 MDT 2024
 # SharedData Build 5076995 on Wed May 22 18:29:18 MDT 2024
-# Start of session at: Tue Nov 26 00:08:33 2024
-# Process ID: 909652
-# Current directory: /home/fpga/worker_place/temp/d7be1fd2f9f64b50a6ff1c51f6a84963
+# Start of session at: Tue Nov 26 00:54:54 2024
+# Process ID: 4404
+# Current directory: /home/fpga/worker_place/temp/temp/204f7f699c5249d9b0e1415ef5275138
 # Command line: vivado -mode batch -source build.tcl
-# Log file: /home/fpga/worker_place/temp/d7be1fd2f9f64b50a6ff1c51f6a84963/vivado.log
-# Journal file: /home/fpga/worker_place/temp/d7be1fd2f9f64b50a6ff1c51f6a84963/vivado.jou
-# Running On        :eecs-digital-21
+# Log file: /home/fpga/worker_place/temp/temp/204f7f699c5249d9b0e1415ef5275138/vivado.log
+# Journal file: /home/fpga/worker_place/temp/temp/204f7f699c5249d9b0e1415ef5275138/vivado.jou
+# Running On        :eecs-digital-18
 # Platform          :Ubuntu
 # Operating System  :Ubuntu 24.04.1 LTS
 # Processor Detail  :13th Gen Intel(R) Core(TM) i7-13700
-# CPU Frequency     :800.597 MHz
+# CPU Frequency     :2373.146 MHz
 # CPU Physical cores:16
 # CPU Logical cores :24
 # Host memory       :33324 MB
 # Swap memory       :8589 MB
 # Total Virtual     :41914 MB
-# Available Virtual :40435 MB
+# Available Virtual :40724 MB
 #-----------------------------------------------------------
 source build.tcl

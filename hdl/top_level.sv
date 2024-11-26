@@ -478,6 +478,7 @@ module top_level
   logic [15:0] perimeter_temp;
   logic [15:0] area;
   logic [15:0] circularity;
+  logic [1:0] shape;
   logic both_valid;
   logic ccl_valid;
   logic ccl_temp;
@@ -523,6 +524,22 @@ module top_level
   //   .valid_out()
   // );
 
+  //Center of Mass Calculation: (you need to do)
+  //using x_com_calc and y_com_calc values
+  //Center of Mass:
+  center_of_mass com_m(
+    .clk_in(clk_pixel),
+    .rst_in(sys_rst_pixel),
+    .x_in(hcount_hdmi),  //TODO: needs to use pipelined signal! (PS3)
+    .y_in(vcount_hdmi), //TODO: needs to use pipelined signal! (PS3)
+    .valid_in(mask), //aka threshold
+    .tabulate_in((nf_hdmi)),
+    .x_out(x_com_calc),
+    .y_out(y_com_calc),
+    .area_out(area),
+    .valid_out(new_com)
+  );
+
   moore_neighbor_tracing mnt (
     .clk_in(clk_pixel),
     .rst_in(sys_rst_pixel),
@@ -531,7 +548,7 @@ module top_level
     .valid_in(active_draw_hdmi),
     .masked_in(mask),
     .new_frame_in(hcount_hdmi == 0 && vcount_hdmi == 0),
-    .perimeter_out(perimeter),
+    .perimeter(perimeter),
     .busy_out(moore_busy),
     .valid_out(moore_valid)
   );
@@ -548,6 +565,19 @@ module top_level
   );
 
   // shape detector stuff
+  always_ff @(posedge clk_pixel)begin
+    if (circularity_valid)begin
+      if (circularity > 80)begin
+        shape <= 0; // circle
+      end else if (circularity > 60)begin
+        shape <= 1; // square
+      end else if (circularity > 40)begin
+        shape <= 2; // triangle
+      end else begin
+        shape <= 3; // plus
+      end
+    end
+  end
 
   image_sprite_transparent #(
     .WIDTH(320),
@@ -559,10 +589,8 @@ module top_level
     .y_in(fmux_vcount),
     .hcount_in(fmux_hcount),
     .vcount_in(fmux_vcount),
-    .red_out(img_red),
-    .green_out(img_green),
-    .blue_out(img_blue),
-    .draw_valid(new_frame_hdmi)
+    .shape(shape),
+    .draw_out(new_frame_hdmi)
   );
 
   // NEW MODULES
@@ -576,20 +604,6 @@ module top_level
   //  * could be purely combinational?
   // SPRITE OVERLAY LOGIC 
 
-  //Center of Mass Calculation: (you need to do)
-  //using x_com_calc and y_com_calc values
-  //Center of Mass:
-  center_of_mass com_m(
-    .clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .x_in(hcount_hdmi),  //TODO: needs to use pipelined signal! (PS3)
-    .y_in(vcount_hdmi), //TODO: needs to use pipelined signal! (PS3)
-    .valid_in(mask), //aka threshold
-    .tabulate_in((nf_hdmi)),
-    .x_out(x_com_calc),
-    .y_out(y_com_calc),
-    .valid_out(new_com)
-  );
   //grab logic for above
   //update center of mass x_com, y_com based on new_com signal
   always_ff @(posedge clk_pixel)begin
