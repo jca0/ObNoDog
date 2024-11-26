@@ -3,22 +3,22 @@
 # SW Build 5076996 on Wed May 22 18:36:09 MDT 2024
 # IP Build 5075265 on Wed May 22 21:45:21 MDT 2024
 # SharedData Build 5076995 on Wed May 22 18:29:18 MDT 2024
-# Start of session at: Thu Nov 14 20:33:29 2024
-# Process ID: 2505
-# Current directory: /home/fpga/worker_place/temp/92ac78d986894080b19b52de581c7b2c
+# Start of session at: Mon Nov 25 18:08:24 2024
+# Process ID: 902738
+# Current directory: /home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1
 # Command line: vivado -mode batch -source build.tcl
-# Log file: /home/fpga/worker_place/temp/92ac78d986894080b19b52de581c7b2c/vivado.log
-# Journal file: /home/fpga/worker_place/temp/92ac78d986894080b19b52de581c7b2c/vivado.jou
-# Running On        :eecs-digital-38
+# Log file: /home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/vivado.log
+# Journal file: /home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/vivado.jou
+# Running On        :eecs-digital-21
 # Platform          :Ubuntu
 # Operating System  :Ubuntu 24.04.1 LTS
-# Processor Detail  :AMD Ryzen 7 2700X Eight-Core Processor
-# CPU Frequency     :2120.464 MHz
-# CPU Physical cores:8
-# CPU Logical cores :16
-# Host memory       :16686 MB
-# Swap memory       :4294 MB
-# Total Virtual     :20981 MB
-# Available Virtual :19996 MB
+# Processor Detail  :13th Gen Intel(R) Core(TM) i7-13700
+# CPU Frequency     :800.000 MHz
+# CPU Physical cores:16
+# CPU Logical cores :24
+# Host memory       :33324 MB
+# Swap memory       :8589 MB
+# Total Virtual     :41914 MB
+# Available Virtual :40434 MB
 #-----------------------------------------------------------
 source build.tcl
