@@ -493,24 +493,25 @@ module top_level
   logic circularity_busy;
   logic circularity_valid;
 
-  // dont use this for now
-  always_ff @(posedge clk_pixel)begin
-    if (ccl_valid) begin
-      ccl_temp <= 1;
-    end
-    if (moore_valid) begin
-      moore_temp <= 1;
-      perimeter_temp <= perimeter;
-    end
-    if (moore_temp && ccl_temp) begin
-      both_valid <= 1;
-      ccl_temp <= 0;
-      moore_temp <= 0;
-    end
-    if (both_valid) begin
-      both_valid <= 0;
-    end
-  end
+  // // dont use this for now
+  // always_ff @(posedge clk_pixel)begin
+  //   if (ccl_valid) begin
+  //     ccl_temp <= 1;
+  //   end
+  //   if (moore_valid) begin
+  //     moore_temp <= 1;
+  //     perimeter_temp <= perimeter;
+  //   end
+  //   if (moore_temp && ccl_temp) begin
+  //     both_valid <= 1;
+  //     ccl_temp <= 0;
+  //     moore_temp <= 0;
+  //   end
+  //   if (both_valid) begin
+  //     both_valid <= 0;
+  //   end
+  // end
+  
 
   // connected_components #(
   //   .HRES(320),
@@ -563,8 +564,8 @@ module top_level
     .clk_in(clk_pixel),
     .rst_in(sys_rst_pixel),
     .area(area),
-    .perimeter(perimeter_temp),
-    .data_valid_in(both_valid),
+    .perimeter(perimeter),
+    .data_valid_in(moore_valid),
     .circularity(circularity),
     .busy_out(circularity_busy),
     .valid_out(circularity_valid)
