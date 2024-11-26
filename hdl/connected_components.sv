@@ -21,7 +21,7 @@ module connected_components #(
     output logic [31:0]  num_blobs        // Number of distinct blobs
 );
 
-    typedef {IDLE, FIRST_PASS, SECOND_PASS, PRUNE, OUTPUT} state;
+    typedef {IDLE, STORE_PIXELS, FIRST_PASS, SECOND_PASS, PRUNE, COM_CALC, OUTPUT} state;
     logic [WIDTH*HEIGHT-1:0][15:0] first_pass_labels;
     logic [WIDTH*HEIGHT-1:0][15:0] second_pass_labels;
     logic [MAX_LABELS-1:0][15:0] pruned_labels;
@@ -45,9 +45,13 @@ module connected_components #(
                     valid_out <= 0
 
                     if (new_frame_in) begin
-                        state <= FIRST_PASS;
+                        state <= STORE_PIXELS;
                         busy_out <= 1;
                     end
+                end
+
+                STORE_PIXELS: begin
+                    
                 end
 
                 FIRST_PASS: begin
@@ -59,7 +63,13 @@ module connected_components #(
                 PRUNE: begin
                 end
 
+                COM_CALC: begin
+                end
+
                 OUTPUT: begin
+                    busy_out <= 0;
+                    valid_out <= 1;
+                end
                 end
             endcase
         end
