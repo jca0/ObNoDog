@@ -493,6 +493,7 @@ module top_level
   logic circularity_busy;
   logic circularity_valid;
 
+  // dont use this for now
   always_ff @(posedge clk_pixel)begin
     if (ccl_valid) begin
       ccl_temp <= 1;

@@ -58,6 +58,7 @@ module center_of_mass (
     
      always_ff @(posedge clk_in) begin
          if (rst_in) begin
+             area_out <=0 ;
              x_out <= 0;
              y_out <= 0;
              valid_out <= 0;
