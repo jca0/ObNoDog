@@ -554,22 +554,43 @@ module top_level
     .y_in(vcount_hdmi >> 2),
     .valid_in(active_draw_hdmi),
     .masked_in(mask),
-    .new_frame_in(hcount_hdmi == 0 && vcount_hdmi == 0),
+    .new_frame_in(nf_hdmi),
     .perimeter(perimeter),
     .busy_out(moore_busy),
     .valid_out(moore_valid)
   );
 
-  circularity circularity_m (
-    .clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .area(area),
-    .perimeter(perimeter),
-    .data_valid_in(moore_valid),
-    .circularity(circularity),
-    .busy_out(circularity_busy),
-    .valid_out(circularity_valid)
-  );
+  // circularity circularity_m (
+  //   .clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .area(area),
+  //   .perimeter(perimeter),
+  //   .data_valid_in(moore_valid && new_com),
+  //   .circularity(circularity),
+  //   .busy_out(circularity_busy),
+  //   .valid_out(circularity_valid)
+  // );
+
+  logic [31:0] dividend;
+  logic [31:0] divisor;
+  logic [31:0] circularity;
+  assign dividend = 4 * area * 314;
+  assign divisor = perimeter * perimeter;
+  divider
+    #(.WIDTH(64)
+    ) my_divider
+    (.clk_in(clk_pixel),
+        .rst_in(sys_rst_pixel),
+        .dividend_in(dividend),
+        .divisor_in(divisor),
+        .data_valid_in(moore_valid && new_com),
+        .quotient_out(circularity), // outputs
+        .remainder_out(),
+        .data_valid_out(circularity_valid),
+        .error_out(),
+        .busy_out()
+    );
+
 
   // shape detector stuff
   always_ff @(posedge clk_pixel)begin
