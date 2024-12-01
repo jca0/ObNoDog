@@ -30,23 +30,19 @@ module connected_components #(
     logic [WIDTH*HEIGHT-1:0][15:0] labels;
     logic [WIDTH*HEIGHT-1:0][15:0] equiv_table;
 
-    logic w_pixel_mask;
-    logic nw_pixel_mask;
-    logic n_pixel_mask;
-    logic ne_pixel_mask;
-    
-    logic [15:0] w_pixel_label;
-    logic [15:0] nw_pixel_label;
-    logic [15:0] n_pixel_label;
-    logic [15:0] ne_pixel_label;
-
-    logic [15:0] w_pixel_temp;
-    logic [15:0] nw_pixel_temp;
-    logic [15:0] n_pixel_temp;
-    logic [15:0] ne_pixel_temp;
+    logic w_pixel_mask, nw_pixel_mask, n_pixel_mask, ne_pixel_mask;
+    logic [15:0] w_pixel_label, nw_pixel_label, n_pixel_label, ne_pixel_label;
+    logic [15:0] w_pixel_temp, nw_pixel_temp, n_pixel_temp, ne_pixel_temp;
 
     logic [10:0] curr_x;
     logic [9:0] curr_y;
+    logic [15:0] curr_label;
+    logic [15:0] min_label;
+
+    logic [31:0] label_count;
+    logic [WIDTH*HEIGHT-1:0][31:0] label_areas;
+    logic [WIDTH*HEIGHT-1:0][31:0] sum_x;
+    logic [WIDTH*HEIGHT-1:0][31:0] sum_y;
 
 
     always_ff @(posedge clk_in) begin
@@ -82,22 +78,93 @@ module connected_components #(
                 end
 
                 FIRST_PASS: begin
+                    if (frame_buff_pixel) begin
+                        min_label <= 16'hFFFF;
+                        if (w_pixel_mask && w_pixel_label > 0) 
+                            min_label <= w_pixel_label;
+                        if (nw_pixel_mask && nw_pixel_label > 0 && nw_pixel_label < min_label)
+                            min_label <= nw_pixel_label;
+                        if (n_pixel_mask && n_pixel_label > 0 && n_pixel_label < min_label)
+                            min_label <= n_pixel_label;
+                        if (ne_pixel_mask && ne_pixel_label > 0 && ne_pixel_label < min_label)
+                            min_label <= ne_pixel_label;
 
+                        if (min_label == 16'hFFFF) begin
+                            first_pass_labels[curr_x + curr_y * WIDTH] <= current_label;
+                            equiv_table[current_label] <= current_label;
+                            current_label <= current_label + 1;
+                        end else begin
+                            first_pass_labels[curr_x + curr_y * WIDTH] <= min_label;
+                            if (w_pixel_mask && w_pixel_label > 0)
+                                equiv_table[w_pixel_label] <= min_label;
+                            if (nw_pixel_mask && nw_pixel_label > 0)
+                                equiv_table[nw_pixel_label] <= min_label;
+                            if (n_pixel_mask && n_pixel_label > 0)
+                                equiv_table[n_pixel_label] <= min_label;
+                            if (ne_pixel_mask && ne_pixel_label > 0)
+                                equiv_table[ne_pixel_label] <= min_label;
+                        end
+                    end
+
+                    if (curr_x == WIDTH-1) begin
+                        curr_x <= 0;
+                        if (curr_y == HEIGHT-1)
+                            state <= SECOND_PASS;
+                        else
+                            curr_y <= curr_y + 1;
+                    end else
+                        curr_x <= curr_x + 1;
                 end
 
                 SECOND_PASS: begin
+                    if (first_pass_labels[curr_x + curr_y * WIDTH] > 0) begin
+                        second_pass_labels[curr_x + curr_y * WIDTH] <= 
+                            equiv_table[first_pass_labels[curr_x + curr_y * WIDTH]];
+                    end
+
+                    if (curr_x == WIDTH-1) begin
+                        curr_x <= 0;
+                        if (curr_y == HEIGHT-1)
+                            state <= PRUNE;
+                        else
+                            curr_y <= curr_y + 1;
+                    end else
+                        curr_x <= curr_x + 1;
                 end
 
                 PRUNE: begin
+                    for (int i = 0; i < WIDTH*HEIGHT; i++) begin
+                        if (second_pass_labels[i] > 0) begin
+                            label_areas[second_pass_labels[i]] <= 
+                                label_areas[second_pass_labels[i]] + 1;
+                            sum_x[second_pass_labels[i]] <= 
+                                sum_x[second_pass_labels[i]] + (i % WIDTH);
+                            sum_y[second_pass_labels[i]] <= 
+                                sum_y[second_pass_labels[i]] + (i / WIDTH);
+                        end
+                    end
+
+                    label_count <= 0;
+                    for (int i = 0; i < WIDTH*HEIGHT; i++) begin
+                        if (label_areas[i] >= MIN_AREA && label_count < MAX_LABELS) begin
+                            area[label_count] <= label_areas[i];
+                            com_x[label_count] <= sum_x[i] / label_areas[i];
+                            com_y[label_count] <= sum_y[i] / label_areas[i];
+                            blob_labels[label_count] <= i;
+                            label_count <= label_count + 1;
+                        end
+                    end
+
+                    state <= OUTPUT;
+                    num_blobs <= label_count;
                 end
 
-                COM_CALC: begin
-                end
+                // COM_CALC: begin
+                // end
 
                 OUTPUT: begin
                     busy_out <= 0;
                     valid_out <= 1;
-                end
                 end
             endcase
         end
