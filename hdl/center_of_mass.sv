@@ -8,228 +8,189 @@ module center_of_mass (
                          input wire tabulate_in,
                          output logic [10:0] x_out,
                          output logic [9:0] y_out,
+                         output logic [19:0] area_out,
                          output logic valid_out);
-	
-     parameter WIDTH = 1024;
-     parameter HEIGHT = 768;
+	 // your code here
+     // Accumulators and counters
+     logic [31:0] x_sum;
+     logic [31:0] y_sum;
+     logic [31:0] pixel_count;
+ 
+     // Division variables
+     logic div_start_x;
+     logic div_start_y;
+     logic [31:0] dividend_x;
+     logic [31:0] dividend_y;
+     logic [31:0] quotient_x;
+     logic [31:0] quotient_y;
+     logic div_valid_x;
+     logic div_valid_y;
+     logic valid_x_reg;
+     logic valid_y_reg;
 
-     enum {INTAKE, DIVIDE, OUTPUT} state;                        // state machine states
+     enum { IDLE, ADDING, DIVIDING } state;
 
-     logic [$clog2(HEIGHT*((WIDTH*(WIDTH+1))>>1)):0] x_sum;      // need n(n+1)/2 * m bits
-     logic [$clog2(WIDTH*HEIGHT):0] x_count;                     // there are width*height pixels
-     logic x_divide_valid;
-     logic [31:0] x_quotient; // outputs of divider
-     logic [31:0] x_remainder;
-     logic x_data_valid_out;
-     logic x_error_out;
-     logic x_busy_out;
-     logic x_divide_done_wait; // are we done dividing
+     divider #(.WIDTH(32)) div_x (
+        .clk_in(clk_in),
+        .rst_in(rst_in),
+        .dividend_in(dividend_x),
+        .divisor_in(pixel_count),
+        .data_valid_in(div_start_x),
+        .quotient_out(quotient_x),
+        .remainder_out(),
+        .data_valid_out(div_valid_x),
+        .error_out(),
+        .busy_out()
+    );
 
+    divider #(.WIDTH(32)) div_y (
+        .clk_in(clk_in),
+        .rst_in(rst_in),
+        .dividend_in(dividend_y),
+        .divisor_in(pixel_count),
+        .data_valid_in(div_start_y),
+        .quotient_out(quotient_y),
+        .remainder_out(),
+        .data_valid_out(div_valid_y),
+        .error_out(),
+        .busy_out()
+    );
+    
+     always_ff @(posedge clk_in) begin
+         if (rst_in) begin
+             area_out <=0 ;
+             x_out <= 0;
+             y_out <= 0;
+             valid_out <= 0;
+             state <= IDLE;
+         end else begin
+             case (state)
+                IDLE: begin
+                    x_sum <= x_in;
+                    y_sum <= y_in;
+                    pixel_count <= 1;
+                    valid_out <= 0;
 
-     logic [$clog2(WIDTH*((HEIGHT*(HEIGHT+1))>>1)):0] y_sum;
-     logic [$clog2(WIDTH*HEIGHT):0] y_count;
-     logic y_divide_valid;
-     logic [31:0] y_quotient;  // outputs of divider
-     logic [31:0] y_remainder;
-     logic y_data_valid_out;
-     logic y_error_out;
-     logic y_busy_out;
-     logic y_divide_done_wait; // are we done dividing
-
-
-
-     divider
-          #(.WIDTH(32)
-     ) x_divider
-          (.clk_in(clk_in),
-          .rst_in(rst_in),
-          .dividend_in(x_sum),
-          .divisor_in(x_count),
-          .data_valid_in(x_divide_valid),
-          .quotient_out(x_quotient), // outputs
-          .remainder_out(x_remainder),
-          .data_valid_out(x_data_valid_out),
-          .error_out(x_error_out),
-          .busy_out(x_busy_out)
-          );
-
-     divider
-          #(.WIDTH(32)
-     ) y_divider
-          (.clk_in(clk_in),
-          .rst_in(rst_in),
-          .dividend_in(y_sum),
-          .divisor_in(y_count),
-          .data_valid_in(y_divide_valid),
-          .quotient_out(y_quotient), // outputs
-          .remainder_out(y_remainder),
-          .data_valid_out(y_data_valid_out),
-          .error_out(y_error_out),
-          .busy_out(y_busy_out)
-          );
-
-
-
-     // set the states combinationally
-     // always_comb begin
-     //      if(rst_in || valid_out || (state == INTAKE && tabulate_in && x_count == 0 && y_count == 0)) begin // reset to beginning
-     //           // return to the beginning of intaking values
-     //           state = INTAKE;
-
-     //           // we are not ready to input divide
-     //           x_divide_valid = 0;
-     //           y_divide_valid = 0;
-
-     //           // the divide does not have a valid output
-     //           x_divide_done_wait = 0;
-     //           y_divide_done_wait = 0;
-
-     //      end else if(state == INTAKE && tabulate_in && (x_count > 0) && (y_count > 0)) begin // if we're done intaking
-
-     //           state = DIVIDE;               // go to divide
-     //           x_divide_valid = 1;           // tell the dividers we have valid inputs
-     //           y_divide_valid = 1;
-     //           x_divide_done_wait = 0;       // we don't have valid outputs yet
-     //           y_divide_done_wait = 0;
-     //      end else if(state == DIVIDE && x_divide_done_wait && y_divide_done_wait) begin
-     //           state = OUTPUT;
-     //           x_divide_done_wait = 0;
-     //           y_divide_done_wait = 0;
-     //      end
-
-          
-     //      if(x_divide_valid && x_data_valid_out) begin    // if the x divider finishes, log it
-     //           x_divide_valid = 0;
-     //           x_divide_done_wait = 1;
-     //      end
-     //      if(y_divide_valid && y_data_valid_out) begin    // same thing with the y divider
-     //           y_divide_valid = 0;
-     //           y_divide_done_wait = 1;
-     //      end
-
-     // end
-
-
-     // do the logic sequentially
-     always_ff @(posedge clk_in)begin
-          if(rst_in) begin // if we detect a reset, reset!
-               //logics
-               state <= INTAKE;
-               x_sum <= 0;
-               y_sum <= 0;
-               x_count <= 0;
-               y_count <= 0;
-
-               // we are not ready to input divide
-               x_divide_valid <= 0;
-               y_divide_valid <= 0;
-
-               // the divide does not have a valid output
-               x_divide_done_wait <= 0;
-               y_divide_done_wait <= 0;
-
-
-               //outputs
-               x_out <= 0;
-               y_out <= 0;
-               valid_out <= 0;
-          end else begin
-
-               case (state)
-                    INTAKE: begin
-                         valid_out <= 0;
-                         
-                         if(valid_in) begin
-                              x_sum <= x_sum + x_in;   // add the position to the sum
-                              y_sum <= y_sum + y_in;
-
-                              x_count <= x_count + 1;  // add one to the count
-                              y_count <= y_count + 1;
-                         end
-                         if (tabulate_in) begin
-                              if(x_count == 0) begin // reset
-                                   x_sum <= 0;
-                                   y_sum <= 0;
-                                   x_count <= 0;
-                                   y_count <= 0;
-
-                                   // we are not ready to input divide
-                                   x_divide_valid <= 0;
-                                   y_divide_valid <= 0;
-
-                                   // the divide does not have a valid output
-                                   x_divide_done_wait <= 0;
-                                   y_divide_done_wait <= 0;
-
-
-                                   //outputs
-                                   x_out <= 0;
-                                   y_out <= 0;
-                                   valid_out <= 0;
-                              end else begin
-                                   state <= DIVIDE;               // go to divide
-                                   x_divide_valid <= 1;           // tell the dividers we have valid inputs
-                                   y_divide_valid <= 1;
-                                   x_divide_done_wait <= 0;       // we don't have valid outputs yet
-                                   y_divide_done_wait <= 0;
-                              end
-                         end
-          
+                    if (valid_in) begin
+                        state <= ADDING;
                     end
-                    DIVIDE: begin
+                end
 
-                          if(x_divide_valid && x_data_valid_out) begin    // if the x divider finishes, log it
-                              x_divide_valid <= 0;
-                              x_divide_done_wait <= 1;
-                              x_out <= x_quotient;
-                         end
-
-                         if(y_divide_valid && y_data_valid_out) begin    // same thing with the y divider
-                              y_divide_valid <= 0;
-                              y_divide_done_wait <= 1;
-                              y_out <= y_quotient;
-                         end
-
-                         if(x_divide_done_wait && y_divide_done_wait) begin
-                              state <= OUTPUT;
-                              x_divide_done_wait <= 0;
-                              y_divide_done_wait <= 0;
-                         end
-
-
-                         // if(x_data_valid_out) begin
-                         //      x_out <= x_quotient;
-                         // end
-                         // if(y_data_valid_out) begin
-                         //      y_out <= y_quotient;
-                         // end
-
+                ADDING: begin
+                    if (valid_in)begin
+                        x_sum <= x_sum + x_in;
+                        y_sum <= y_sum + y_in;
+                        pixel_count <= pixel_count + 1;
                     end
-                    OUTPUT: begin
-                         valid_out <= 1;
-                         state <= INTAKE;
 
-                         // reset
-                         x_sum <= 0;
-                         y_sum <= 0;
-                         x_count <= 0;
-                         y_count <= 0;
-
-                         // we are not ready to input divide
-                         x_divide_valid <= 0;
-                         y_divide_valid <= 0;
-
-                         // the divide does not have a valid output
-                         x_divide_done_wait <= 0;
-                         y_divide_done_wait <= 0;
+                    if (tabulate_in) begin
+                        dividend_x <= x_sum;
+                        dividend_y <= y_sum;
+                        div_start_x <= 1;
+                        div_start_y <= 1;
+                        area_out <= pixel_count;
+                        state <= DIVIDING;
                     end
-                    default: begin
-                         valid_out <= 0;
+                end
+
+                DIVIDING: begin
+                    div_start_x <= 0;
+                    div_start_y <= 0;
+                    if (pixel_count == 0) begin
+                        state <= IDLE;
+                        valid_out <= 0;
                     end
-               endcase
-          end
+                    
+                    if (div_valid_x) begin
+                      x_out <= quotient_x[10:0];
+                      valid_x_reg <= 1;
+                    end
+                    if (div_valid_y) begin
+                      y_out <= quotient_y[9:0];
+                      valid_y_reg <= 1;
+                    end
+                    if (valid_x_reg && valid_y_reg) begin
+                      state <= IDLE;
+                      valid_out <= 1;
+                      valid_x_reg <= 0;
+                      valid_y_reg <= 0;
+                    end
+                end
+             endcase
+         end
      end
+endmodule
 
+module divider #(parameter WIDTH = 32) (input wire clk_in,
+                input wire rst_in,
+                input wire[WIDTH-1:0] dividend_in,
+                input wire[WIDTH-1:0] divisor_in,
+                input wire data_valid_in,
+                output logic[WIDTH-1:0] quotient_out,
+                output logic[WIDTH-1:0] remainder_out,
+                output logic data_valid_out,
+                output logic error_out,
+                output logic busy_out);
+  localparam RESTING = 0;
+  localparam DIVIDING = 1;
+  logic [WIDTH-1:0] quotient, dividend;
+  logic [WIDTH-1:0] divisor;
+  logic state;
+  always_ff @(posedge clk_in)begin
+    if (rst_in)begin
+      quotient <= 0;
+      dividend <= 0;
+      divisor <= 0;
+      remainder_out <= 0;
+      busy_out <= 1'b0;
+      error_out <= 1'b0;
+      state <= RESTING;
+      data_valid_out <= 1'b0;
+    end else begin
+      case (state)
+        RESTING: begin
+          if (data_valid_in)begin
+            state <= DIVIDING;
+            quotient <= 0;
+            dividend <= dividend_in;
+            divisor <= divisor_in;
+            busy_out <= 1'b1;
+            error_out <= 1'b0;
+          end
+          data_valid_out <= 1'b0;
+        end
+        DIVIDING: begin
+          if (dividend<=0)begin
+            state <= RESTING; //similar to return statement
+            remainder_out <= dividend;
+            quotient_out <= quotient;
+            busy_out <= 1'b0; //tell outside world i'm done
+            error_out <= 1'b0;
+            data_valid_out <= 1'b1; //good stuff!
+          end else if (divisor==0)begin
+            state <= RESTING;
+            remainder_out <= 0;
+            quotient_out <= 0;
+            busy_out <= 1'b0; //tell outside world i'm done
+            error_out <= 1'b1; //ERROR
+            data_valid_out <= 1'b1; //valid ERROR
+          end else if (dividend < divisor) begin
+            state <= RESTING;
+            remainder_out <= dividend;
+            quotient_out <= quotient;
+            busy_out <= 1'b0;
+            error_out <= 1'b0;
+            data_valid_out <= 1'b1; //good stuff!
+          end else begin
+            //state staying in.
+            state <= DIVIDING;
+            quotient <= quotient + 1'b1;
+            dividend <= dividend-divisor;
+          end
+        end
+      endcase
+    end
+  end
 endmodule
 
 `default_nettype wire

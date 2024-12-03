@@ -28,19 +28,46 @@ module circularity (
     logic div_error_out;
     logic div_busy_out;
 
-    always_comb begin
-        if(rst_in) begin
-            valid_out = 0;
-            circularity = 0;
-            busy_out = 0;
+    // always_comb begin
+    //     if(rst_in) begin
+    //         valid_out = 0;
+    //         circularity = 0;
+    //         busy_out = 0;
 
+    //     end else begin
+    //         dividend = 4 * area * 314; // pi = 3.14 * 100 (so we get an integer 0-100)
+    //         divisor = perimeter * perimeter;
+
+    //         valid_out = div_data_valid_out;
+    //         circularity = div_quotient;
+    //         busy_out = div_busy_out;
+    //     end
+    // end
+
+    always_ff @(posedge clk_in) begin
+        if (rst_in) begin
+            dividend <= 0;
+            divisor <= 0;
+            div_quotient <= 0;
+            div_remainder <= 0;
+            div_data_valid_out <= 0;
+            div_error_out <= 0;
+            div_busy_out <= 0;
+            busy_out <= 0;
+            valid_out <= 0;
+            circularity <= 0;
         end else begin
-            dividend = 4 * area * 314; // pi = 3.14 * 100 (so we get an integer 0-100)
-            divisor = perimeter * perimeter;
+            dividend <= 4 * area * 314; // pi = 3.14 * 100 (so we get an integer 0-100)
+            divisor <= perimeter * perimeter;
 
-            valid_out = div_data_valid_out;
-            circularity = div_quotient;
-            busy_out = div_busy_out;
+            div_quotient <= div_quotient;
+            div_remainder <= div_remainder;
+            div_data_valid_out <= div_data_valid_out;
+            div_error_out <= div_error_out;
+            div_busy_out <= div_busy_out;
+            busy_out <= div_busy_out;
+            valid_out <= div_data_valid_out;
+            circularity <= div_quotient;
         end
     end
 

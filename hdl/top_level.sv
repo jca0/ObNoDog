@@ -103,7 +103,7 @@ module top_level
   // hook it up to buffered inputs.
   //same as it ever was.
 
-  pixel_reconstruct
+  pixel_reconstruct mod
     (.clk_in(clk_camera),
      .rst_in(sys_rst_camera),
      .camera_pclk_in(cam_pclk_buf[0]),
@@ -360,9 +360,8 @@ module top_level
   logic [15:0] frame_buff_raw; //data out of frame buffer (565)
   logic [FB_SIZE-1:0] addrb; //used to lookup address in memory for reading from buffer
   logic good_addrb; //used to indicate within valid frame for scaling
-
+  //brought in from lab 5...just do 4X upscale
   always_ff @(posedge clk_pixel)begin
-
     if(!btn[2]) begin // 4x upsampling
       addrb <= (319-(hcount_hdmi >> 2)) + 320*(vcount_hdmi >> 2);
       good_addrb <= (hcount_hdmi<1280)&&(vcount_hdmi<720);
@@ -370,7 +369,6 @@ module top_level
       addrb <= (319-hcount_hdmi) + 320*vcount_hdmi;
       good_addrb <= (hcount_hdmi<320) && (vcount_hdmi<180);
     end
-
   end
 
   //--------------------------END NEW STUFF-------------------
@@ -481,6 +479,58 @@ module top_level
   assign ss0_c = ss_c; //control upper four digit's cathodes!
   assign ss1_c = ss_c; //same as above but for lower four digits!
 
+  logic [15:0] perimeter;
+  logic [15:0] perimeter_temp;
+  logic [15:0] area;
+  logic [15:0] circularity;
+  logic [1:0] shape;
+  logic both_valid;
+  logic ccl_valid;
+  logic ccl_temp;
+  logic moore_busy;
+  logic moore_valid;
+  logic moore_temp;
+  logic circularity_busy;
+  logic circularity_valid;
+
+  // // dont use this for now
+  // always_ff @(posedge clk_pixel)begin
+  //   if (ccl_valid) begin
+  //     ccl_temp <= 1;
+  //   end
+  //   if (moore_valid) begin
+  //     moore_temp <= 1;
+  //     perimeter_temp <= perimeter;
+  //   end
+  //   if (moore_temp && ccl_temp) begin
+  //     both_valid <= 1;
+  //     ccl_temp <= 0;
+  //     moore_temp <= 0;
+  //   end
+  //   if (both_valid) begin
+  //     both_valid <= 0;
+  //   end
+  // end
+  
+
+  // connected_components #(
+  //   .HRES(320),
+  //   .VRES(180),
+  //   .MAX_LABELS(20),
+  //   .MIN_AREA(40)
+  // ) cc(
+  //   .clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .hcount_in(fmux_hcount),
+  //   .vcount_in(fmux_vcount),
+  //   .mask_in(mask),
+  //   .valid_in(fmux_valid),
+  //   .label_out(),
+  //   .hcount_out(),
+  //   .vcount_out(),
+  //   .valid_out()
+  // );
+
   //Center of Mass Calculation: (you need to do)
   //using x_com_calc and y_com_calc values
   //Center of Mass:
@@ -493,8 +543,366 @@ module top_level
     .tabulate_in((nf_hdmi)),
     .x_out(x_com_calc),
     .y_out(y_com_calc),
+    .area_out(area),
     .valid_out(new_com)
   );
+
+  moore_neighbor_tracing mnt (
+    .clk_in(clk_pixel),
+    .rst_in(sys_rst_pixel),
+    .x_in(hcount_hdmi >> 2),
+    .y_in(vcount_hdmi >> 2),
+    .valid_in(active_draw_hdmi),
+    .masked_in(mask),
+    .new_frame_in(nf_hdmi),
+    .perimeter(perimeter),
+    .busy_out(moore_busy),
+    .valid_out(moore_valid)
+  );
+
+  // circularity circularity_m (
+  //   .clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .area(area),
+  //   .perimeter(perimeter),
+  //   .data_valid_in(moore_valid && new_com),
+  //   .circularity(circularity),
+  //   .busy_out(circularity_busy),
+  //   .valid_out(circularity_valid)
+  // );
+
+
+
+  logic com_waiting;
+  logic [15:0] area_stored;
+  logic moore_waiting;
+  logic [15:0] perimeter_stored;
+
+  // dont use this for now
+  always_ff @(posedge clk_pixel)begin
+    if (new_com) begin
+      com_waiting <= 1;
+      area_stored <= area;
+    end
+    if (moore_valid) begin
+      moore_waiting <= 1;
+      perimeter_stored <= perimeter;
+    end
+    if (com_waiting && moore_waiting) begin
+      both_valid <= 1;
+      com_waiting <= 0;
+      moore_waiting <= 0;
+    end
+    if (both_valid) begin
+      both_valid <= 0;
+    end
+  end
+
+
+  logic [31:0] dividend;
+  logic [31:0] divisor;
+  logic [31:0] circularity_raw;
+  assign dividend = 4 * area_stored * 314;
+  assign divisor = perimeter_stored * perimeter_stored * 16; // area is 16* what it should be --> divide out without losing information
+  logic circularity_busy;
+
+  divider
+    #(.WIDTH(64)
+    ) my_divider
+    (.clk_in(clk_pixel),
+        .rst_in(sys_rst_pixel),
+        .dividend_in(dividend),
+        .divisor_in(divisor),
+        .data_valid_in(both_valid && !circularity_busy),
+        .quotient_out(circularity_raw), // outputs
+        .remainder_out(),
+        .data_valid_out(circularity_valid),
+        .error_out(),
+        .busy_out(circularity_busy)
+    );
+
+
+  // shape detector stuff
+  // always_ff @(posedge clk_pixel)begin
+  //   if (circularity_valid)begin
+  //     if (circularity > 80)begin
+  //       shape <= 0; // circle
+  //     end else if (circularity > 60)begin
+  //       shape <= 1; // square
+  //     end else if (circularity > 40)begin
+  //       shape <= 2; // triangle
+  //     end else begin
+  //       shape <= 3; // plus
+  //     end
+  //   end
+  // end
+
+  logic [31:0] circularity;
+
+  always_ff @(posedge clk_pixel) begin
+    if(circularity_valid && circularity_raw < 200) begin // throw out obviously garbage circularity values --> should be in the 0-100 range (but circle can be a bit bigger)
+      circularity <= circularity_raw;
+    end
+  end
+
+  always_comb begin
+    //if (circularity_valid) begin
+    if (circularity > 95)begin
+      shape = 0; // circle
+    end else if (circularity > 82)begin
+      shape = 1; // square
+    end else if (circularity > 60)begin
+      shape = 2; // triangle
+    end else begin
+      shape = 3; // plus
+    end
+    //end
+  end
+
+
+
+  //image_sprite output:
+  logic [7:0] img_red, img_green, img_blue;
+  assign img_red =0;
+  assign img_green =0;
+  assign img_blue =0;
+  logic draw_sprite;
+  //image sprite removed to keep builds focused.
+
+  //if any of the draw_outs from any of the sprite modules are true, then set draw_out to be true
+  always_comb begin
+    if (draw_classifier || draw_number_0 || draw_number_1 || draw_number_2 || draw_number_3) begin
+      draw_sprite = 1;
+    end else begin
+      draw_sprite = 0;
+    end
+  end
+
+  logic draw_classifier;
+  image_sprite_transparent #(
+    .WIDTH(256),
+    .HEIGHT(256),
+    .NUM_IMGS(4)
+  ) classifier(
+    .pixel_clk_in(clk_pixel),
+    .rst_in(sys_rst_pixel),
+    .x_in(x_com>128 ? x_com-128 : 0),
+    .y_in(y_com>128 ? y_com-128 : 0),
+    .hcount_in(hcount_hdmi),
+    .vcount_in(vcount_hdmi),
+    .shape(shape),
+    .draw_out(draw_classifier)
+  );
+
+
+  logic [15:0] circ_temp;
+  logic [3:0] number_0;
+  logic [3:0] number_1;
+  logic [3:0] number_2;
+  logic [3:0] number_3;
+
+  // pulling the numbers from circularity
+  always_comb begin
+
+    circ_temp = circularity;
+
+    if (circ_temp >= 10000) begin
+      number_0 = 9;
+      number_1 = 9;
+      number_2 = 9;
+      number_3 = 9;
+    end else begin
+      // THOUSANDS
+      if (circ_temp >= 9000) begin
+        number_0 = 9;
+        circ_temp = circ_temp - 9000;
+      end else if (circ_temp >= 8000) begin
+        number_0 = 8;
+        circ_temp = circ_temp - 8000;
+      end else if (circ_temp >= 7000) begin
+        number_0 = 7;
+        circ_temp = circ_temp - 7000;
+      end else if (circ_temp >= 6000) begin
+        number_0 = 6;
+        circ_temp = circ_temp - 6000;
+      end else if (circ_temp >= 5000) begin
+        number_0 = 5;
+        circ_temp = circ_temp - 5000;
+      end else if (circ_temp >= 4000) begin
+        number_0 = 4;
+        circ_temp = circ_temp - 4000;
+      end else if (circ_temp >= 3000) begin
+        number_0 = 3;
+        circ_temp = circ_temp - 3000;
+      end else if (circ_temp >= 2000) begin
+        number_0 = 2;
+        circ_temp = circ_temp - 2000;
+      end else if (circ_temp >= 1000) begin
+        number_0 = 1;
+        circ_temp = circ_temp - 1000;
+      end else begin
+        number_0 = 0;
+      end
+
+      // HUNDREDS
+      if (circ_temp >= 900) begin
+        number_1 = 9;
+        circ_temp = circ_temp - 900;
+      end else if (circ_temp >= 800) begin
+        number_1 = 8;
+        circ_temp = circ_temp - 800;
+      end else if (circ_temp >= 700) begin
+        number_1 = 7;
+        circ_temp = circ_temp - 700;
+      end else if (circ_temp >= 600) begin
+        number_1 = 6;
+        circ_temp = circ_temp - 600;
+      end else if (circ_temp >= 500) begin
+        number_1 = 5;
+        circ_temp = circ_temp - 500;
+      end else if (circ_temp >= 400) begin
+        number_1 = 4;
+        circ_temp = circ_temp - 400;
+      end else if (circ_temp >= 300) begin
+        number_1 = 3;
+        circ_temp = circ_temp - 300;
+      end else if (circ_temp >= 200) begin
+        number_1 = 2;
+        circ_temp = circ_temp - 200;
+      end else if (circ_temp >= 100) begin
+        number_1 = 1;
+        circ_temp = circ_temp - 100;
+      end else begin
+        number_1 = 0;
+      end
+      
+      // TENS
+      if (circ_temp >= 90) begin
+        number_2 = 9;
+        circ_temp = circ_temp - 90;
+      end else if (circ_temp >= 80) begin
+        number_2 = 8;
+        circ_temp = circ_temp - 80;
+      end else if (circ_temp >= 70) begin
+        number_2 = 7;
+        circ_temp = circ_temp - 70;
+      end else if (circ_temp >= 60) begin
+        number_2 = 6;
+        circ_temp = circ_temp - 60;
+      end else if (circ_temp >= 50) begin
+        number_2 = 5;
+        circ_temp = circ_temp - 50;
+      end else if (circ_temp >= 40) begin
+        number_2 = 4;
+        circ_temp = circ_temp - 40;
+      end else if (circ_temp >= 30) begin
+        number_2 = 3;
+        circ_temp = circ_temp - 30;
+      end else if (circ_temp >= 20) begin
+        number_2 = 2;
+        circ_temp = circ_temp - 20;
+      end else if (circ_temp >= 10) begin
+        number_2 = 1;
+        circ_temp = circ_temp - 10;
+      end else begin
+        number_2 = 0;
+      end
+
+      // ONES
+      if (circ_temp <= 9) begin
+        number_3 = circ_temp;
+      end else begin
+        number_3 = 0;
+      end
+
+    end
+
+  end
+
+
+
+  // for placing the numbers easier
+  logic [15:0] circ_number_x = 6;
+  logic [15:0] circ_number_y = 4;
+  logic [15:0] circ_number_spacing = 4;
+  logic [4:0] number_img_size = 24; // doesnt change
+
+
+  logic draw_number_0;
+  image_sprite_transparent_numbers #(
+    .WIDTH(24),
+    .HEIGHT(24),
+    .NUM_IMGS(10)
+  ) sprite_number_0(
+    .pixel_clk_in(clk_pixel),
+    .rst_in(sys_rst_pixel),
+    .x_in(circ_number_x),
+    .y_in(circ_number_y),
+    .hcount_in(hcount_hdmi),
+    .vcount_in(vcount_hdmi),
+    .number(number_0),
+    .draw_out(draw_number_0)
+  );
+
+  logic draw_number_1;
+  image_sprite_transparent_numbers_1 #(
+    .WIDTH(24),
+    .HEIGHT(24),
+    .NUM_IMGS(10)
+  ) sprite_number_1(
+    .pixel_clk_in(clk_pixel),
+    .rst_in(sys_rst_pixel),
+    .x_in(circ_number_x + (number_img_size + circ_number_spacing)*1),
+    .y_in(circ_number_y),
+    .hcount_in(hcount_hdmi),
+    .vcount_in(vcount_hdmi),
+    .number(number_1),
+    .draw_out(draw_number_1)
+  );
+
+  logic draw_number_2;
+  image_sprite_transparent_numbers_2 #(
+    .WIDTH(24),
+    .HEIGHT(24),
+    .NUM_IMGS(10)
+  ) sprite_number_2(
+    .pixel_clk_in(clk_pixel),
+    .rst_in(sys_rst_pixel),
+    .x_in(circ_number_x + (number_img_size + circ_number_spacing)*2),
+    .y_in(circ_number_y),
+    .hcount_in(hcount_hdmi),
+    .vcount_in(vcount_hdmi),
+    .number(number_2),
+    .draw_out(draw_number_2)
+  );
+
+  logic draw_number_3;
+  image_sprite_transparent_numbers_3 #(
+    .WIDTH(24),
+    .HEIGHT(24),
+    .NUM_IMGS(10)
+  ) sprite_number_3(
+    .pixel_clk_in(clk_pixel),
+    .rst_in(sys_rst_pixel),
+    .x_in(circ_number_x + (number_img_size + circ_number_spacing)*3),
+    .y_in(circ_number_y),
+    .hcount_in(hcount_hdmi),
+    .vcount_in(vcount_hdmi),
+    .number(number_3),
+    .draw_out(draw_number_3)
+  );
+
+  // NEW MODULES
+  // CONNECTED COMPONENTS LABELLING MODULE
+  //  * Takes in a binary mask, labels k connected components, finds center of mass of each component
+  // MOORE NEIGHBORHOOD MODULE
+  //  * Takes in a binary mask and returns perimeter of connected component
+  // CIRCULARITY MODULE
+  //  * Takes in a perimater and area and returns circularity of connected component
+  // SHAPE DETECTOR LOGIC
+  //  * could be purely combinational?
+  // SPRITE OVERLAY LOGIC 
+
   //grab logic for above
   //update center of mass x_com, y_com based on new_com signal
   always_ff @(posedge clk_pixel)begin
@@ -506,41 +914,6 @@ module top_level
       y_com <= y_com_calc;
     end
   end
-
-  //image_sprite output:
-  logic [7:0] img_red, img_green, img_blue;
-  //assign img_red =0;
-  //assign img_green =0;
-  //assign img_blue =0;
-  logic draw_sprite;
-  //assign draw_sprite = 0;
-  //image sprite removed to keep builds focused.
-
-  always_comb begin
-    img_red = draw_sprite? 0 : fb_red;
-    img_green = draw_sprite? 255 : fb_green;
-    img_blue = draw_sprite? 0 : fb_blue;
-
-  end
-
-  image_sprite_transparent #(
-    .WIDTH(256),
-    .HEIGHT(256),
-    .NUM_IMGS(4))
-    com_sprite_m (
-    .pixel_clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .hcount_in(hcount_hdmi),   //: needs to use pipelined signal (PS1) //***DONE*** does it?
-    .vcount_in(vcount_hdmi),   //: needs to use pipelined signal (PS1) //***DONE***
-    .x_in(x_com>128 ? x_com-128 : 0),
-    .y_in(y_com>128 ? y_com-128 : 0),
-    .shape(sw[1:0]),
-    .draw_out(draw_sprite));
-
-
-
-
-
 
 
   //crosshair output:
@@ -600,6 +973,7 @@ module top_level
     .thresholded_pixel_in(mask), //one bit mask signal TODO: needs (PS4)
     .crosshair_in({ch_red, ch_green, ch_blue}), //TODO: needs (PS8)
     .com_sprite_pixel_in({img_red, img_green, img_blue}), //TODO: needs (PS9) maybe?
+    .draw_sprite(draw_sprite), //draw sprite signal
     .pixel_out({red,green,blue}) //output to tmds
   );
 
