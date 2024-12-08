@@ -51,7 +51,7 @@ module moore_neighbor_tracing #(
                scan_x <= 0;
                scan_y <= 0;
                trace_start_x <= 0;
-               trace_start_x <= 0;
+               trace_start_y <= 0;
 
                read_wait <= 0;
 
