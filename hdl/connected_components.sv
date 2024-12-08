@@ -4,7 +4,7 @@
 module connected_components #(
     parameter WIDTH = 320,        // Horizontal resolution
     parameter HEIGHT = 180,        // Vertical resolution
-    parameter MAX_LABELS = 5, // Maximum number of labels supported
+    parameter MAX_LABELS = 10, // Maximum number of labels supported
     parameter MIN_AREA = 20      // Minimum blob size to retain
 )(
     input  logic         clk_in,          
@@ -24,11 +24,12 @@ module connected_components #(
     output logic [31:0]  num_blobs        // Number of distinct blobs
 );
 
-    typedef {IDLE, STORE_FRAME, FIRST_PASS, SECOND_PASS, PRUNE, COM_CALC, OUTPUT} state;
+    enum {IDLE, STORE_FRAME, FIRST_PASS, SECOND_PASS, PRUNE, COM_CALC, OUTPUT} state;
     logic [WIDTH*HEIGHT-1:0][15:0] first_pass_labels;
     logic [WIDTH*HEIGHT-1:0][15:0] second_pass_labels;
     logic [WIDTH*HEIGHT-1:0][15:0] labels;
     logic [WIDTH*HEIGHT-1:0][15:0] equiv_table;
+    logic [WIDTH*HEIGHT-1:0][15:0] pruned_labels;
 
     logic w_pixel_mask, nw_pixel_mask, n_pixel_mask, ne_pixel_mask;
     logic [15:0] w_pixel_label, nw_pixel_label, n_pixel_label, ne_pixel_label;
@@ -50,7 +51,7 @@ module connected_components #(
             state <= IDLE;
 
             first_pass_labels <= 0;
-            second_pass_labels <= 0
+            second_pass_labels <= 0;
             pruned_labels <= 0;
 
             valid_out <= 0;
@@ -60,15 +61,15 @@ module connected_components #(
         end else begin
             case(state)
                 IDLE: begin
-                    valid_out <= 0
+                    valid_out <= 0;
 
                     if (new_frame_in) begin
-                        state <= STORE_PIXELS;
+                        state <= STORE_FRAME;
                         busy_out <= 1;
                     end
                 end
 
-                STORE_PIXELS: begin
+                STORE_FRAME: begin
                     if (x_in==319 && y_in==179) begin
                         state <= FIRST_PASS;
                         curr_x <= 0;
@@ -90,9 +91,9 @@ module connected_components #(
                             min_label <= ne_pixel_label;
 
                         if (min_label == 16'hFFFF) begin
-                            first_pass_labels[curr_x + curr_y * WIDTH] <= current_label;
-                            equiv_table[current_label] <= current_label;
-                            current_label <= current_label + 1;
+                            first_pass_labels[curr_x + curr_y * WIDTH] <= curr_label;
+                            equiv_table[curr_label] <= curr_label;
+                            curr_label <= curr_label + 1;
                         end else begin
                             first_pass_labels[curr_x + curr_y * WIDTH] <= min_label;
                             if (w_pixel_mask && w_pixel_label > 0)
@@ -135,12 +136,9 @@ module connected_components #(
                 PRUNE: begin
                     for (int i = 0; i < WIDTH*HEIGHT; i++) begin
                         if (second_pass_labels[i] > 0) begin
-                            label_areas[second_pass_labels[i]] <= 
-                                label_areas[second_pass_labels[i]] + 1;
-                            sum_x[second_pass_labels[i]] <= 
-                                sum_x[second_pass_labels[i]] + (i % WIDTH);
-                            sum_y[second_pass_labels[i]] <= 
-                                sum_y[second_pass_labels[i]] + (i / WIDTH);
+                            label_areas[second_pass_labels[i]] <= label_areas[second_pass_labels[i]] + 1;
+                            sum_x[second_pass_labels[i]] <= sum_x[second_pass_labels[i]] + (i % WIDTH);
+                            sum_y[second_pass_labels[i]] <= sum_y[second_pass_labels[i]] + (i / WIDTH);
                         end
                     end
 
@@ -176,6 +174,13 @@ module connected_components #(
     logic frame_buff_pixel; //data out of frame buffer (masked 1-bit pixel)
     logic [FB_SIZE-1:0] addrb; //used to lookup address in memory for reading from buffer
 
+    logic [FB_SIZE-1:0] addra_2; //used to specify address to write to in frame buffer
+    logic [FB_SIZE-1:0] addrb_2; //used to lookup address in memory for reading from buffer
+    logic [FB_SIZE-1:0] addra_3; //used to specify address to write to in frame buffer
+    logic [FB_SIZE-1:0] addrb_3; //used to lookup address in memory for reading from buffer
+    logic [FB_SIZE-1:0] addra_4; //used to specify address to write to in frame buffer
+    logic [FB_SIZE-1:0] addrb_4; //used to lookup address in memory for reading from buffer
+
     always_comb begin
         if (state != FIRST_PASS || state != SECOND_PASS) begin
             addra = x_in + y_in * WIDTH; // store values
@@ -188,20 +193,20 @@ module connected_components #(
             addra_4 = addra;
             addrb_4 = addrb;
         end else begin
-            addra = (scan_x != 0 && scan_y != 0)? (scan_x-1) + (scan_y-1)*WIDTH : 0;                  // nw
-            addrb = (scan_y != 0)? (scan_x) + (scan_y-1)*WIDTH : 0;                                   // n
-            addra_2 = (scan_x != WIDTH-1 && scan_y != 0)? (scan_x+1) + (scan_y-1)*WIDTH : 0;          // ne
-            addrb_2 = (scan_x != 0)? (scan_x-1) + (scan_y)*WIDTH : 0;                                 // w
+            addra = (curr_x != 0 && curr_y != 0)? (curr_x-1) + (curr_y-1)*WIDTH : 0;                  // nw
+            addrb = (curr_y != 0)? (curr_x) + (curr_y-1)*WIDTH : 0;                                   // n
+            addra_2 = (curr_x != WIDTH-1 && curr_y != 0)? (curr_x+1) + (curr_y-1)*WIDTH : 0;          // ne
+            addrb_2 = (curr_x != 0)? (curr_x-1) + (curr_y)*WIDTH : 0;                                 // w
 
-            nw_pixel_mask = (scan_x != 0 && scan_y != 0)? nw_pixel_temp : 0;      
-            n_pixel_mask = (scan_y != 0)? n_pixel_temp : 0;                       
-            ne_pixel_mask = (scan_x != WIDTH-1 && scan_y != 0)? ne_pixel_temp : 0;
-            w_pixel_mask = (scan_x != 0)? w_pixel_temp : 0; 
+            nw_pixel_mask = (curr_x != 0 && curr_y != 0)? nw_pixel_temp : 0;      
+            n_pixel_mask = (curr_y != 0)? n_pixel_temp : 0;                       
+            ne_pixel_mask = (curr_x != WIDTH-1 && curr_y != 0)? ne_pixel_temp : 0;
+            w_pixel_mask = (curr_x != 0)? w_pixel_temp : 0; 
 
-            nw_pixel_label = (scan_x != 0 && scan_y != 0)? nw_pixel_temp : 0;      
-            n_pixel_label = (scan_y != 0)? n_pixel_temp : 0;                       
-            ne_pixel_label = (scan_x != WIDTH-1 && scan_y != 0)? ne_pixel_temp : 0;
-            w_pixel_label = (scan_x != 0)? w_pixel_temp : 0; 
+            nw_pixel_label = (curr_x != 0 && curr_y != 0)? nw_pixel_temp : 0;      
+            n_pixel_label = (curr_y != 0)? n_pixel_temp : 0;                       
+            ne_pixel_label = (curr_x != WIDTH-1 && curr_y != 0)? ne_pixel_temp : 0;
+            w_pixel_label = (curr_x != 0)? w_pixel_temp : 0; 
         end
     end
 

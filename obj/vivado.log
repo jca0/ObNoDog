@@ -3,23 +3,23 @@
 # SW Build 5076996 on Wed May 22 18:36:09 MDT 2024
 # IP Build 5075265 on Wed May 22 21:45:21 MDT 2024
 # SharedData Build 5076995 on Wed May 22 18:29:18 MDT 2024
-# Start of session at: Mon Nov 25 18:08:24 2024
-# Process ID: 902738
-# Current directory: /home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1
+# Start of session at: Tue Dec  3 16:28:54 2024
+# Process ID: 11206
+# Current directory: /home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0
 # Command line: vivado -mode batch -source build.tcl
-# Log file: /home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/vivado.log
-# Journal file: /home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/vivado.jou
-# Running On        :eecs-digital-21
+# Log file: /home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/vivado.log
+# Journal file: /home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/vivado.jou
+# Running On        :eecs-digital-25
 # Platform          :Ubuntu
 # Operating System  :Ubuntu 24.04.1 LTS
 # Processor Detail  :13th Gen Intel(R) Core(TM) i7-13700
-# CPU Frequency     :800.000 MHz
+# CPU Frequency     :800.255 MHz
 # CPU Physical cores:16
 # CPU Logical cores :24
-# Host memory       :33324 MB
+# Host memory       :33325 MB
 # Swap memory       :8589 MB
-# Total Virtual     :41914 MB
-# Available Virtual :40434 MB
+# Total Virtual     :41915 MB
+# Available Virtual :40857 MB
 #-----------------------------------------------------------
 source build.tcl
 # set_param general.maxThreads 4
@@ -59,7 +59,7 @@ blk_mem_gen_0
 INFO: [IP_Flow 19-234] Refreshing IP repositories
 INFO: [IP_Flow 19-1704] No user IP repositories specified
 INFO: [IP_Flow 19-2313] Loaded Vivado IP repository '/tools/Xilinx/Vivado/2024.1/data/ip'.
-WARNING: [Vivado 12-13650] The IP file '/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/ip/blk_mem_gen_0/blk_mem_gen_0.xci' has been moved from its original location, as a result the outputs for this IP will now be generated in '/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/ip/blk_mem_gen_0/ip/blk_mem_gen_0'. Alternatively a copy of the IP can be imported into the project using one of the 'import_ip' or 'import_files' commands.
+WARNING: [Vivado 12-13650] The IP file '/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/ip/blk_mem_gen_0/blk_mem_gen_0.xci' has been moved from its original location, as a result the outputs for this IP will now be generated in '/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/ip/blk_mem_gen_0/ip/blk_mem_gen_0'. Alternatively a copy of the IP can be imported into the project using one of the 'import_ip' or 'import_files' commands.
 # generate_target all [get_ips]
 INFO: [IP_Flow 19-1686] Generating 'Instantiation Template' target for IP 'blk_mem_gen_0'...
 INFO: [IP_Flow 19-1686] Generating 'Synthesis' target for IP 'blk_mem_gen_0'...
@@ -70,7 +70,7 @@ INFO: [IP_Flow 19-1686] Generating 'Change Log' target for IP 'blk_mem_gen_0'...
 INFO: [IP_Flow 19-234] Refreshing IP repositories
 INFO: [IP_Flow 19-1704] No user IP repositories specified
 INFO: [IP_Flow 19-2313] Loaded Vivado IP repository '/tools/Xilinx/Vivado/2024.1/data/ip'.
-WARNING: [Vivado 12-13650] The IP file '/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/ip/blk_mem_gen_0/blk_mem_gen_0.xci' has been moved from its original location, as a result the outputs for this IP will now be generated in '/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/ip/blk_mem_gen_0/ip/blk_mem_gen_0'. Alternatively a copy of the IP can be imported into the project using one of the 'import_ip' or 'import_files' commands.
+WARNING: [Vivado 12-13650] The IP file '/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/ip/blk_mem_gen_0/blk_mem_gen_0.xci' has been moved from its original location, as a result the outputs for this IP will now be generated in '/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/ip/blk_mem_gen_0/ip/blk_mem_gen_0'. Alternatively a copy of the IP can be imported into the project using one of the 'import_ip' or 'import_files' commands.
 Command: synth_design -top blk_mem_gen_0 -part xc7s50csga324-1 -mode out_of_context
 Starting synth_design
 Attempting to get a license for feature 'Synthesis' and/or device 'xc7s50'
@@ -79,11 +79,11 @@ INFO: [Device 21-403] Loading part xc7s50csga324-1
 INFO: [Device 21-9227] Part: xc7s50csga324-1 does not have CEAM library.
 INFO: [Synth 8-7079] Multithreading enabled for synth_design using a maximum of 4 processes.
 INFO: [Synth 8-7078] Launching helper process for spawning children vivado processes
-INFO: [Synth 8-7075] Helper process launched with PID 902758
+INFO: [Synth 8-7075] Helper process launched with PID 11226
 ---------------------------------------------------------------------------------
-Starting RTL Elaboration : Time (s): cpu = 00:00:03 ; elapsed = 00:00:03 . Memory (MB): peak = 2244.109 ; gain = 410.660 ; free physical = 17090 ; free virtual = 37104
+Starting RTL Elaboration : Time (s): cpu = 00:00:02 ; elapsed = 00:00:02 . Memory (MB): peak = 2245.141 ; gain = 411.629 ; free physical = 27310 ; free virtual = 37505
 ---------------------------------------------------------------------------------
-INFO: [Synth 8-638] synthesizing module 'blk_mem_gen_0' [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/ip/blk_mem_gen_0/ip/blk_mem_gen_0/synth/blk_mem_gen_0.vhd:76]
+INFO: [Synth 8-638] synthesizing module 'blk_mem_gen_0' [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/ip/blk_mem_gen_0/ip/blk_mem_gen_0/synth/blk_mem_gen_0.vhd:76]
 	Parameter C_FAMILY bound to: spartan7 - type: string 
 	Parameter C_XDEVICEFAMILY bound to: spartan7 - type: string 
 	Parameter C_ELABORATION_DIR bound to: ./ - type: string 
@@ -159,8 +159,8 @@ INFO: [Synth 8-638] synthesizing module 'blk_mem_gen_0' [/home/fpga/worker_place
 	Parameter C_COUNT_36K_BRAM bound to: 24 - type: string 
 	Parameter C_COUNT_18K_BRAM bound to: 8 - type: string 
 	Parameter C_EST_POWER_SUMMARY bound to: Estimated Power for IP     :     33.457774 mW - type: string 
-INFO: [Synth 8-3491] module 'blk_mem_gen_v8_4_8' declared at '/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/ip/blk_mem_gen_0/ip/blk_mem_gen_0/hdl/blk_mem_gen_v8_4_vhsyn_rfs.vhd:195208' bound to instance 'U0' of component 'blk_mem_gen_v8_4_8' [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/ip/blk_mem_gen_0/ip/blk_mem_gen_0/synth/blk_mem_gen_0.vhd:249]
-INFO: [Synth 8-256] done synthesizing module 'blk_mem_gen_0' (0#1) [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/ip/blk_mem_gen_0/ip/blk_mem_gen_0/synth/blk_mem_gen_0.vhd:76]
+INFO: [Synth 8-3491] module 'blk_mem_gen_v8_4_8' declared at '/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/ip/blk_mem_gen_0/ip/blk_mem_gen_0/hdl/blk_mem_gen_v8_4_vhsyn_rfs.vhd:195208' bound to instance 'U0' of component 'blk_mem_gen_v8_4_8' [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/ip/blk_mem_gen_0/ip/blk_mem_gen_0/synth/blk_mem_gen_0.vhd:249]
+INFO: [Synth 8-256] done synthesizing module 'blk_mem_gen_0' (0#1) [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/ip/blk_mem_gen_0/ip/blk_mem_gen_0/synth/blk_mem_gen_0.vhd:76]
 WARNING: [Synth 8-7129] Port CLKB in module blk_mem_output_block is either unconnected or has no load
 WARNING: [Synth 8-7129] Port SBITERR_I in module blk_mem_output_block is either unconnected or has no load
 WARNING: [Synth 8-7129] Port DBITERR_I in module blk_mem_output_block is either unconnected or has no load
@@ -263,52 +263,52 @@ WARNING: [Synth 8-7129] Port SBITERRIN[508] in module blk_mem_gen_mux__parameter
 WARNING: [Synth 8-7129] Port SBITERRIN[507] in module blk_mem_gen_mux__parameterized0 is either unconnected or has no load
 INFO: [Common 17-14] Message 'Synth 8-7129' appears 100 times and further instances of the messages will be disabled. Use the Tcl command set_msg_config to change the current settings.
 ---------------------------------------------------------------------------------
-Finished RTL Elaboration : Time (s): cpu = 00:00:06 ; elapsed = 00:00:07 . Memory (MB): peak = 2551.586 ; gain = 718.137 ; free physical = 16760 ; free virtual = 36775
+Finished RTL Elaboration : Time (s): cpu = 00:00:06 ; elapsed = 00:00:06 . Memory (MB): peak = 2551.617 ; gain = 718.105 ; free physical = 26979 ; free virtual = 37176
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Handling Custom Attributes
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Handling Custom Attributes : Time (s): cpu = 00:00:06 ; elapsed = 00:00:07 . Memory (MB): peak = 2551.586 ; gain = 718.137 ; free physical = 16760 ; free virtual = 36775
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:06 ; elapsed = 00:00:06 . Memory (MB): peak = 2551.617 ; gain = 718.105 ; free physical = 26979 ; free virtual = 37176
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished RTL Optimization Phase 1 : Time (s): cpu = 00:00:06 ; elapsed = 00:00:07 . Memory (MB): peak = 2551.586 ; gain = 718.137 ; free physical = 16760 ; free virtual = 36775
+Finished RTL Optimization Phase 1 : Time (s): cpu = 00:00:06 ; elapsed = 00:00:06 . Memory (MB): peak = 2551.617 ; gain = 718.105 ; free physical = 26979 ; free virtual = 37176
 ---------------------------------------------------------------------------------
-Netlist sorting complete. Time (s): cpu = 00:00:00.01 ; elapsed = 00:00:00.01 . Memory (MB): peak = 2551.586 ; gain = 0.000 ; free physical = 16760 ; free virtual = 36775
+Netlist sorting complete. Time (s): cpu = 00:00:00.01 ; elapsed = 00:00:00.01 . Memory (MB): peak = 2551.617 ; gain = 0.000 ; free physical = 26979 ; free virtual = 37176
 INFO: [Netlist 29-17] Analyzing 32 Unisim elements for replacement
 INFO: [Netlist 29-28] Unisim Transformation completed in 0 CPU seconds
 INFO: [Project 1-570] Preparing netlist for logic optimization
 
 Processing XDC Constraints
 Initializing timing engine
-Parsing XDC File [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/ip/blk_mem_gen_0/ip/blk_mem_gen_0/blk_mem_gen_0_ooc.xdc] for cell 'U0'
-Finished Parsing XDC File [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/ip/blk_mem_gen_0/ip/blk_mem_gen_0/blk_mem_gen_0_ooc.xdc] for cell 'U0'
+Parsing XDC File [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/ip/blk_mem_gen_0/ip/blk_mem_gen_0/blk_mem_gen_0_ooc.xdc] for cell 'U0'
+Finished Parsing XDC File [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/ip/blk_mem_gen_0/ip/blk_mem_gen_0/blk_mem_gen_0_ooc.xdc] for cell 'U0'
 Completed Processing XDC Constraints
 
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2647.633 ; gain = 0.000 ; free physical = 16760 ; free virtual = 36775
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2647.664 ; gain = 0.000 ; free physical = 26980 ; free virtual = 37176
 INFO: [Project 1-111] Unisim Transformation Summary:
 No Unisim elements were transformed.
 
-Constraint Validation Runtime : Time (s): cpu = 00:00:00.01 ; elapsed = 00:00:00.02 . Memory (MB): peak = 2647.633 ; gain = 0.000 ; free physical = 16752 ; free virtual = 36767
+Constraint Validation Runtime : Time (s): cpu = 00:00:00.01 ; elapsed = 00:00:00.01 . Memory (MB): peak = 2647.664 ; gain = 0.000 ; free physical = 26980 ; free virtual = 37176
 ---------------------------------------------------------------------------------
-Finished Constraint Validation : Time (s): cpu = 00:00:09 ; elapsed = 00:00:10 . Memory (MB): peak = 2647.633 ; gain = 814.184 ; free physical = 16751 ; free virtual = 36766
+Finished Constraint Validation : Time (s): cpu = 00:00:09 ; elapsed = 00:00:09 . Memory (MB): peak = 2647.664 ; gain = 814.152 ; free physical = 26980 ; free virtual = 37176
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Loading Part and Timing Information
 ---------------------------------------------------------------------------------
 Loading part: xc7s50csga324-1
 ---------------------------------------------------------------------------------
-Finished Loading Part and Timing Information : Time (s): cpu = 00:00:09 ; elapsed = 00:00:10 . Memory (MB): peak = 2647.633 ; gain = 814.184 ; free physical = 16751 ; free virtual = 36766
+Finished Loading Part and Timing Information : Time (s): cpu = 00:00:09 ; elapsed = 00:00:09 . Memory (MB): peak = 2647.664 ; gain = 814.152 ; free physical = 26980 ; free virtual = 37176
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Applying 'set_property' XDC Constraints
 ---------------------------------------------------------------------------------
 Applied set_property KEEP_HIERARCHY = SOFT for U0. (constraint file  auto generated constraint).
 ---------------------------------------------------------------------------------
-Finished applying 'set_property' XDC Constraints : Time (s): cpu = 00:00:09 ; elapsed = 00:00:10 . Memory (MB): peak = 2647.633 ; gain = 814.184 ; free physical = 16751 ; free virtual = 36766
+Finished applying 'set_property' XDC Constraints : Time (s): cpu = 00:00:09 ; elapsed = 00:00:09 . Memory (MB): peak = 2647.664 ; gain = 814.152 ; free physical = 26980 ; free virtual = 37176
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished RTL Optimization Phase 2 : Time (s): cpu = 00:00:10 ; elapsed = 00:00:10 . Memory (MB): peak = 2647.633 ; gain = 814.184 ; free physical = 16749 ; free virtual = 36766
+Finished RTL Optimization Phase 2 : Time (s): cpu = 00:00:09 ; elapsed = 00:00:10 . Memory (MB): peak = 2647.664 ; gain = 814.152 ; free physical = 26980 ; free virtual = 37177
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start RTL Component Statistics 
@@ -336,25 +336,25 @@ Start Cross Boundary and Area Optimization
 ---------------------------------------------------------------------------------
 WARNING: [Synth 8-7080] Parallel synthesis criteria is not met
 ---------------------------------------------------------------------------------
-Finished Cross Boundary and Area Optimization : Time (s): cpu = 00:00:10 ; elapsed = 00:00:11 . Memory (MB): peak = 2647.633 ; gain = 814.184 ; free physical = 16749 ; free virtual = 36765
+Finished Cross Boundary and Area Optimization : Time (s): cpu = 00:00:10 ; elapsed = 00:00:10 . Memory (MB): peak = 2647.664 ; gain = 814.152 ; free physical = 26980 ; free virtual = 37177
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Applying XDC Timing Constraints
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Applying XDC Timing Constraints : Time (s): cpu = 00:00:13 ; elapsed = 00:00:13 . Memory (MB): peak = 2647.633 ; gain = 814.184 ; free physical = 16749 ; free virtual = 36765
+Finished Applying XDC Timing Constraints : Time (s): cpu = 00:00:12 ; elapsed = 00:00:13 . Memory (MB): peak = 2647.664 ; gain = 814.152 ; free physical = 26982 ; free virtual = 37179
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Timing Optimization
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Timing Optimization : Time (s): cpu = 00:00:13 ; elapsed = 00:00:13 . Memory (MB): peak = 2647.633 ; gain = 814.184 ; free physical = 16749 ; free virtual = 36765
+Finished Timing Optimization : Time (s): cpu = 00:00:12 ; elapsed = 00:00:13 . Memory (MB): peak = 2647.664 ; gain = 814.152 ; free physical = 26982 ; free virtual = 37179
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Technology Mapping
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Technology Mapping : Time (s): cpu = 00:00:13 ; elapsed = 00:00:13 . Memory (MB): peak = 2647.633 ; gain = 814.184 ; free physical = 16749 ; free virtual = 36765
+Finished Technology Mapping : Time (s): cpu = 00:00:12 ; elapsed = 00:00:13 . Memory (MB): peak = 2647.664 ; gain = 814.152 ; free physical = 26982 ; free virtual = 37179
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start IO Insertion
@@ -372,37 +372,37 @@ Start Final Netlist Cleanup
 Finished Final Netlist Cleanup
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished IO Insertion : Time (s): cpu = 00:00:14 ; elapsed = 00:00:15 . Memory (MB): peak = 2647.633 ; gain = 814.184 ; free physical = 16749 ; free virtual = 36765
+Finished IO Insertion : Time (s): cpu = 00:00:14 ; elapsed = 00:00:14 . Memory (MB): peak = 2647.664 ; gain = 814.152 ; free physical = 26982 ; free virtual = 37179
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Renaming Generated Instances
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Renaming Generated Instances : Time (s): cpu = 00:00:14 ; elapsed = 00:00:15 . Memory (MB): peak = 2647.633 ; gain = 814.184 ; free physical = 16749 ; free virtual = 36766
+Finished Renaming Generated Instances : Time (s): cpu = 00:00:14 ; elapsed = 00:00:14 . Memory (MB): peak = 2647.664 ; gain = 814.152 ; free physical = 26982 ; free virtual = 37179
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Rebuilding User Hierarchy
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Rebuilding User Hierarchy : Time (s): cpu = 00:00:14 ; elapsed = 00:00:15 . Memory (MB): peak = 2647.633 ; gain = 814.184 ; free physical = 16749 ; free virtual = 36766
+Finished Rebuilding User Hierarchy : Time (s): cpu = 00:00:14 ; elapsed = 00:00:14 . Memory (MB): peak = 2647.664 ; gain = 814.152 ; free physical = 26983 ; free virtual = 37180
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Renaming Generated Ports
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Renaming Generated Ports : Time (s): cpu = 00:00:14 ; elapsed = 00:00:15 . Memory (MB): peak = 2647.633 ; gain = 814.184 ; free physical = 16749 ; free virtual = 36766
+Finished Renaming Generated Ports : Time (s): cpu = 00:00:14 ; elapsed = 00:00:14 . Memory (MB): peak = 2647.664 ; gain = 814.152 ; free physical = 26983 ; free virtual = 37180
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Handling Custom Attributes
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Handling Custom Attributes : Time (s): cpu = 00:00:14 ; elapsed = 00:00:15 . Memory (MB): peak = 2647.633 ; gain = 814.184 ; free physical = 16749 ; free virtual = 36766
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:14 ; elapsed = 00:00:14 . Memory (MB): peak = 2647.664 ; gain = 814.152 ; free physical = 26983 ; free virtual = 37180
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Renaming Generated Nets
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Renaming Generated Nets : Time (s): cpu = 00:00:14 ; elapsed = 00:00:15 . Memory (MB): peak = 2647.633 ; gain = 814.184 ; free physical = 16749 ; free virtual = 36766
+Finished Renaming Generated Nets : Time (s): cpu = 00:00:14 ; elapsed = 00:00:14 . Memory (MB): peak = 2647.664 ; gain = 814.152 ; free physical = 26983 ; free virtual = 37180
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Writing Synthesis Report
@@ -430,22 +430,22 @@ Report Cell Usage:
 |16    |FDRE     |    20|
 +------+---------+------+
 ---------------------------------------------------------------------------------
-Finished Writing Synthesis Report : Time (s): cpu = 00:00:14 ; elapsed = 00:00:15 . Memory (MB): peak = 2647.633 ; gain = 814.184 ; free physical = 16749 ; free virtual = 36766
+Finished Writing Synthesis Report : Time (s): cpu = 00:00:14 ; elapsed = 00:00:14 . Memory (MB): peak = 2647.664 ; gain = 814.152 ; free physical = 26983 ; free virtual = 37180
 ---------------------------------------------------------------------------------
 Synthesis finished with 0 errors, 0 critical warnings and 135 warnings.
-Synthesis Optimization Runtime : Time (s): cpu = 00:00:13 ; elapsed = 00:00:14 . Memory (MB): peak = 2647.633 ; gain = 718.137 ; free physical = 16749 ; free virtual = 36766
-Synthesis Optimization Complete : Time (s): cpu = 00:00:14 ; elapsed = 00:00:15 . Memory (MB): peak = 2647.633 ; gain = 814.184 ; free physical = 16749 ; free virtual = 36766
+Synthesis Optimization Runtime : Time (s): cpu = 00:00:13 ; elapsed = 00:00:13 . Memory (MB): peak = 2647.664 ; gain = 718.105 ; free physical = 26983 ; free virtual = 37180
+Synthesis Optimization Complete : Time (s): cpu = 00:00:14 ; elapsed = 00:00:15 . Memory (MB): peak = 2647.664 ; gain = 814.152 ; free physical = 26983 ; free virtual = 37180
 INFO: [Project 1-571] Translating synthesized netlist
-Netlist sorting complete. Time (s): cpu = 00:00:00.01 ; elapsed = 00:00:00 . Memory (MB): peak = 2647.633 ; gain = 0.000 ; free physical = 17043 ; free virtual = 37059
+Netlist sorting complete. Time (s): cpu = 00:00:00.01 ; elapsed = 00:00:00 . Memory (MB): peak = 2647.664 ; gain = 0.000 ; free physical = 27235 ; free virtual = 37432
 INFO: [Netlist 29-17] Analyzing 86 Unisim elements for replacement
 INFO: [Netlist 29-28] Unisim Transformation completed in 0 CPU seconds
 INFO: [Project 1-570] Preparing netlist for logic optimization
-Parsing XDC File [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/ip/blk_mem_gen_0/ip/blk_mem_gen_0/blk_mem_gen_0_ooc.xdc] for cell 'U0'
-INFO: [Vivado 12-4761] HD.CLK_SRC property is set on port clka. The net connecting to the port drives either clock PIN or hierarchical black box. Use the create_clock constraint to create a clock on this port prior to setting HD.CLK_SRC.  [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/ip/blk_mem_gen_0/ip/blk_mem_gen_0/blk_mem_gen_0_ooc.xdc:54]
-INFO: [Vivado 12-4761] HD.CLK_SRC property is set on port clkb. The net connecting to the port drives either clock PIN or hierarchical black box. Use the create_clock constraint to create a clock on this port prior to setting HD.CLK_SRC.  [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/ip/blk_mem_gen_0/ip/blk_mem_gen_0/blk_mem_gen_0_ooc.xdc:57]
-Finished Parsing XDC File [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/ip/blk_mem_gen_0/ip/blk_mem_gen_0/blk_mem_gen_0_ooc.xdc] for cell 'U0'
+Parsing XDC File [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/ip/blk_mem_gen_0/ip/blk_mem_gen_0/blk_mem_gen_0_ooc.xdc] for cell 'U0'
+INFO: [Vivado 12-4761] HD.CLK_SRC property is set on port clka. The net connecting to the port drives either clock PIN or hierarchical black box. Use the create_clock constraint to create a clock on this port prior to setting HD.CLK_SRC.  [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/ip/blk_mem_gen_0/ip/blk_mem_gen_0/blk_mem_gen_0_ooc.xdc:54]
+INFO: [Vivado 12-4761] HD.CLK_SRC property is set on port clkb. The net connecting to the port drives either clock PIN or hierarchical black box. Use the create_clock constraint to create a clock on this port prior to setting HD.CLK_SRC.  [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/ip/blk_mem_gen_0/ip/blk_mem_gen_0/blk_mem_gen_0_ooc.xdc:57]
+Finished Parsing XDC File [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/ip/blk_mem_gen_0/ip/blk_mem_gen_0/blk_mem_gen_0_ooc.xdc] for cell 'U0'
 INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2647.633 ; gain = 0.000 ; free physical = 17043 ; free virtual = 37059
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2647.664 ; gain = 0.000 ; free physical = 27235 ; free virtual = 37432
 INFO: [Project 1-111] Unisim Transformation Summary:
 No Unisim elements were transformed.
 
@@ -453,17 +453,17 @@ Synth Design complete | Checksum: c77b6d5c
 INFO: [Common 17-83] Releasing license: Synthesis
 26 Infos, 102 Warnings, 0 Critical Warnings and 0 Errors encountered.
 synth_design completed successfully
-synth_design: Time (s): cpu = 00:00:18 ; elapsed = 00:00:17 . Memory (MB): peak = 2647.633 ; gain = 1147.059 ; free physical = 17043 ; free virtual = 37059
-INFO: [Common 17-2834] synth_design peak Physical Memory [PSS] (MB): overall = 2355.582; main = 2070.903; forked = 444.194
-INFO: [Common 17-2834] synth_design peak Virtual Memory [VSS] (MB): overall = 3648.117; main = 2615.621; forked = 1032.496
+synth_design: Time (s): cpu = 00:00:18 ; elapsed = 00:00:17 . Memory (MB): peak = 2647.664 ; gain = 1143.090 ; free physical = 27235 ; free virtual = 37432
+INFO: [Common 17-2834] synth_design peak Physical Memory [PSS] (MB): overall = 2359.940; main = 2073.495; forked = 443.968
+INFO: [Common 17-2834] synth_design peak Virtual Memory [VSS] (MB): overall = 3648.148; main = 2615.652; forked = 1032.496
 INFO: [Coretcl 2-1174] Renamed 66 cell refs.
 INFO: [Timing 38-480] Writing timing data to binary archive.
-Write ShapeDB Complete: Time (s): cpu = 00:00:00.01 ; elapsed = 00:00:00 . Memory (MB): peak = 2647.633 ; gain = 0.000 ; free physical = 17043 ; free virtual = 37059
-INFO: [Common 17-1381] The checkpoint '/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/ip/blk_mem_gen_0/ip/blk_mem_gen_0/blk_mem_gen_0.dcp' has been generated.
+Write ShapeDB Complete: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2647.664 ; gain = 0.000 ; free physical = 27235 ; free virtual = 37432
+INFO: [Common 17-1381] The checkpoint '/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/ip/blk_mem_gen_0/ip/blk_mem_gen_0/blk_mem_gen_0.dcp' has been generated.
 INFO: [Vivado 12-3441] generate_netlist_ip - operation complete
-synth_ip: Time (s): cpu = 00:00:19 ; elapsed = 00:00:18 . Memory (MB): peak = 2647.633 ; gain = 1147.059 ; free physical = 17042 ; free virtual = 37059
-INFO: [Common 17-2834] synth_ip peak Physical Memory [PSS] (MB): overall = 2355.582; main = 2072.997; forked = 444.194
-INFO: [Common 17-2834] synth_ip peak Virtual Memory [VSS] (MB): overall = 3648.117; main = 2647.637; forked = 1032.496
+synth_ip: Time (s): cpu = 00:00:18 ; elapsed = 00:00:17 . Memory (MB): peak = 2647.664 ; gain = 1143.090 ; free physical = 27244 ; free virtual = 37442
+INFO: [Common 17-2834] synth_ip peak Physical Memory [PSS] (MB): overall = 2359.940; main = 2075.890; forked = 443.968
+INFO: [Common 17-2834] synth_ip peak Virtual Memory [VSS] (MB): overall = 3648.148; main = 2647.668; forked = 1032.496
 # synth_design -top top_level -part $partNum -verbose
 Command: synth_design -top top_level -part xc7s50csga324-1 -verbose
 Starting synth_design
@@ -471,46 +471,42 @@ Attempting to get a license for feature 'Synthesis' and/or device 'xc7s50'
 INFO: [Common 17-349] Got license for feature 'Synthesis' and/or device 'xc7s50'
 INFO: [Synth 8-7079] Multithreading enabled for synth_design using a maximum of 4 processes.
 ---------------------------------------------------------------------------------
-Starting RTL Elaboration : Time (s): cpu = 00:00:02 ; elapsed = 00:00:02 . Memory (MB): peak = 2647.664 ; gain = 0.000 ; free physical = 16758 ; free virtual = 36775
+Starting RTL Elaboration : Time (s): cpu = 00:00:02 ; elapsed = 00:00:02 . Memory (MB): peak = 2663.672 ; gain = 0.000 ; free physical = 26954 ; free virtual = 37151
 ---------------------------------------------------------------------------------
-WARNING: [Synth 8-6901] identifier 'ds_hcount' is used before its declaration [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/hdl/top_level.sv:178]
-WARNING: [Synth 8-6901] identifier 'ds_vcount' is used before its declaration [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/hdl/top_level.sv:179]
-WARNING: [Synth 8-6901] identifier 'ds_pixel' is used before its declaration [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/hdl/top_level.sv:180]
-WARNING: [Synth 8-6901] identifier 'ds_valid' is used before its declaration [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/hdl/top_level.sv:181]
-WARNING: [Synth 8-6901] identifier 'ds_hcount' is used before its declaration [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/hdl/top_level.sv:183]
-WARNING: [Synth 8-6901] identifier 'ds_vcount' is used before its declaration [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/hdl/top_level.sv:184]
-WARNING: [Synth 8-6901] identifier 'ds_pixel' is used before its declaration [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/hdl/top_level.sv:185]
-WARNING: [Synth 8-6901] identifier 'ds_valid' is used before its declaration [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/hdl/top_level.sv:186]
-WARNING: [Synth 8-6901] identifier 'frame_buff_pixel' is used before its declaration [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/hdl/moore_neighbor_tracing.sv:87]
-WARNING: [Synth 8-6901] identifier 'WIDTH' is used before its declaration [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/hdl/circularity.sv:8]
-WARNING: [Synth 8-6901] identifier 'HEIGHT' is used before its declaration [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/hdl/circularity.sv:8]
-WARNING: [Synth 8-6901] identifier 'WIDTH' is used before its declaration [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/hdl/circularity.sv:9]
-WARNING: [Synth 8-6901] identifier 'HEIGHT' is used before its declaration [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/hdl/circularity.sv:9]
-WARNING: [Synth 8-6901] identifier 'WIDTH' is used before its declaration [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/hdl/circularity.sv:12]
-WARNING: [Synth 8-6901] identifier 'HEIGHT' is used before its declaration [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/hdl/circularity.sv:12]
-WARNING: [Synth 8-6901] identifier 'TOTAL_PIXELS' is used before its declaration [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/hdl/video_sig_gen.sv:15]
-WARNING: [Synth 8-6901] identifier 'TOTAL_LINES' is used before its declaration [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/hdl/video_sig_gen.sv:16]
-ERROR: [Synth 8-6735] net type must be explicitly specified for 'clk_in' when default_nettype is none [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/hdl/connected_components.sv:10]
-ERROR: [Synth 8-6735] net type must be explicitly specified for 'rst_in' when default_nettype is none [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/hdl/connected_components.sv:11]
-ERROR: [Synth 8-6735] net type must be explicitly specified for 'hcount_in' when default_nettype is none [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/hdl/connected_components.sv:12]
-ERROR: [Synth 8-6735] net type must be explicitly specified for 'vcount_in' when default_nettype is none [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/hdl/connected_components.sv:13]
-ERROR: [Synth 8-6735] net type must be explicitly specified for 'mask_in' when default_nettype is none [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/hdl/connected_components.sv:14]
-ERROR: [Synth 8-6735] net type must be explicitly specified for 'valid_in' when default_nettype is none [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/hdl/connected_components.sv:15]
-INFO: [Synth 8-10285] module 'connected_components' is ignored due to previous errors [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/hdl/connected_components.sv:111]
-INFO: [Synth 8-9084] Verilog file '/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/hdl/connected_components.sv' ignored due to errors
-INFO: [Synth 8-6157] synthesizing module 'top_level' [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/hdl/top_level.sv:4]
-ERROR: [Synth 8-439] module 'filter' not found [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/hdl/top_level.sv:235]
-	Parameter K_SELECT bound to: 32'sb00000000000000000000000000000000 
-	Parameter HRES bound to: 32'sb00000000000000000000000101000000 
-	Parameter VRES bound to: 32'sb00000000000000000000000010110100 
-ERROR: [Synth 8-196] conditional expression could not be resolved to a constant [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/hdl/top_level.sv:233]
-ERROR: [Synth 8-6156] failed synthesizing module 'top_level' [/home/fpga/worker_place/temp/f357c2eeb31342deab208ddd84ee8bf1/hdl/top_level.sv:4]
+WARNING: [Synth 8-6901] identifier 'coeffs_i' is used before its declaration [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/hdl/kernels.sv:10]
+WARNING: [Synth 8-6901] identifier 'coeffs_i' is used before its declaration [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/hdl/kernels.sv:11]
+WARNING: [Synth 8-6901] identifier 'coeffs_i' is used before its declaration [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/hdl/kernels.sv:12]
+WARNING: [Synth 8-6901] identifier 'coeffs_i' is used before its declaration [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/hdl/kernels.sv:13]
+WARNING: [Synth 8-6901] identifier 'coeffs_i' is used before its declaration [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/hdl/kernels.sv:14]
+WARNING: [Synth 8-6901] identifier 'coeffs_i' is used before its declaration [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/hdl/kernels.sv:15]
+WARNING: [Synth 8-6901] identifier 'coeffs_i' is used before its declaration [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/hdl/kernels.sv:16]
+WARNING: [Synth 8-6901] identifier 'coeffs_i' is used before its declaration [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/hdl/kernels.sv:17]
+WARNING: [Synth 8-6901] identifier 'coeffs_i' is used before its declaration [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/hdl/kernels.sv:18]
+WARNING: [Synth 8-6901] identifier 'TOTAL_PIXELS' is used before its declaration [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/hdl/video_sig_gen.sv:15]
+WARNING: [Synth 8-6901] identifier 'TOTAL_LINES' is used before its declaration [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/hdl/video_sig_gen.sv:16]
+ERROR: [Synth 8-2716] syntax error near 'pruned_labels' [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/hdl/connected_components.sv:55]
+ERROR: [Synth 8-2716] syntax error near 'if' [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/hdl/connected_components.sv:66]
+ERROR: [Synth 8-10307] SystemVerilog keyword 'if' used in incorrect context [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/hdl/connected_components.sv:66]
+ERROR: [Synth 8-6735] net type must be explicitly specified for 'clk_in' when default_nettype is none [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/hdl/connected_components.sv:10]
+ERROR: [Synth 8-6735] net type must be explicitly specified for 'rst_in' when default_nettype is none [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/hdl/connected_components.sv:11]
+ERROR: [Synth 8-6735] net type must be explicitly specified for 'x_in' when default_nettype is none [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/hdl/connected_components.sv:12]
+ERROR: [Synth 8-6735] net type must be explicitly specified for 'y_in' when default_nettype is none [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/hdl/connected_components.sv:13]
+ERROR: [Synth 8-6735] net type must be explicitly specified for 'mask_in' when default_nettype is none [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/hdl/connected_components.sv:14]
+ERROR: [Synth 8-6735] net type must be explicitly specified for 'new_frame_in' when default_nettype is none [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/hdl/connected_components.sv:15]
+ERROR: [Synth 8-6735] net type must be explicitly specified for 'valid_in' when default_nettype is none [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/hdl/connected_components.sv:16]
+ERROR: [Synth 8-36] 'masked_in' is not declared [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/hdl/connected_components.sv:225]
+ERROR: [Synth 8-36] 'masked_in' is not declared [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/hdl/connected_components.sv:251]
+ERROR: [Synth 8-36] 'masked_in' is not declared [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/hdl/connected_components.sv:277]
+ERROR: [Synth 8-36] 'masked_in' is not declared [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/hdl/connected_components.sv:303]
+INFO: [Synth 8-10285] module 'connected_components' is ignored due to previous errors [/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/hdl/connected_components.sv:320]
+INFO: [Synth 8-9084] Verilog file '/home/fpga/worker_place/temp/d192657d4dba4064879823aa30aa4ae0/hdl/connected_components.sv' ignored due to errors
+ERROR: [Synth 8-439] module 'top_level' not found
 ---------------------------------------------------------------------------------
-Finished RTL Elaboration : Time (s): cpu = 00:00:02 ; elapsed = 00:00:02 . Memory (MB): peak = 2647.664 ; gain = 0.000 ; free physical = 16758 ; free virtual = 36775
+Finished RTL Elaboration : Time (s): cpu = 00:00:02 ; elapsed = 00:00:02 . Memory (MB): peak = 2663.672 ; gain = 0.000 ; free physical = 26954 ; free virtual = 37151
 ---------------------------------------------------------------------------------
 RTL Elaboration failed
 INFO: [Common 17-83] Releasing license: Synthesis
-6 Infos, 17 Warnings, 0 Critical Warnings and 10 Errors encountered.
+5 Infos, 11 Warnings, 0 Critical Warnings and 16 Errors encountered.
 synth_design failed
 ERROR: [Common 17-69] Command failed: Synthesis failed - please see the console or run log file for details
-INFO: [Common 17-206] Exiting Vivado at Mon Nov 25 18:08:50 2024...
+INFO: [Common 17-206] Exiting Vivado at Tue Dec  3 16:29:19 2024...
