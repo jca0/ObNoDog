@@ -561,7 +561,7 @@ module top_level
   logic ccl_pixel_valid;
 
 
-  temp_ccl #(
+  ccl #(
     parameter WIDTH = 320,        // Horizontal resolution
     parameter HEIGHT = 180,       // Vertical resolution
     parameter LABEL_WIDTH = 16,   // Maximum number of labels supported
