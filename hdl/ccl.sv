@@ -105,7 +105,6 @@ always_ff @(posedge clk_in) begin
         
         busy_out <= 0;
         valid_out <= 0;
-        num_blobs <= 0;
         blob_labels <= 0;
         curr_label <= 0;
         label_counter <= 0;
