@@ -564,7 +564,7 @@ module top_level
   ccl #(
     .WIDTH(320),        // Horizontal resolution
     .HEIGHT(180),       // Vertical resolution
-    .LABEL_WIDTH(16),   // Maximum number of labels supported
+    .MAX_LABELS(64),    // how many labels? hopefully this leads to no noise
     .MIN_AREA(50)       // Minimum blob size to retain
   ) my_ccl (
   .clk_in(clk_pixel),    

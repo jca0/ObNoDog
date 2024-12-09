@@ -4,8 +4,9 @@
 module ccl #(
     parameter WIDTH = 320,        // Horizontal resolution
     parameter HEIGHT = 180,        // Vertical resolution
-    parameter LABEL_WIDTH = 16,
+    parameter MAX_LABELS = 64,
     parameter MIN_AREA = 50      // Minimum blob size to retain
+
 )(
     input  wire                 clk_in,          
     input  wire                 rst_in,          
@@ -15,34 +16,37 @@ module ccl #(
     input  wire                 new_frame_in,         
     input  wire                 valid_in,       
 
-    output logic                valid_out,       // Valid output signal
-    output logic                busy_out,        // Busy output signal
-    output logic [2:0][15:0]    blob_labels, // Array of distinct blob labels
+    output logic                valid_out,          // Valid output signal
+    output logic                busy_out,           // Busy output signal
+
+    output logic [2:0][15:0]    blob_labels,        // Array of distinct blob labels
     output logic [10:0]         x_out,
     output logic [9:0]          y_out,
-    output logic [2:0][15:0]    area_out,       // Array of blob areas
-    output logic [2:0][15:0]    com_x_out, // Array of blob centroid x-coordinates
-    output logic [2:0][15:0]    com_y_out, // Array of blob centroid y-coordinates
+    output logic [2:0][15:0]    area_out,           // Array of blob areas
+    output logic [2:0][15:0]    com_x_out,          // Array of blob centroid x-coordinates
+    output logic [2:0][15:0]    com_y_out,          // Array of blob centroid y-coordinates
     output logic [15:0]         curr_pix_label,
     output logic                curr_pix_valid
 
 );
 
+parameter LABEL_WIDTH = $clog2(MAX_LABELS);
+
 enum {IDLE, STORE_FRAME, FIRST_PASS, RESOLVE_EQUIV, PROPERTY_CALC, STORE_IN_ARRS, PRUNE, TL_FRAME, OUTPUT} state;
 
-logic [WIDTH*HEIGHT:0][15:0] first_pass_labels;
-logic [WIDTH*HEIGHT:0][15:0] second_pass_labels;
+// logic [MAX_LABELS:0][15:0] first_pass_labels;
+logic [MAX_LABELS:0][15:0] second_pass_labels;
 
-logic [WIDTH*HEIGHT:0][15:0] equiv_table;
+logic [MAX_LABELS:0][15:0] equiv_table;
 logic [15:0] resolve_index;
 logic [15:0] resolve_pass;
 logic [15:0] max_passes;
 
-logic [WIDTH*HEIGHT:0][15:0] area_table;
-logic [(WIDTH*HEIGHT) >> 2:0][23:0] sum_x_table, sum_y_table; 
+logic [MAX_LABELS:0][15:0] area_table;
+logic [MAX_LABELS:0][23:0] sum_x_table, sum_y_table; 
 
 // ===== PRUNING =====
-logic [(WIDTH*HEIGHT) >> 2:0][23:0] x_sums, y_sums; // x sums of positions of all blobs
+logic [MAX_LABELS:0][23:0] x_sums, y_sums; // x sums of positions of all blobs
 logic [2:0][15:0] largest_areas;                    // areas of 3 largest blobs
 logic [2:0][LABEL_WIDTH-1:0] largest_labels;         // labels of 3 largest blobs
 logic [2:0][$clog2(WIDTH)-1:0] largest_x_coms;      // x coms of 3 largest blobs
@@ -51,8 +55,8 @@ logic largest_smallest;                             // is the most recently look
 logic [2:0] largest_smallest_ind;                   // index of replaced value
 
 
-logic [WIDTH*HEIGHT:0][15:0] areas;                 // areas of all blobs
-logic [$clog2(WIDTH*HEIGHT):0] prune_iter;          // label to check for pruning
+logic [MAX_LABELS:0][15:0] areas;                 // areas of all blobs
+logic [$clog2(MAX_LABELS):0] prune_iter;          // label to check for pruning
 logic com_div_busy;                                 // are we currently doing a division in pruning
 logic x_div_begin;                                  // is the x divider ready to begin
 logic y_div_begin;                                  // is the y divider ready to begin
@@ -66,8 +70,8 @@ logic x_div_out_valid;                              // valid out signal
 logic y_div_out_valid;
 logic x_div_out_waiting;                            // have we recieved a valid out signal in the past and we're waiting on the other one
 logic y_div_out_waiting;
-logic [WIDTH*HEIGHT:0][$clog2(WIDTH)-1:0] x_coms;   // x coms of all blobs
-logic [WIDTH*HEIGHT:0][$clog2(HEIGHT)-1:0] y_coms;  // y coms of all blobs
+// logic [MAX_LABELS:0][$clog2(WIDTH)-1:0] x_coms;   // x coms of all blobs
+// logic [MAX_LABELS:0][$clog2(HEIGHT)-1:0] y_coms;  // y coms of all blobs
 // ===== PRUNING =====
 
 
@@ -94,10 +98,29 @@ logic [15:0] label_counter;
 logic [1:0] bram_wait;
 logic read_signal; // if !read_signal, write to BRAM
 
+
+
+
+
+localparam FB_DEPTH = WIDTH*HEIGHT;
+localparam FB_SIZE = $clog2(FB_DEPTH);
+logic fb_pixel_masked; // masked pixel coming out of the frame buffer
+logic [FB_SIZE-1:0] addra11, addrb11, addra12, addrb12, addra13; // for the first pass
+logic fb_pixel_label; // label of the pixel coming out of the frame buffer
+logic [FB_SIZE-1:0] addra21, addrb21, addra22, addrb22, addra23, addrb23, addra24, addrb24; // for the second pass
+
+
+
+
+
+
+
+
+
 always_ff @(posedge clk_in) begin
     if (rst_in) begin
         state <= IDLE;
-        first_pass_labels <= 0;
+        // first_pass_labels <= 0;
         second_pass_labels <= 0;
         bram_wait <= 0;
         read_signal <= 1;
@@ -282,11 +305,10 @@ always_ff @(posedge clk_in) begin
             // all dividends and divisors = 0
             // all largest_ = 0
             PRUNE: begin
-                if(prune_iter > WIDTH*HEIGHT) begin
+                if(prune_iter > MAX_LABELS) begin
                     state <= TL_FRAME;
                     x_tl <= 0;
                     y_tl <= 0;
-                    label_tl <= 0;
                     read_wait_tl <= 0;
                     valid_label_tl <= 0;
                 end else begin
@@ -351,7 +373,7 @@ always_ff @(posedge clk_in) begin
 
                         // if x_div gives an output
                         if(x_div_out_valid && !x_div_out_waiting) begin 
-                            x_coms[prune_iter] <= x_quotient;           // store the output
+                            // x_coms[prune_iter] <= x_quotient;           // store the output
                             x_div_out_waiting <= 1;                     // keep track that we have a valid output
 
                             // if we need to overwrite largest array
@@ -362,7 +384,7 @@ always_ff @(posedge clk_in) begin
 
                         // same thing for y
                         if(y_div_out_valid && !y_div_out_waiting) begin
-                            y_coms[prune_iter] <= y_quotient;
+                            // y_coms[prune_iter] <= y_quotient;
                             y_div_out_waiting <= 1; 
 
                             if(largest_smallest) begin
@@ -428,6 +450,8 @@ always_comb begin
         com_y_out = 0;
         curr_pix_label = 0;
         curr_pix_valid = 0;
+        x_out = 0;
+        y_out = 0;
     end else begin
         blob_labels = largest_labels;
         area_out = largest_areas;
@@ -435,6 +459,8 @@ always_comb begin
         com_y_out = largest_y_coms;
         curr_pix_label = label_tl;
         curr_pix_valid = valid_label_tl;
+        x_out = x_tl;
+        y_out = y_tl;
     end
 end
 
@@ -466,14 +492,9 @@ divider #(.WIDTH(24)) div_y (
 
 
 
-localparam FB_DEPTH = WIDTH*HEIGHT;
-localparam FB_SIZE = $clog2(FB_DEPTH);
-logic fb_pixel_masked; // masked pixel coming out of the frame buffer
-logic [FB_SIZE-1:0] addra11, addrb11, addra12, addrb12, addra13; // for the first pass
-logic fb_pixel_label; // label of the pixel coming out of the frame buffer
-logic [FB_SIZE-1:0] addra21, addrb21, addra22, addrb22, addra23, addrb23, addra24, addrb24; // for the second pass
 
 always_comb begin
+
     if (state == STORE_FRAME) begin
         addra11 = x_in + y_in * WIDTH;
         addrb11 = curr_x + curr_y * WIDTH;
@@ -508,7 +529,7 @@ always_comb begin
         n_pixel_label = (curr_y != 0)? n_pixel_temp_label : 0;                       
         ne_pixel_label = (curr_x != WIDTH-1 && curr_y != 0)? ne_pixel_temp_label : 0;
         w_pixel_label = (curr_x != 0)? w_pixel_temp_label : 0; 
-    end else if(state == TL_FRAME) begin
+    end else if (state == TL_FRAME) begin
         addra21 = x_tl + y_tl*WIDTH; // read label from center & pull corresponding value
         label_tl = equiv_table[fb_pixel_label]; // TODO: MAKE SURE THIS IS THE CORRECT OUTPUT & ALL THIS IS INTEGRATED CORRECTLY
     end
