@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 `default_nettype none
 
-module temp_ccl #(
+module ccl #(
     parameter WIDTH = 320,        // Horizontal resolution
     parameter HEIGHT = 180,        // Vertical resolution
     parameter LABEL_WIDTH = 16,
@@ -24,11 +24,11 @@ module temp_ccl #(
     output logic [2:0][15:0] com_x_out, // Array of blob centroid x-coordinates
     output logic [2:0][15:0] com_y_out, // Array of blob centroid y-coordinates
     output logic [15:0] curr_pix_label,
-    output logic [31:0]  num_blobs        // Number of distinct blobs
+    output logic curr_pix_valid
 
 );
 
-enum {IDLE, STORE_FRAME, FIRST_PASS, RESOLVE_EQUIV, PRUNE, SECOND_PASS, OUTPUT} state;
+enum {IDLE, STORE_FRAME, FIRST_PASS, RESOLVE_EQUIV, PROPERTY_CALC, STORE_IN_ARRS, PRUNE, TL_FRAME, OUTPUT} state;
 
 logic [WIDTH*HEIGHT:0][15:0] first_pass_labels;
 logic [WIDTH*HEIGHT:0][15:0] second_pass_labels;
@@ -212,19 +212,62 @@ always_ff @(posedge clk_in) begin
 
             RESOLVE_EQUIV: begin
                 equiv_table[resolve_index] <= equiv_table[equiv_table[resolve_index]];
-                area_table[resolve_index] <= area_table[equiv_table[resolve_index]];
-                sum_x_table[resolve_index] <= sum_x_table[equiv_table[resolve_index]];
-                sum_y_table[resolve_index] <= sum_y_table[equiv_table[resolve_index]];
-
                 if (resolve_index == curr_label - 1) begin
                     resolve_index <= 0;
                     resolve_pass <= resolve_pass + 1;
-
                     if (resolve_pass == max_passes) begin
-                        state <= SECOND_PASS;
-                        curr_x <= 0;
-                        curr_y <= 0;
-                        bram_wait <= 0;
+                        state <= PROPERTY_CALC;
+                        resolve_index <= 0;
+                        resolve_pass <= 0;
+                    end
+                end else begin
+                    resolve_index <= resolve_index + 1;
+                end
+            end
+
+            PROPERTY_CALC: begin
+                if (resolve_index != equiv_table[resolve_index]) begin
+                    area_table[equiv_table[resolve_index]] <= area_table[equiv_table[resolve_index]] + area_table[resolve_index];
+                    sum_x_table[equiv_table[resolve_index]] <= sum_x_table[equiv_table[resolve_index]] + sum_x_table[resolve_index];
+                    sum_y_table[equiv_table[resolve_index]] <= sum_y_table[equiv_table[resolve_index]] + sum_y_table[resolve_index];
+                end
+                if (resolve_index == curr_label - 1) begin
+                    resolve_index <= 0;
+                    resolve_pass <= resolve_pass + 1;
+                    if (resolve_pass == max_passes) begin
+                        state <= STORE_IN_ARRS;
+                        resolve_index <= 0;
+                        resolve_pass <= 0;
+                    end
+                end else begin
+                    resolve_index <= resolve_index + 1;
+                end
+            end
+
+            STORE_IN_ARRS: begin
+                second_pass_labels[equiv_table[resolve_index]] <= 1;
+                areas[equiv_table[resolve_index]] <= area_table[equiv_table[resolve_index]];
+                x_sums[equiv_table[resolve_index]] <= sum_x_table[equiv_table[resolve_index]];
+                y_sums[equiv_table[resolve_index]] <= sum_y_table[equiv_table[resolve_index]];
+                if (resolve_index == curr_label - 1) begin
+                    resolve_index <= 0;
+                    resolve_pass <= resolve_pass + 1;
+                    if (resolve_pass == max_passes) begin
+                        state <= PRUNE;
+                        prune_iter <= 0;
+                        com_div_busy <= 0;
+                        x_div_begin <= 0;
+                        y_div_begin <= 0;
+                        x_dividend <= 0;
+                        x_divisor <= 0;
+                        y_dividend <= 0;
+                        y_divisor <= 0;
+                        largest_areas <= 0;
+                        largest_labels <= 0;
+                        largest_x_coms <= 0;
+                        largest_y_coms <= 0;
+                        largest_smallest <= 0;
+                        largest_smallest_ind <= 0;
                     end
                 end else begin
                     resolve_index <= resolve_index + 1;
@@ -242,7 +285,7 @@ always_ff @(posedge clk_in) begin
             // all largest_ = 0
             PRUNE: begin
                 if(prune_iter > WIDTH*HEIGHT) begin
-                    state <= OUTPUT_FRAMES;
+                    state <= TL_FRAME;
                     x_tl <= 0;
                     y_tl <= 0;
                     label_tl <= 0;
@@ -371,6 +414,53 @@ always_ff @(posedge clk_in) begin
     end 
 end
 
+// SETTING OUTPUTS FOR 3 LARGEST BLOBS
+// CRITICAL FOR TL_FRAME
+always_comb begin
+    if(rst_in) begin
+        blob_labels = 0;
+        area_out = 0;
+        com_x_out = 0;
+        com_y_out = 0;
+        curr_pix_label = 0;
+        curr_pix_valid = 0;
+    end else begin
+        blob_labels = largest_labels;
+        area_out = largest_areas;
+        com_x_out = largest_x_coms;
+        com_y_out = largest_y_coms;
+        curr_pix_label = label_tl;
+        curr_pix_valid = valid_label_tl;
+    end
+end
+
+
+divider #(.WIDTH(24)) div_x (
+        .clk_in(clk_in),
+        .rst_in(rst_in),
+        .dividend_in(x_dividend),
+        .divisor_in(x_divisor),
+        .data_valid_in(x_div_begin),
+        .quotient_out(x_quotient),
+        .remainder_out(),
+        .data_valid_out(x_div_out_valid),
+        .error_out(),
+        .busy_out()
+    );
+divider #(.WIDTH(24)) div_y (
+        .clk_in(clk_in),
+        .rst_in(rst_in),
+        .dividend_in(y_dividend),
+        .divisor_in(y_divisor),
+        .data_valid_in(y_div_begin),
+        .quotient_out(y_quotient),
+        .remainder_out(),
+        .data_valid_out(y_div_out_valid),
+        .error_out(),
+        .busy_out()
+    );
+
+
 
 localparam FB_DEPTH = WIDTH*HEIGHT;
 localparam FB_SIZE = $clog2(FB_DEPTH);
@@ -414,51 +504,11 @@ always_comb begin
         n_pixel_label = (curr_y != 0)? n_pixel_temp_label : 0;                       
         ne_pixel_label = (curr_x != WIDTH-1 && curr_y != 0)? ne_pixel_temp_label : 0;
         w_pixel_label = (curr_x != 0)? w_pixel_temp_label : 0; 
-
+    end else if(state == TL_FRAME) begin
+        addra21 = x_tl + y_tl*WIDTH; // read label from center & pull corresponding value
+        label_tl = equiv_table[fb_pixel_label]; // TODO: MAKE SURE THIS IS THE CORRECT OUTPUT & ALL THIS IS INTEGRATED CORRECTLY
     end
 end
-
-// SETTING OUTPUTS FOR 3 LARGEST BLOBS
-// CRITICAL FOR TL_FRAME
-always_comb begin
-    if(rst_in) begin
-        blob_labels = 0;
-        area_out = 0;
-        com_x_out = 0;
-        com_y_out = 0;
-    end else begin
-        blob_labels = largest_labels;
-        area_out = largest_areas;
-        com_x_out = largest_x_coms;
-        com_y_out = largest_y_coms;
-    end
-end
-
-
-divider #(.WIDTH(24)) div_x (
-        .clk_in(clk_in),
-        .rst_in(rst_in),
-        .dividend_in(x_dividend),
-        .divisor_in(x_divisor),
-        .data_valid_in(x_div_begin),
-        .quotient_out(x_quotient),
-        .remainder_out(),
-        .data_valid_out(x_div_out_valid),
-        .error_out(),
-        .busy_out()
-    );
-divider #(.WIDTH(24)) div_y (
-        .clk_in(clk_in),
-        .rst_in(rst_in),
-        .dividend_in(y_dividend),
-        .divisor_in(y_divisor),
-        .data_valid_in(y_div_begin),
-        .quotient_out(y_quotient),
-        .remainder_out(),
-        .data_valid_out(y_div_out_valid),
-        .error_out(),
-        .busy_out()
-    );
 
 xilinx_true_dual_port_read_first_2_clock_ram
     #(.RAM_WIDTH(1),
