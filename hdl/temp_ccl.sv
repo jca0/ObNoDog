@@ -25,16 +25,20 @@ enum {IDLE, STORE_FRAME, FIRST_PASS, SECOND_PASS, OUTPUT} state;
 
 logic [WIDTH*HEIGHT-1:0][15:0] first_pass_labels;
 logic [WIDTH*HEIGHT-1:0][15:0] second_pass_labels;
-logic [WIDTH*HEIGHT-1:0][15:0] equiv_table;
+logic [15:0][15:0] equiv_table;
 
 logic w_pixel_mask, nw_pixel_mask, n_pixel_mask, ne_pixel_mask;
 logic [15:0] w_pixel_label, nw_pixel_label, n_pixel_label, ne_pixel_label;
-logic [15:0] w_pixel_temp, nw_pixel_temp, n_pixel_temp, ne_pixel_temp;
+logic w_pixel_temp, nw_pixel_temp, n_pixel_temp, ne_pixel_temp;
+logic [15:0] w_pixel_temp_label, nw_pixel_temp_label, n_pixel_temp_label, ne_pixel_temp_label;
 
 logic [10:0] curr_x;
 logic [9:0] curr_y;
 logic [15:0] curr_label;
 logic [15:0] min_label;
+logic [15:0] label_counter;
+
+logic [1:0] read_wait;
 
 always_ff @(posedge clk_in) begin
     if (rst_in) begin
@@ -42,12 +46,14 @@ always_ff @(posedge clk_in) begin
         first_pass_labels <= 0;
         second_pass_labels <= 0;
         equiv_table <= 0;
+        read_wait <= 0;
         
         busy_out <= 0;
         valid_out <= 0;
         num_blobs <= 0;
         blob_labels <= 0;
         curr_label <= 0;
+        label_counter <= 0;
     end else begin
         case (state) 
             IDLE: begin
@@ -61,7 +67,7 @@ always_ff @(posedge clk_in) begin
 
             STORE_FRAME: begin
                 // stores masked frame in a frame buffer
-                if (x_in == 319 && y_in == 179) begin
+                if (x_in == WIDTH-1 && y_in == HEIGHT-1) begin
                     state <= FIRST_PASS;
                     curr_x <= 0;
                     curr_y <= 0;
@@ -70,6 +76,14 @@ always_ff @(posedge clk_in) begin
 
             FIRST_PASS: begin
                 // reads from masked frame buffer and writes to label frame buffer
+                if (curr_x != WIDTH-1 && curr_y != HEIGHT-1) begin
+                    if (read_wait < 2) begin
+                        read_wait <= read_wait + 1;
+                    end else begin
+                        read_wait <= 0;
+                    end
+                end
+
                 if (fb_pixel_masked) begin
                     min_label <= 16'hFFFF;
                     // find min label if any neighbors are labeled
@@ -128,7 +142,7 @@ localparam FB_DEPTH = WIDTH*HEIGHT;
 localparam FB_SIZE = $clog2(FB_DEPTH);
 logic fb_pixel_masked; // masked pixel coming out of the frame buffer
 logic [FB_SIZE-1:0] addra11, addrb11, addra12, addrb12, addra13; // for the first pass
-
+logic fb_pixel_label; // label of the pixel coming out of the frame buffer
 logic [FB_SIZE-1:0] addra21, addrb21, addra22, addrb22, addra23; // for the second pass
 
 always_comb begin
@@ -160,6 +174,12 @@ always_comb begin
         n_pixel_mask = (curr_y != 0)? n_pixel_temp : 0;                       
         ne_pixel_mask = (curr_x != WIDTH-1 && curr_y != 0)? ne_pixel_temp : 0;
         w_pixel_mask = (curr_x != 0)? w_pixel_temp : 0; 
+
+        nw_pixel_label = (curr_x != 0 && curr_y != 0)? nw_pixel_temp_label : 0;      
+        n_pixel_label = (curr_y != 0)? n_pixel_temp_label : 0;                       
+        ne_pixel_label = (curr_x != WIDTH-1 && curr_y != 0)? ne_pixel_temp_label : 0;
+        w_pixel_label = (curr_x != 0)? w_pixel_temp_label : 0; 
+
     end
 end
 
@@ -172,7 +192,7 @@ xilinx_true_dual_port_read_first_2_clock_ram
     .addra(addra11), //pixels are stored using this math
     .clka(clk_in),
     .wea(valid_in && state == STORE_FRAME),
-    .dina(masked_in),
+    .dina(mask_in),
     .ena(1'b1),
     .douta(w_pixel_temp), //never read from this side
     .rsta(rst_in),
@@ -180,7 +200,7 @@ xilinx_true_dual_port_read_first_2_clock_ram
 
     // PORT B
     .addrb(addrb11),//transformed lookup pixel
-    .dinb(16'b0),
+    .dinb(1'b0),
     .clkb(clk_in),
     .web(1'b0),
     .enb(1'b1),
@@ -198,7 +218,7 @@ xilinx_true_dual_port_read_first_2_clock_ram
     .addra(addra12), //pixels are stored using this math
     .clka(clk_in),
     .wea(valid_in && state == STORE_FRAME),
-    .dina(masked_in),
+    .dina(mask_in),
     .ena(1'b1),
     .douta(n_pixel_temp), //never read from this side
     .rsta(rst_in),
@@ -206,7 +226,7 @@ xilinx_true_dual_port_read_first_2_clock_ram
 
     // PORT B
     .addrb(addrb12),//transformed lookup pixel
-    .dinb(16'b0),
+    .dinb(1'b0),
     .clkb(clk_in),
     .web(1'b0),
     .enb(1'b1),
@@ -224,7 +244,7 @@ xilinx_true_dual_port_read_first_2_clock_ram
     .addra(addra13), //pixels are stored using this math
     .clka(clk_in),
     .wea(valid_in && state == STORE_FRAME),
-    .dina(masked_in),
+    .dina(mask_in),
     .ena(1'b1),
     .douta(fb_pixel_masked), //never read from this side
     .rsta(rst_in),
@@ -232,7 +252,7 @@ xilinx_true_dual_port_read_first_2_clock_ram
 
     // PORT B
     .addrb(),//transformed lookup pixel
-    .dinb(16'b0),
+    .dinb(1'b0),
     .clkb(clk_in),
     .web(1'b0),
     .enb(1'b1),
@@ -241,71 +261,71 @@ xilinx_true_dual_port_read_first_2_clock_ram
     .regceb(1'b1)
     );
     
-// CHANGE THIS
+    
 xilinx_true_dual_port_read_first_2_clock_ram
-    #(.RAM_WIDTH(1),
+    #(.RAM_WIDTH(16),
     .RAM_DEPTH(FB_DEPTH))
     fb1_labels
     (
     // PORT A
-    .addra(addra), //pixels are stored using this math
+    .addra(addra21), //pixels are stored using this math
     .clka(clk_in),
     .wea(valid_in && state == STORE_FRAME),
     .dina(curr_label),
     .ena(1'b1),
-    .douta(w_pixel_temp), //never read from this side
+    .douta(w_pixel_temp_label), //never read from this side
     .rsta(rst_in),
     .regcea(1'b1),
 
     // PORT B
-    .addrb(addrb),//transformed lookup pixel
+    .addrb(addrb21),//transformed lookup pixel
     .dinb(16'b0),
     .clkb(clk_in),
     .web(1'b0),
     .enb(1'b1),
-    .doutb(nw_pixel_temp),
+    .doutb(nw_pixel_temp_label),
     .rstb(rst_in),
     .regceb(1'b1)
     );
 
 xilinx_true_dual_port_read_first_2_clock_ram
-    #(.RAM_WIDTH(1),
+    #(.RAM_WIDTH(16),
     .RAM_DEPTH(FB_DEPTH))
     fb2_labels
     (
     // PORT A
-    .addra(addra_2), //pixels are stored using this math
+    .addra(addra22), //pixels are stored using this math
     .clka(clk_in),
     .wea(valid_in && state == STORE_FRAME),
     .dina(curr_label),
     .ena(1'b1),
-    .douta(n_pixel_temp), //never read from this side
+    .douta(n_pixel_temp_label), //never read from this side
     .rsta(rst_in),
     .regcea(1'b1),
 
     // PORT B
-    .addrb(addrb_2),//transformed lookup pixel
+    .addrb(addrb22),//transformed lookup pixel
     .dinb(16'b0),
     .clkb(clk_in),
     .web(1'b0),
     .enb(1'b1),
-    .doutb(ne_pixel_temp),
+    .doutb(ne_pixel_temp_label),
     .rstb(rst_in),
     .regceb(1'b1)
     );
 
 xilinx_true_dual_port_read_first_2_clock_ram
-    #(.RAM_WIDTH(1),
+    #(.RAM_WIDTH(16),
     .RAM_DEPTH(FB_DEPTH))
     fb3_labels
     (
     // PORT A
-    .addra(addra_2), //pixels are stored using this math
+    .addra(addra23), //pixels are stored using this math
     .clka(clk_in),
     .wea(valid_in && state == STORE_FRAME),
     .dina(curr_label),
     .ena(1'b1),
-    .douta(n_pixel_temp), //never read from this side
+    .douta(fb_pixel_label), //never read from this side
     .rsta(rst_in),
     .regcea(1'b1),
 

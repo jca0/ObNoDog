@@ -19,7 +19,7 @@ async def test_a(dut):
     dut._log.info("Holding reset...")
     await FallingEdge(dut.clk_in)
     dut.rst_in.value = 1
-    await ClockCycles(dut.clk_in, 3, rising = False)
+    await ClockCycles(dut.clk_in, 1, rising = False)
     dut.rst_in.value = 0
     dut.valid_in.value = 1
     dut.new_frame_in.value = 1
@@ -71,8 +71,9 @@ def is_runner():
     sys.path.append(str(proj_path / "sim" / "model"))
     sources = [proj_path / "hdl" / "temp_ccl.sv"]
     sources += [proj_path / "hdl" / "divider.sv"]
+    sources += [proj_path / "hdl" / "xilinx_true_dual_port_read_first_2_clock_ram.v"]
     build_test_args = ["-Wall"]
-    parameters = {'HEIGHT': 4, 'WIDTH': 4, 'MAX_LABELS': 3, 'MIN_AREA': 1}
+    parameters = {'HEIGHT': 4, 'WIDTH': 4, 'MIN_AREA': 1}
     sys.path.append(str(proj_path / "sim"))
     runner = get_runner(sim)
     runner.build(
