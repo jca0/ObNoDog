@@ -1,6 +1,6 @@
 <testsuites name="results">
   <testsuite name="all" package="all">
-    <property name="random_seed" value="1733727178" />
-    <testcase name="test_a" classname="test_temp_ccl" file="/Users/jingcao/Desktop/ObNoDog/sim/test_temp_ccl.py" lineno="14" time="0.007463932037353516" sim_time_ns="1185.001" ratio_time="158763.63745940075" />
+    <property name="random_seed" value="1733734850" />
+    <testcase name="test_a" classname="test_temp_ccl" file="/Users/jingcao/Desktop/ObNoDog/sim/test_temp_ccl.py" lineno="14" time="0.007616996765136719" sim_time_ns="1185.001" ratio_time="155573.2576156254" />
   </testsuite>
 </testsuites>

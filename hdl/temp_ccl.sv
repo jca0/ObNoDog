@@ -17,18 +17,28 @@ module temp_ccl #(
 
     output logic         valid_out,       // Valid output signal
     output logic         busy_out,        // Busy output signal
-    output logic [$clog2(WIDTH*HEIGHT):0][15:0]  blob_labels, // Array of distinct blob labels
+    output logic [2:0][15:0]  blob_labels, // Array of distinct blob labels
+    output logic [10:0] x_out,
+    output logic [9:0]  y_out,
+    output logic [2:0][15:0] area_out,       // Array of blob areas
+    output logic [2:0][15:0] com_x_out, // Array of blob centroid x-coordinates
+    output logic [2:0][15:0] com_y_out, // Array of blob centroid y-coordinates
+    output logic [15:0] curr_pix_label,
     output logic [31:0]  num_blobs        // Number of distinct blobs
+
 );
 
-enum {IDLE, STORE_FRAME, FIRST_PASS, RESOLVE_EQUIV, SECOND_PASS, OUTPUT} state;
+enum {IDLE, STORE_FRAME, FIRST_PASS, RESOLVE_EQUIV, PRUNE, SECOND_PASS, OUTPUT} state;
 
-logic [WIDTH*HEIGHT-1:0][15:0] first_pass_labels;
-logic [WIDTH*HEIGHT-1:0][15:0] second_pass_labels;
-logic [15:0][15:0] equiv_table;
+logic [WIDTH*HEIGHT:0][15:0] first_pass_labels;
+logic [WIDTH*HEIGHT:0][15:0] second_pass_labels;
+
+logic [WIDTH*HEIGHT:0][15:0] equiv_table;
 logic [15:0] resolve_index;
 logic [15:0] resolve_pass;
 logic [15:0] max_passes;
+
+logic [WITH*HEIGHT:0][15:0] area_table;
 
 logic w_pixel_mask, nw_pixel_mask, n_pixel_mask, ne_pixel_mask;
 logic [15:0] w_pixel_label, nw_pixel_label, n_pixel_label, ne_pixel_label;
@@ -62,6 +72,7 @@ always_ff @(posedge clk_in) begin
         // initially label maps to itself
         for (int i = 0; i < 16; i=i+1) begin
             equiv_table[i] <= i;
+            area_table[i] <= 0;
         end
 
     end else begin
@@ -115,6 +126,7 @@ always_ff @(posedge clk_in) begin
                             if (min_label == 16'hFFFF) begin
                                 // store label of current pixel in BRAM (ADD CODE)
                                 equiv_table[curr_label] <= curr_label;
+                                area_table[curr_label] <= area_table[curr_label] + 1;
                                 curr_label <= curr_label + 1;
                             end else begin
                                 // store label of current pixel in BRAM (ADD CODE)
@@ -126,6 +138,8 @@ always_ff @(posedge clk_in) begin
                                     equiv_table[n_pixel_label] <= min_label;
                                 if (ne_pixel_mask && ne_pixel_label > 0)
                                     equiv_table[ne_pixel_label] <= min_label;
+
+                                area_table[min_label] <= area_table[min_label] + 1;
                             end
 
                             read_signal <= 1; // read next cycle  
@@ -151,6 +165,8 @@ always_ff @(posedge clk_in) begin
 
             RESOLVE_EQUIV: begin
                 equiv_table[resolve_index] <= equiv_table[equiv_table[resolve_index]];
+                area_table[resolve_index] <= area_table[equiv_table[resolve_index]];
+
                 if (resolve_index == curr_label - 1) begin
                     resolve_index <= 0;
                     resolve_pass <= resolve_pass + 1;
@@ -165,31 +181,20 @@ always_ff @(posedge clk_in) begin
                     resolve_index <= resolve_index + 1;
                 end
             end
-
-            SECOND_PASS: begin
-                // updates the label frame buffer
-                if (bram_wait > 0) begin
-                    bram_wait <= bram_wait - 1;
-                end else begin
-                    bram_wait <= 2;
-                    
-
-                end
-
-            end
-
+            
             OUTPUT: begin
             end
         endcase
     end 
 end
 
+
 localparam FB_DEPTH = WIDTH*HEIGHT;
 localparam FB_SIZE = $clog2(FB_DEPTH);
 logic fb_pixel_masked; // masked pixel coming out of the frame buffer
 logic [FB_SIZE-1:0] addra11, addrb11, addra12, addrb12, addra13; // for the first pass
 logic fb_pixel_label; // label of the pixel coming out of the frame buffer
-logic [FB_SIZE-1:0] addra21, addrb21, addra22, addrb22, addra23; // for the second pass
+logic [FB_SIZE-1:0] addra21, addrb21, addra22, addrb22, addra23, addrb23, addra24, addrb24; // for the second pass
 
 always_comb begin
     if (state == STORE_FRAME) begin
@@ -198,23 +203,24 @@ always_comb begin
         addra12 = addra11;
         addrb12 = addrb11;
         addra13 = addra11;
+    end else if (state == FIRST_PASS) begin
+        // addra13 = curr_x + curr_y * WIDTH; // mask center
 
-        addra21 = curr_x + curr_y * WIDTH;
-        addrb21 = curr_x + curr_y * WIDTH;
-        addra22 = addra21;
-        addrb22 = addrb21;
-        addra23 = addra21;
-
-    end else begin
         addra11 = (curr_x != 0 && curr_y != 0)? (curr_x-1) + (curr_y-1)*WIDTH : 0;                  // nw
         addrb11 = (curr_y != 0)? (curr_x) + (curr_y-1)*WIDTH : 0;                                   // n
         addra12 = (curr_x != WIDTH-1 && curr_y != 0)? (curr_x+1) + (curr_y-1)*WIDTH : 0;          // ne
         addrb12 = (curr_x != 0)? (curr_x-1) + (curr_y)*WIDTH : 0;                                 // w
+        addra13 = curr_x + curr_y*WIDTH;
 
-        addra21 = (curr_x != 0 && curr_y != 0)? (curr_x-1) + (curr_y-1)*WIDTH : 0;                  // nw
-        addrb21 = (curr_y != 0)? (curr_x) + (curr_y-1)*WIDTH : 0;                                   // n
-        addra22 = (curr_x != WIDTH-1 && curr_y != 0)? (curr_x+1) + (curr_y-1)*WIDTH : 0;          // ne
-        addrb22 = (curr_x != 0)? (curr_x-1) + (curr_y)*WIDTH : 0;                                 // w
+        // labels
+        addra21 = curr_x + curr_y*WIDTH;
+        addra22 = curr_x + curr_y*WIDTH;
+        addra23 = curr_x + curr_y*WIDTH;
+        addra24 = curr_x + curr_y*WIDTH;
+        addrb21 = (curr_x != 0 && curr_y != 0)? (curr_x-1) + (curr_y-1)*WIDTH : 0;                  // nw
+        addrb22 = (curr_y != 0)? (curr_x) + (curr_y-1)*WIDTH : 0;                                   // n
+        addrb23 = (curr_x != WIDTH-1 && curr_y != 0)? (curr_x+1) + (curr_y-1)*WIDTH : 0;          // ne
+        addrb24 = (curr_x != 0)? (curr_x-1) + (curr_y)*WIDTH : 0;                                 // w
 
         nw_pixel_mask = (curr_x != 0 && curr_y != 0)? nw_pixel_temp : 0;      
         n_pixel_mask = (curr_y != 0)? n_pixel_temp : 0;                       
@@ -316,10 +322,10 @@ xilinx_true_dual_port_read_first_2_clock_ram
     // PORT A
     .addra(addra21), //pixels are stored using this math
     .clka(clk_in),
-    .wea(valid_in && state == STORE_FRAME),
-    .dina(curr_label),
+    .wea(state == FIRST_PASS && !read_signal),
+    .dina(curr_label),//curr_label),
     .ena(1'b1),
-    .douta(w_pixel_temp_label), //never read from this side
+    .douta(fb_pixel_label), //never read from this side
     .rsta(rst_in),
     .regcea(1'b1),
 
@@ -342,10 +348,10 @@ xilinx_true_dual_port_read_first_2_clock_ram
     // PORT A
     .addra(addra22), //pixels are stored using this math
     .clka(clk_in),
-    .wea(valid_in && state == STORE_FRAME),
+    .wea(state == FIRST_PASS && !read_signal),
     .dina(curr_label),
     .ena(1'b1),
-    .douta(n_pixel_temp_label), //never read from this side
+    .douta(), //never read from this side
     .rsta(rst_in),
     .regcea(1'b1),
 
@@ -355,7 +361,7 @@ xilinx_true_dual_port_read_first_2_clock_ram
     .clkb(clk_in),
     .web(1'b0),
     .enb(1'b1),
-    .doutb(ne_pixel_temp_label),
+    .doutb(n_pixel_temp_label),
     .rstb(rst_in),
     .regceb(1'b1)
     );
@@ -368,20 +374,46 @@ xilinx_true_dual_port_read_first_2_clock_ram
     // PORT A
     .addra(addra23), //pixels are stored using this math
     .clka(clk_in),
-    .wea(valid_in && state == STORE_FRAME),
+    .wea(state == FIRST_PASS && !read_signal),
     .dina(curr_label),
     .ena(1'b1),
-    .douta(fb_pixel_label), //never read from this side
+    .douta(), //never read from this side
     .rsta(rst_in),
     .regcea(1'b1),
 
     // PORT B
-    .addrb(),//transformed lookup pixel
+    .addrb(addrb23),//transformed lookup pixel
     .dinb(16'b0),
     .clkb(clk_in),
     .web(1'b0),
     .enb(1'b1),
-    .doutb(),
+    .doutb(ne_pixel_temp_label),
+    .rstb(),
+    .regceb(1'b1)
+    );
+
+xilinx_true_dual_port_read_first_2_clock_ram
+    #(.RAM_WIDTH(16),
+    .RAM_DEPTH(FB_DEPTH))
+    fb4_labels
+    (
+    // PORT A
+    .addra(addra24), //pixels are stored using this math
+    .clka(clk_in),
+    .wea(state == FIRST_PASS && !read_signal),
+    .dina(curr_label),
+    .ena(1'b1),
+    .douta(), //never read from this side
+    .rsta(rst_in),
+    .regcea(1'b1),
+
+    // PORT B
+    .addrb(addrb24),//transformed lookup pixel
+    .dinb(16'b0),
+    .clkb(clk_in),
+    .web(1'b0),
+    .enb(1'b1),
+    .doutb(w_pixel_temp_label),
     .rstb(),
     .regceb(1'b1)
     );
