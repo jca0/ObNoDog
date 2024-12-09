@@ -1,8 +1,8 @@
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 ---------------------------------------------------------------------------------------------------------------------------------------------
-| Tool Version : Vivado v.2024.1 (win64) Build 5076996 Wed May 22 18:37:14 MDT 2024
-| Date         : Wed Nov 13 00:11:30 2024
-| Host         : NickAsusRogSrix running 64-bit major release  (build 9200)
+| Tool Version : Vivado v.2024.1 (lin64) Build 5076996 Wed May 22 18:36:09 MDT 2024
+| Date         : Thu Nov 28 09:22:41 2024
+| Host         : eecs-digital-07 running 64-bit Ubuntu 24.04.1 LTS
 | Command      : report_timing -file obj/post_place_timing.rpt
 | Design       : top_level
 | Device       : 7s50-csga324
@@ -12,20 +12,20 @@ Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanc
 
 Timing Report
 
-Slack (MET) :             0.535ns  (required time - arrival time)
-  Source:                 crw/sccb_c/delay_reg_reg[13]/C
-                            (rising edge-triggered cell FDRE clocked by clk_camera_cw_fast  {rise@0.000ns fall@2.500ns period=5.000ns})
-  Destination:            crw/sccb_c/delay_reg_reg[4]/CE
+Slack (MET) :             0.553ns  (required time - arrival time)
+  Source:                 registers/BRAM_reg/CLKARDCLK
+                            (rising edge-triggered cell RAMB18E1 clocked by clk_camera_cw_fast  {rise@0.000ns fall@2.500ns period=5.000ns})
+  Destination:            crw/FSM_onehot_state_reg[5]/D
                             (rising edge-triggered cell FDRE clocked by clk_camera_cw_fast  {rise@0.000ns fall@2.500ns period=5.000ns})
   Path Group:             clk_camera_cw_fast
   Path Type:              Setup (Max at Slow Process Corner)
   Requirement:            5.000ns  (clk_camera_cw_fast rise@5.000ns - clk_camera_cw_fast rise@0.000ns)
-  Data Path Delay:        4.166ns  (logic 1.242ns (29.813%)  route 2.924ns (70.187%))
-  Logic Levels:           4  (LUT4=1 LUT6=3)
-  Clock Path Skew:        -0.027ns (DCD - SCD + CPR)
-    Destination Clock Delay (DCD):    -2.063ns = ( 2.937 - 5.000 ) 
-    Source Clock Delay      (SCD):    -2.457ns
-    Clock Pessimism Removal (CPR):    -0.420ns
+  Data Path Delay:        4.439ns  (logic 1.527ns (34.400%)  route 2.912ns (65.600%))
+  Logic Levels:           5  (LUT4=2 LUT5=1 LUT6=2)
+  Clock Path Skew:        -0.016ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    -1.893ns = ( 3.107 - 5.000 ) 
+    Source Clock Delay      (SCD):    -2.303ns
+    Clock Pessimism Removal (CPR):    -0.426ns
   Clock Uncertainty:      0.067ns  ((TSJ^2 + DJ^2)^1/2) / 2 + PE
     Total System Jitter     (TSJ):    0.071ns
     Discrete Jitter          (DJ):    0.113ns
@@ -43,20 +43,23 @@ Slack (MET) :             0.535ns  (required time - arrival time)
                                                      -8.525    -5.832 r  wizard_migcam/plle2_adv_inst/CLKOUT2
                          net (fo=1, estimated)        1.660    -4.172    wizard_migcam/clk_camera_cw_fast
     BUFGCTRL_X0Y3        BUFG (Prop_bufg_I_O)         0.096    -4.076 r  wizard_migcam/clkout3_buf/O
-                         net (fo=226, estimated)      1.619    -2.457    crw/sccb_c/clk_camera
-    SLICE_X2Y85          FDRE                                         r  crw/sccb_c/delay_reg_reg[13]/C
+                         net (fo=226, estimated)      1.772    -2.303    registers/clk_camera
+    RAMB18_X0Y52         RAMB18E1                                     r  registers/BRAM_reg/CLKARDCLK
   -------------------------------------------------------------------    -------------------
-    SLICE_X2Y85          FDRE (Prop_fdre_C_Q)         0.518    -1.939 r  crw/sccb_c/delay_reg_reg[13]/Q
-                         net (fo=3, estimated)        0.874    -1.065    crw/sccb_c/delay_reg[13]
-    SLICE_X2Y83          LUT4 (Prop_lut4_I3_O)        0.148    -0.917 r  crw/sccb_c/FSM_sequential_phy_state_reg[3]_i_6/O
-                         net (fo=1, estimated)        0.455    -0.462    crw/sccb_c/FSM_sequential_phy_state_reg[3]_i_6_n_2
-    SLICE_X2Y83          LUT6 (Prop_lut6_I0_O)        0.328    -0.134 r  crw/sccb_c/FSM_sequential_phy_state_reg[3]_i_3/O
-                         net (fo=20, estimated)       0.355     0.221    crw/sccb_c/FSM_sequential_phy_state_reg[3]_i_3_n_2
-    SLICE_X3Y85          LUT6 (Prop_lut6_I0_O)        0.124     0.345 r  crw/sccb_c/delay_reg[16]_i_3/O
-                         net (fo=1, estimated)        0.569     0.914    crw/sccb_c/delay_reg[16]_i_3_n_2
-    SLICE_X2Y86          LUT6 (Prop_lut6_I1_O)        0.124     1.038 r  crw/sccb_c/delay_reg[16]_i_1/O
-                         net (fo=17, estimated)       0.671     1.709    crw/sccb_c/delay_reg[16]_i_1_n_2
-    SLICE_X3Y83          FDRE                                         r  crw/sccb_c/delay_reg_reg[4]/CE
+    RAMB18_X0Y52         RAMB18E1 (Prop_ramb18e1_CLKARDCLK_DOADO[15])
+                                                      0.882    -1.421 r  registers/BRAM_reg/DOADO[15]
+                         net (fo=2, estimated)        1.155    -0.266    registers/bram_dout[15]
+    SLICE_X9Y131         LUT4 (Prop_lut4_I0_O)        0.124    -0.142 r  registers/FSM_onehot_state[5]_i_7/O
+                         net (fo=1, estimated)        0.295     0.153    registers/FSM_onehot_state[5]_i_7_n_3
+    SLICE_X11Y131        LUT5 (Prop_lut5_I4_O)        0.124     0.277 r  registers/FSM_onehot_state[5]_i_6/O
+                         net (fo=1, estimated)        0.295     0.572    registers/FSM_onehot_state[5]_i_6_n_3
+    SLICE_X9Y131         LUT6 (Prop_lut6_I5_O)        0.124     0.696 r  registers/FSM_onehot_state[5]_i_4/O
+                         net (fo=1, estimated)        0.154     0.850    registers/FSM_onehot_state[5]_i_4_n_3
+    SLICE_X9Y131         LUT6 (Prop_lut6_I5_O)        0.124     0.974 f  registers/FSM_onehot_state[5]_i_2/O
+                         net (fo=2, estimated)        1.013     1.987    crw/sccb_c/FSM_onehot_state_reg[1]_0
+    SLICE_X4Y129         LUT4 (Prop_lut4_I0_O)        0.149     2.136 r  crw/sccb_c/FSM_onehot_state[5]_i_1/O
+                         net (fo=1, routed)           0.000     2.136    crw/state__0[5]
+    SLICE_X4Y129         FDRE                                         r  crw/FSM_onehot_state_reg[5]/D
   -------------------------------------------------------------------    -------------------
 
                          (clock clk_camera_cw_fast rise edge)
@@ -69,16 +72,16 @@ Slack (MET) :             0.535ns  (required time - arrival time)
                                                      -7.790    -0.229 r  wizard_migcam/plle2_adv_inst/CLKOUT2
                          net (fo=1, estimated)        1.577     1.348    wizard_migcam/clk_camera_cw_fast
     BUFGCTRL_X0Y3        BUFG (Prop_bufg_I_O)         0.091     1.439 r  wizard_migcam/clkout3_buf/O
-                         net (fo=226, estimated)      1.498     2.937    crw/sccb_c/clk_camera
-    SLICE_X3Y83          FDRE                                         r  crw/sccb_c/delay_reg_reg[4]/C
-                         clock pessimism             -0.420     2.516    
-                         clock uncertainty           -0.067     2.450    
-    SLICE_X3Y83          FDRE (Setup_fdre_C_CE)      -0.205     2.245    crw/sccb_c/delay_reg_reg[4]
+                         net (fo=226, estimated)      1.668     3.107    crw/clk_camera
+    SLICE_X4Y129         FDRE                                         r  crw/FSM_onehot_state_reg[5]/C
+                         clock pessimism             -0.426     2.680    
+                         clock uncertainty           -0.067     2.614    
+    SLICE_X4Y129         FDRE (Setup_fdre_C_D)        0.075     2.689    crw/FSM_onehot_state_reg[5]
   -------------------------------------------------------------------
-                         required time                          2.245    
-                         arrival time                          -1.709    
+                         required time                          2.689    
+                         arrival time                          -2.136    
   -------------------------------------------------------------------
-                         slack                                  0.535    
+                         slack                                  0.553    
 
 
 

@@ -481,7 +481,10 @@ module top_level
 
   logic [15:0] perimeter;
   logic [15:0] perimeter_temp;
+<<<<<<< HEAD
   logic [19:0] area_raw;
+=======
+>>>>>>> origin/main
   logic [15:0] area;
   logic [15:0] circularity;
   logic [1:0] shape;
