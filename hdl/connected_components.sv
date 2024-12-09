@@ -23,7 +23,8 @@ module temp_ccl #(
     output logic [2:0][15:0] area_out,       // Array of blob areas
     output logic [2:0][15:0] com_x_out, // Array of blob centroid x-coordinates
     output logic [2:0][15:0] com_y_out, // Array of blob centroid y-coordinates
-    output logic [15:0] curr_pix_label
+    output logic [15:0] curr_pix_label,
+    output logic curr_pix_valid
 );
 
 enum {IDLE, STORE_FRAME, FIRST_PASS, RESOLVE_EQUIV, PRUNE, SECOND_PASS, OUTPUT} state;
@@ -444,12 +445,14 @@ always_comb begin
         com_x_out = 0;
         com_y_out = 0;
         curr_pix_label = 0;
+        curr_pix_valid = 0;
     end else begin
         blob_labels = largest_labels;
         area_out = largest_areas;
         com_x_out = largest_x_coms;
         com_y_out = largest_y_coms;
         curr_pix_label = label_tl;
+        curr_pix_valid = valid_label_tl;
     end
 end
 
