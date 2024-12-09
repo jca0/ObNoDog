@@ -21,11 +21,14 @@ module temp_ccl #(
     output logic [31:0]  num_blobs        // Number of distinct blobs
 );
 
-enum {IDLE, STORE_FRAME, FIRST_PASS, SECOND_PASS, OUTPUT} state;
+enum {IDLE, STORE_FRAME, FIRST_PASS, RESOLVE_EQUIV, SECOND_PASS, OUTPUT} state;
 
 logic [WIDTH*HEIGHT-1:0][15:0] first_pass_labels;
 logic [WIDTH*HEIGHT-1:0][15:0] second_pass_labels;
 logic [15:0][15:0] equiv_table;
+logic [15:0] resolve_index;
+logic [15:0] resolve_pass;
+logic [15:0] max_passes;
 
 logic w_pixel_mask, nw_pixel_mask, n_pixel_mask, ne_pixel_mask;
 logic [15:0] w_pixel_label, nw_pixel_label, n_pixel_label, ne_pixel_label;
@@ -38,15 +41,16 @@ logic [15:0] curr_label;
 logic [15:0] min_label;
 logic [15:0] label_counter;
 
-logic [1:0] read_wait;
+logic [1:0] bram_wait;
+logic read_signal; // if !read_signal, write to BRAM
 
 always_ff @(posedge clk_in) begin
     if (rst_in) begin
         state <= IDLE;
         first_pass_labels <= 0;
         second_pass_labels <= 0;
-        equiv_table <= 0;
-        read_wait <= 0;
+        bram_wait <= 0;
+        read_signal <= 1;
         
         busy_out <= 0;
         valid_out <= 0;
@@ -54,6 +58,12 @@ always_ff @(posedge clk_in) begin
         blob_labels <= 0;
         curr_label <= 0;
         label_counter <= 0;
+
+        // initially label maps to itself
+        for (int i = 0; i < 16; i=i+1) begin
+            equiv_table[i] <= i;
+        end
+
     end else begin
         case (state) 
             IDLE: begin
@@ -71,64 +81,100 @@ always_ff @(posedge clk_in) begin
                     state <= FIRST_PASS;
                     curr_x <= 0;
                     curr_y <= 0;
+                    curr_label <= 1;
                 end
             end
 
             FIRST_PASS: begin
+                // add areas 
+                // x sums, y sums
                 // reads from masked frame buffer and writes to label frame buffer
-                if (curr_x != WIDTH-1 && curr_y != HEIGHT-1) begin
-                    if (read_wait < 2) begin
-                        read_wait <= read_wait + 1;
+                if (bram_wait > 0) begin
+                    bram_wait <= bram_wait - 1;
+                end else begin
+                    bram_wait <= 2;
+
+                    if (fb_pixel_masked) begin
+                        if (read_signal) begin
+                            min_label <= 16'hFFFF;
+                            // READ FROM BRAM
+                            // find min label if any neighbors are labeled
+                            if (w_pixel_mask && w_pixel_label > 0)  // may need some refactoring
+                                min_label <= w_pixel_label;
+                            if (nw_pixel_mask && nw_pixel_label > 0 && nw_pixel_label < min_label)
+                                min_label <= nw_pixel_label;
+                            if (n_pixel_mask && n_pixel_label > 0 && n_pixel_label < min_label)
+                                min_label <= n_pixel_label;
+                            if (ne_pixel_mask && ne_pixel_label > 0 && ne_pixel_label < min_label)
+                                min_label <= ne_pixel_label;
+                            
+                            read_signal <= 0; // write next cycle
+                        end else begin
+                            // STORE INTO BRAM
+                            // if no neighbors are labeled, assign new label
+                            if (min_label == 16'hFFFF) begin
+                                // store label of current pixel in BRAM (ADD CODE)
+                                equiv_table[curr_label] <= curr_label;
+                                curr_label <= curr_label + 1;
+                            end else begin
+                                // store label of current pixel in BRAM (ADD CODE)
+                                if (w_pixel_mask && w_pixel_label > 0)
+                                    equiv_table[w_pixel_label] <= min_label;
+                                if (nw_pixel_mask && nw_pixel_label > 0)
+                                    equiv_table[nw_pixel_label] <= min_label;
+                                if (n_pixel_mask && n_pixel_label > 0)
+                                    equiv_table[n_pixel_label] <= min_label;
+                                if (ne_pixel_mask && ne_pixel_label > 0)
+                                    equiv_table[ne_pixel_label] <= min_label;
+                            end
+
+                            read_signal <= 1; // read next cycle  
+                        end
+                    end
+
+                    if (curr_x == WIDTH-1) begin
+                        curr_x <= 0;
+                        if (curr_y == HEIGHT-1) begin
+                            state <= RESOLVE_EQUIV;
+                            resolve_index <= 0;
+                            resolve_pass <= 0;
+                            max_passes <= curr_label;
+                            curr_y <= 0;
+                        end else begin
+                            curr_y <= curr_y + 1;
+                        end
                     end else begin
-                        read_wait <= 0;
+                        curr_x <= curr_x + 1;
                     end
                 end
+            end
 
-                if (fb_pixel_masked) begin
-                    min_label <= 16'hFFFF;
-                    // find min label if any neighbors are labeled
-                    if (w_pixel_mask && w_pixel_label > 0) 
-                        min_label <= w_pixel_label;
-                    if (nw_pixel_mask && nw_pixel_label > 0 && nw_pixel_label < min_label)
-                        min_label <= nw_pixel_label;
-                    if (n_pixel_mask && n_pixel_label > 0 && n_pixel_label < min_label)
-                        min_label <= n_pixel_label;
-                    if (ne_pixel_mask && ne_pixel_label > 0 && ne_pixel_label < min_label)
-                        min_label <= ne_pixel_label;
-                    
-                    // if no neighbors are labeled, assign new label
-                    if (min_label == 16'hFFFF) begin
-                        // store label of current pixel in BRAM (ADD CODE)
-                        equiv_table[curr_label] <= curr_label;
-                        curr_label <= curr_label + 1;
-                    end else begin
-                        // store label of current pixel in BRAM (ADD CODE)
-                        if (w_pixel_mask && w_pixel_label > 0)
-                            equiv_table[w_pixel_label] <= min_label;
-                        if (nw_pixel_mask && nw_pixel_label > 0)
-                            equiv_table[nw_pixel_label] <= min_label;
-                        if (n_pixel_mask && n_pixel_label > 0)
-                            equiv_table[n_pixel_label] <= min_label;
-                        if (ne_pixel_mask && ne_pixel_label > 0)
-                            equiv_table[ne_pixel_label] <= min_label;
-                    end
-                end
+            RESOLVE_EQUIV: begin
+                equiv_table[resolve_index] <= equiv_table[equiv_table[resolve_index]];
+                if (resolve_index == curr_label - 1) begin
+                    resolve_index <= 0;
+                    resolve_pass <= resolve_pass + 1;
 
-                if (curr_x == WIDTH-1) begin
-                    curr_x <= 0;
-                    if (curr_y == HEIGHT-1) begin
+                    if (resolve_pass == max_passes) begin
                         state <= SECOND_PASS;
+                        curr_x <= 0;
                         curr_y <= 0;
-                    end else begin
-                        curr_y <= curr_y + 1;
+                        bram_wait <= 0;
                     end
                 end else begin
-                    curr_x <= curr_x + 1;
+                    resolve_index <= resolve_index + 1;
                 end
             end
 
             SECOND_PASS: begin
                 // updates the label frame buffer
+                if (bram_wait > 0) begin
+                    bram_wait <= bram_wait - 1;
+                end else begin
+                    bram_wait <= 2;
+                    
+
+                end
 
             end
 
@@ -261,7 +307,7 @@ xilinx_true_dual_port_read_first_2_clock_ram
     .regceb(1'b1)
     );
     
-    
+
 xilinx_true_dual_port_read_first_2_clock_ram
     #(.RAM_WIDTH(16),
     .RAM_DEPTH(FB_DEPTH))
