@@ -23,9 +23,7 @@ module temp_ccl #(
     output logic [2:0][15:0] area_out,       // Array of blob areas
     output logic [2:0][15:0] com_x_out, // Array of blob centroid x-coordinates
     output logic [2:0][15:0] com_y_out, // Array of blob centroid y-coordinates
-    output logic [15:0] curr_pix_label,
-    output logic [31:0]  num_blobs        // Number of distinct blobs
-
+    output logic [15:0] curr_pix_label
 );
 
 enum {IDLE, STORE_FRAME, FIRST_PASS, RESOLVE_EQUIV, PRUNE, SECOND_PASS, OUTPUT} state;
