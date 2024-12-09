@@ -260,7 +260,7 @@ always_ff @(posedge clk_in) begin
             // all largest_ = 0
             PRUNE: begin
                 if(prune_iter > WIDTH*HEIGHT) begin
-                    state <= OUTPUT_FRAMES;
+                    state <= TL_FRAME;
                     x_tl <= 0;
                     y_tl <= 0;
                     label_tl <= 0;
