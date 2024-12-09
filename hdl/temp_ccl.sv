@@ -39,6 +39,7 @@ logic [15:0] resolve_pass;
 logic [15:0] max_passes;
 
 logic [WITH*HEIGHT:0][15:0] area_table;
+logic [WIDTH*HEIGHT:0][31:0] sum_x_table, sum_y_table; 
 
 logic w_pixel_mask, nw_pixel_mask, n_pixel_mask, ne_pixel_mask;
 logic [15:0] w_pixel_label, nw_pixel_label, n_pixel_label, ne_pixel_label;
@@ -73,6 +74,8 @@ always_ff @(posedge clk_in) begin
         for (int i = 0; i < 16; i=i+1) begin
             equiv_table[i] <= i;
             area_table[i] <= 0;
+            sum_x_table[i] <= 0;
+            sum_y_table[i] <= 0;
         end
 
     end else begin
@@ -127,6 +130,8 @@ always_ff @(posedge clk_in) begin
                                 // store label of current pixel in BRAM (ADD CODE)
                                 equiv_table[curr_label] <= curr_label;
                                 area_table[curr_label] <= area_table[curr_label] + 1;
+                                sum_x_table[curr_label] <= sum_x_table[curr_label] + curr_x;
+                                sum_y_table[curr_label] <= sum_y_table[curr_label] + curr_y;
                                 curr_label <= curr_label + 1;
                             end else begin
                                 // store label of current pixel in BRAM (ADD CODE)
@@ -140,6 +145,8 @@ always_ff @(posedge clk_in) begin
                                     equiv_table[ne_pixel_label] <= min_label;
 
                                 area_table[min_label] <= area_table[min_label] + 1;
+                                sum_x_table[min_label] <= sum_x_table[min_label] + curr_x;
+                                sum_y_table[min_label] <= sum_y_table[min_label] + curr_y;
                             end
 
                             read_signal <= 1; // read next cycle  
@@ -166,6 +173,8 @@ always_ff @(posedge clk_in) begin
             RESOLVE_EQUIV: begin
                 equiv_table[resolve_index] <= equiv_table[equiv_table[resolve_index]];
                 area_table[resolve_index] <= area_table[equiv_table[resolve_index]];
+                sum_x_table[resolve_index] <= sum_x_table[equiv_table[resolve_index]];
+                sum_y_table[resolve_index] <= sum_y_table[equiv_table[resolve_index]];
 
                 if (resolve_index == curr_label - 1) begin
                     resolve_index <= 0;
