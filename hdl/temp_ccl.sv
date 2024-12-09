@@ -4,7 +4,7 @@
 module temp_ccl #(
     parameter WIDTH = 320,        // Horizontal resolution
     parameter HEIGHT = 180,        // Vertical resolution
-    // parameter MAX_LABELS = 10, // Maximum number of labels supported
+    parameter LABEL_WIDTH = 16,
     parameter MIN_AREA = 50      // Minimum blob size to retain
 )(
     input  logic         clk_in,          
@@ -38,7 +38,7 @@ logic [15:0] resolve_index;
 logic [15:0] resolve_pass;
 logic [15:0] max_passes;
 
-logic [WITH*HEIGHT:0][15:0] area_table;
+logic [WIDTH*HEIGHT:0][15:0] area_table;
 logic [WIDTH*HEIGHT:0][31:0] sum_x_table, sum_y_table; 
 
 logic w_pixel_mask, nw_pixel_mask, n_pixel_mask, ne_pixel_mask;
@@ -324,7 +324,7 @@ xilinx_true_dual_port_read_first_2_clock_ram
     
 
 xilinx_true_dual_port_read_first_2_clock_ram
-    #(.RAM_WIDTH(16),
+    #(.RAM_WIDTH(LABEL_WIDTH),
     .RAM_DEPTH(FB_DEPTH))
     fb1_labels
     (
@@ -350,7 +350,7 @@ xilinx_true_dual_port_read_first_2_clock_ram
     );
 
 xilinx_true_dual_port_read_first_2_clock_ram
-    #(.RAM_WIDTH(16),
+    #(.RAM_WIDTH(LABEL_WIDTH),
     .RAM_DEPTH(FB_DEPTH))
     fb2_labels
     (
@@ -376,7 +376,7 @@ xilinx_true_dual_port_read_first_2_clock_ram
     );
 
 xilinx_true_dual_port_read_first_2_clock_ram
-    #(.RAM_WIDTH(16),
+    #(.RAM_WIDTH(LABEL_WIDTH),
     .RAM_DEPTH(FB_DEPTH))
     fb3_labels
     (
@@ -402,7 +402,7 @@ xilinx_true_dual_port_read_first_2_clock_ram
     );
 
 xilinx_true_dual_port_read_first_2_clock_ram
-    #(.RAM_WIDTH(16),
+    #(.RAM_WIDTH(LABEL_WIDTH),
     .RAM_DEPTH(FB_DEPTH))
     fb4_labels
     (
