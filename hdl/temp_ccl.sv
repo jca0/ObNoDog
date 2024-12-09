@@ -17,7 +17,7 @@ module temp_ccl #(
 
     output logic         valid_out,       // Valid output signal
     output logic         busy_out,        // Busy output signal
-    output logic [$clog2(WIDTH*HEIGHT):0][15:0]  blob_labels, // Array of distinct blob labels
+    // output logic [$clog2(WIDTH*HEIGHT):0][15:0]  blob_labels, // Array of distinct blob labels
     output logic [31:0]  num_blobs,        // Number of distinct blobs
     output logic [2:0][15:0] blob_labels,
     output logic [2:0][$clog2(WIDTH)-1] com_x_out,
@@ -25,7 +25,7 @@ module temp_ccl #(
     output logic [2:0][15:0] area_out
 );
 
-enum {IDLE, STORE_FRAME, FIRST_PASS, SECOND_PASS, PRUNE, OUTPUT} state;
+enum {IDLE, STORE_FRAME, FIRST_PASS, SECOND_PASS, PRUNE, TL_FRAME, OUTPUT} state;
 
 logic [WIDTH*HEIGHT:0] first_pass_labels;
 logic [WIDTH*HEIGHT:0] second_pass_labels;
@@ -62,6 +62,14 @@ logic [WIDTH*HEIGHT:0][$clog2(WIDTH)-1:0] x_coms;   // x coms of all blobs
 logic [WIDTH*HEIGHT:0][$clog2(HEIGHT)-1:0] y_coms;  // y coms of all blobs
 // ===== PRUNING =====
 
+
+// ===== TL_FRAME =====
+logic [$clog2(WIDTH)-1:0] x_tl;
+logic [$clog2(HEIGHT)-1:0] y_tl;
+logic [WIDTH*HEIGHT:0] label_tl;
+logic [1:0] read_wait_tl;
+logic valid_label_tl;
+// ===== TL_FRAME =====
 
 
 logic w_pixel_mask, nw_pixel_mask, n_pixel_mask, ne_pixel_mask;
@@ -167,8 +175,12 @@ always_ff @(posedge clk_in) begin
             // all largest_ = 0
             PRUNE: begin
                 if(prune_iter > WIDTH*HEIGHT) begin
-                    // TODO: MOVE ONTO NEXT STATE
-
+                    state <= OUTPUT_FRAMES;
+                    x_tl <= 0;
+                    y_tl <= 0;
+                    label_tl <= 0;
+                    read_wait_tl <= 0;
+                    valid_label_tl <= 0;
                 end else begin
 
                     // if we're not dividing currently
@@ -255,18 +267,47 @@ always_ff @(posedge clk_in) begin
 
             end
 
-            // TODO: logic to output ready for a cycle
             // TODO: logic to scan through and write to BRAMs in top level
             // TODO: combinational logic to set largest_ to the outputs
 
-            OUTPUT: begin
+            TL_FRAME: begin
+                if(read_wait_tl == 2) begin
+                    valid_label_tl <= 1;
+                    read_wait_tl <= 0;
+                    if(x_tl == WIDTH-1) begin
+                        x_tl <= 0;
+                        if(y_tl == HEIGHT-1) begin
+                            y_tl <= 0;
+                            state <= OUTPUT; // TERMINATE once we hit the end
+                        end else begin
+                            y_tl <= y_tl + 1;
+                        end
+                    end else begin
+                        x_tl <= x_tl + 1;
+                    end
+                end else begin
+                    valid_label_tl <= 0;
+                    read_wait_tl <= read_wait_tl + 1;
+                end
+                // read through BRAM based on the value
+
             end
+
+            // TODO: MAKE SURE THERE ARENT ANY OTHER VALUES WE NEED
+            OUTPUT: begin
+                valid_label_tl <= 0;
+                valid_out <= 1;
+                state <= IDLE;
+                busy_out <= 0;
+            end
+
         endcase
     end 
 end
 
 
 // SETTING OUTPUTS FOR 3 LARGEST BLOBS
+// CRITICAL FOR TL_FRAME
 always_comb begin
     if(rst_in) begin
         blob_labels = 0;
@@ -349,6 +390,11 @@ always_comb begin
         n_pixel_mask = (curr_y != 0)? n_pixel_temp : 0;                       
         ne_pixel_mask = (curr_x != WIDTH-1 && curr_y != 0)? ne_pixel_temp : 0;
         w_pixel_mask = (curr_x != 0)? w_pixel_temp : 0; 
+    
+    // NEED FOR TOP LEVEL OUTPUT
+    end else if(state == TL_FRAME) begin
+        addra21 = x_tl + y_tl*WIDTH; // read label from center & pull corresponding value
+        label_tl = equiv_table[fb_pixel_label]; // TODO: MAKE SURE THIS IS THE CORRECT OUTPUT & ALL THIS IS INTEGRATED CORRECTLY
     end
 end
 
