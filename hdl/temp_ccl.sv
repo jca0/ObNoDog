@@ -18,7 +18,11 @@ module temp_ccl #(
     output logic         valid_out,       // Valid output signal
     output logic         busy_out,        // Busy output signal
     output logic [$clog2(WIDTH*HEIGHT):0][15:0]  blob_labels, // Array of distinct blob labels
-    output logic [31:0]  num_blobs        // Number of distinct blobs
+    output logic [31:0]  num_blobs,        // Number of distinct blobs
+    output logic [2:0][15:0] blob_labels,
+    output logic [2:0][$clog2(WIDTH)-1] com_x_out,
+    output logic [2:0][$clog2(HEIGHT)-1] com_y_out,
+    output logic [2:0][15:0] area_out
 );
 
 enum {IDLE, STORE_FRAME, FIRST_PASS, SECOND_PASS, PRUNE, OUTPUT} state;
@@ -26,27 +30,37 @@ enum {IDLE, STORE_FRAME, FIRST_PASS, SECOND_PASS, PRUNE, OUTPUT} state;
 logic [WIDTH*HEIGHT:0] first_pass_labels;
 logic [WIDTH*HEIGHT:0] second_pass_labels;
 logic [WIDTH*HEIGHT:0][15:0] equiv_table;
-logic [WIDTH*HEIGHT:0][23:0] x_sums;
-logic [WIDTH*HEIGHT:0][23:0] y_sums;
 
-logic [WIDTH*HEIGHT:0][15:0] areas;
-logic [$clog2(WIDTH*HEIGHT):0] prune_iter;
-logic com_div_busy;
-logic x_div_begin;
-logic y_div_begin;
-logic [23:0] x_dividend;
-logic [23:0] y_dividend;
+
+// ===== PRUNING =====
+logic [WIDTH*HEIGHT:0][23:0] x_sums;                // x sums of positions of all blobs
+logic [WIDTH*HEIGHT:0][23:0] y_sums;                // y sums of positions of all blobs
+logic [2:0][15:0] largest_areas;                    // areas of 3 largest blobs
+logic [2:0][WIDTH*HEIGHT:0] largest_labels;         // labels of 3 largest blobs
+logic [2:0][$clog2(WIDTH)-1:0] largest_x_coms;      // x coms of 3 largest blobs
+logic [2:0][$clog2(HEIGHT)-1:0] largest_y_coms;     // y coms of 3 largest blobs
+logic largest_smallest;                             // is the most recently looked at label greater than some value in our array of largest values
+logic [2:0] largest_smallest_ind;                   // index of replaced value
+
+
+logic [WIDTH*HEIGHT:0][15:0] areas;                 // areas of all blobs
+logic [$clog2(WIDTH*HEIGHT):0] prune_iter;          // label to check for pruning
+logic com_div_busy;                                 // are we currently doing a division in pruning
+logic x_div_begin;                                  // is the x divider ready to begin
+logic y_div_begin;                                  // is the y divider ready to begin
+logic [23:0] x_dividend;                            // inputs into dividerrs
+logic [23:0] y_dividend;                                
 logic [15:0] x_divisor;
 logic [15:0] y_divisor;
-logic [$clog2(WIDTH)-1:0] x_quotient;
+logic [$clog2(WIDTH)-1:0] x_quotient;               // outputs of dividers
 logic [$clog2(HEIGHT)-1:0] y_quotient;
-logic x_div_out_valid;
+logic x_div_out_valid;                              // valid out signal
 logic y_div_out_valid;
-logic x_div_out_waiting;
+logic x_div_out_waiting;                            // have we recieved a valid out signal in the past and we're waiting on the other one
 logic y_div_out_waiting;
-logic [WIDTH*HEIGHT:0][$clog2(WIDTH)-1:0] x_coms;
-logic [WIDTH*HEIGHT:0][$clog2(HEIGHT)-1:0] y_coms;
-
+logic [WIDTH*HEIGHT:0][$clog2(WIDTH)-1:0] x_coms;   // x coms of all blobs
+logic [WIDTH*HEIGHT:0][$clog2(HEIGHT)-1:0] y_coms;  // y coms of all blobs
+// ===== PRUNING =====
 
 
 
@@ -150,10 +164,11 @@ always_ff @(posedge clk_in) begin
             // x_div_begin = 0
             // y_div_begin = 0
             // all dividends and divisors = 0
+            // all largest_ = 0
             PRUNE: begin
                 if(prune_iter > WIDTH*HEIGHT) begin
                     // TODO: MOVE ONTO NEXT STATE
-                    
+
                 end else begin
 
                     // if we're not dividing currently
@@ -178,6 +193,28 @@ always_ff @(posedge clk_in) begin
                                 y_div_begin <= 1;
                                 x_div_out_waiting <= 0;                 // also keep track that we're still waiting for a divider output
                                 y_div_out_waiting <= 0;
+
+
+                                // keep track of 3 largest values
+                                if(areas[prune_iter] > largest_areas[0] && largest_areas[0] <= largest_areas[1] && largest_areas[0] <= largest_areas[2]) begin
+                                    largest_smallest <= 1;
+                                    largest_smallest_ind <= 0;
+                                    largest_areas[0] <= areas[prune_iter];
+                                    largest_labels[0] <= second_pass_labels[prune_iter];
+
+                                end else if (areas[prune_iter] > largest_areas[1] && largest_areas[1] <= largest_areas[0] && largest_areas[1] <= largest_areas[0]) begin
+                                    largest_smallest <= 1;
+                                    largest_smallest_ind <= 1;
+                                    largest_areas[1] <= areas[prune_iter];
+                                    largest_labels[1] <= second_pass_labels[prune_iter];
+
+                                end else if (areas[prune_iter] > largest_areas[2] && largest_areas[2] <= largest_areas[0] && largest_areas[2] <= largest_areas[1]) begin
+                                    largest_smallest <= 1;
+                                    largest_smallest_ind <= 2;
+                                    largest_areas[2] <= areas[prune_iter];
+                                    largest_labels[2] <= second_pass_labels[prune_iter];
+
+                                end
                             end
                         end else begin
                             prune_iter <= prune_iter + 1;               // if this label is 0, just continue
@@ -190,28 +227,58 @@ always_ff @(posedge clk_in) begin
                         if(x_div_out_valid && !x_div_out_waiting) begin 
                             x_coms[prune_iter] <= x_quotient;           // store the output
                             x_div_out_waiting <= 1;                     // keep track that we have a valid output
+
+                            // if we need to overwrite largest array
+                            if(largest_smallest) begin
+                                largest_x_coms[largest_smallest_ind] <= x_quotient;
+                            end
                         end
 
                         // same thing for y
                         if(y_div_out_valid && !y_div_out_waiting) begin
                             y_coms[prune_iter] <= y_quotient;
                             y_div_out_waiting <= 1; 
+
+                            if(largest_smallest) begin
+                                largest_y_coms[largest_smallest_ind] <= y_quotient;
+                            end
                         end
 
                         // if we have both outputs, we can continue
                         if(x_div_out_waiting && y_div_out_waiting) begin
                             com_div_busy <= 0;                          // brings us back to the main cycle
                             prune_iter <= prune_iter + 1;               // increment the label we're looking at finally
+                            largest_smallest <= 0;
                         end
                     end
                 end
 
             end
 
+            // TODO: logic to output ready for a cycle
+            // TODO: logic to scan through and write to BRAMs in top level
+            // TODO: combinational logic to set largest_ to the outputs
+
             OUTPUT: begin
             end
         endcase
     end 
+end
+
+
+// SETTING OUTPUTS FOR 3 LARGEST BLOBS
+always_comb begin
+    if(rst_in) begin
+        blob_labels = 0;
+        area_out = 0;
+        com_x_out = 0;
+        com_y_out = 0;
+    end else begin
+        blob_labels = largest_labels;
+        area_out = largest_areas;
+        com_x_out = largest_x_coms;
+        com_y_out = largest_y_coms;
+    end
 end
 
 
