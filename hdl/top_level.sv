@@ -483,7 +483,7 @@ module top_level
   logic [15:0] perimeter_temp;
   logic [19:0] area_raw;
   logic [15:0] area;
-  logic [15:0] circularity;
+  logic [7:0] circularity;
   logic [1:0] shape;
   logic both_valid;
   logic ccl_valid;
@@ -562,10 +562,10 @@ module top_level
 
 
   ccl #(
-    parameter WIDTH = 320,        // Horizontal resolution
-    parameter HEIGHT = 180,       // Vertical resolution
-    parameter LABEL_WIDTH = 16,   // Maximum number of labels supported
-    parameter MIN_AREA = 50       // Minimum blob size to retain
+    .WIDTH(320),        // Horizontal resolution
+    .HEIGHT(180),       // Vertical resolution
+    .LABEL_WIDTH(16),   // Maximum number of labels supported
+    .MIN_AREA(50)       // Minimum blob size to retain
   ) my_ccl (
   .clk_in(clk_pixel),    
   .rst_in(sys_rst_pixel),          
@@ -580,7 +580,7 @@ module top_level
   .blob_labels(largest_labels),
   .x_out(ccl_x_out),
   .y_out(ccl_y_out),
-  .area_out(largest_areas)
+  .area_out(largest_areas),
   .com_x_out(largest_x_coms),
   .com_y_out(largest_y_coms),
   .curr_pix_label(ccl_pixel_label),
@@ -594,7 +594,7 @@ module top_level
   always_comb begin
     // area = (area_raw >> 4);
     area = largest_areas[0];
-    x_com_calc = largest_x_coms[0];
+    x_com_calc = largest_x_coms[0]; // TODO: we may want to shift this over by << 2 so that it appears on the screen in the right spot
     y_com_calc = largest_y_coms[0];
     new_com = ccl_valid_out; // just set this because it works with previous code
   end
@@ -643,7 +643,7 @@ module top_level
     .dina(ccl_pixel_label == largest_labels[0]),
     .ena(1'b1),
     .douta(ccl_moore_pixels[0][0]),
-    .rsta(rst_in),
+    .rsta(sys_rst_pixel),
     .regcea(1'b1),
 
     // PORT B
@@ -653,7 +653,7 @@ module top_level
     .web(1'b0),
     .enb(1'b1),
     .doutb(ccl_moore_pixels[0][1]),
-    .rstb(rst_in),
+    .rstb(sys_rst_pixel),
     .regceb(1'b1)
     );
 
@@ -669,7 +669,7 @@ module top_level
     .dina(ccl_pixel_label == largest_labels[0]),
     .ena(1'b1),
     .douta(ccl_moore_pixels[0][2]),
-    .rsta(rst_in),
+    .rsta(sys_rst_pixel),
     .regcea(1'b1),
 
     // PORT B
@@ -679,7 +679,7 @@ module top_level
     .web(1'b0),
     .enb(1'b1),
     .doutb(ccl_moore_pixels[1][2]),
-    .rstb(rst_in),
+    .rstb(sys_rst_pixel),
     .regceb(1'b1)
     );
 
@@ -695,7 +695,7 @@ module top_level
     .dina(ccl_pixel_label == largest_labels[0]),
     .ena(1'b1),
     .douta(ccl_moore_pixels[2][2]),
-    .rsta(rst_in),
+    .rsta(sys_rst_pixel),
     .regcea(1'b1),
 
     // PORT B
@@ -705,7 +705,7 @@ module top_level
     .web(1'b0),
     .enb(1'b1),
     .doutb(ccl_moore_pixels[2][1]),
-    .rstb(rst_in),
+    .rstb(sys_rst_pixel),
     .regceb(1'b1)
     );
 
@@ -721,7 +721,7 @@ module top_level
     .dina(ccl_pixel_label == largest_labels[0]),
     .ena(1'b1),
     .douta(ccl_moore_pixels[2][0]),
-    .rsta(rst_in),
+    .rsta(sys_rst_pixel),
     .regcea(1'b1),
 
     // PORT B
@@ -731,7 +731,7 @@ module top_level
     .web(1'b0),
     .enb(1'b1),
     .doutb(ccl_moore_pixels[1][0]),
-    .rstb(rst_in),
+    .rstb(sys_rst_pixel),
     .regceb(1'b1)
     );
 
@@ -739,8 +739,8 @@ module top_level
 
   logic [7:0][15:0] moore_addrs;
   moore_neighbor_tracing_ccl #(
-    WIDTH=320,
-    HEIGHT=180)
+    .WIDTH(320),
+    .HEIGHT(180))
     mnt_ccl_1 
     (
     .clk_in(clk_pixel),
@@ -863,7 +863,7 @@ module top_level
   //   end
   // end
 
-  logic [31:0] circularity;
+  // logic [31:0] circularity;
 
   logic [15:0] circ_temp [4:0];     // 2D array for circ_temp[stage]
   logic [15:0] area_temp [4:0];
