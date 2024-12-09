@@ -4,7 +4,7 @@
 module temp_ccl #(
     parameter WIDTH = 320,        // Horizontal resolution
     parameter HEIGHT = 180,        // Vertical resolution
-    // parameter MAX_LABELS = 10, // Maximum number of labels supported
+    parameter LABEL_WIDTH = 16, // Maximum number of labels supported
     parameter MIN_AREA = 50      // Minimum blob size to retain
 )(
     input  logic         clk_in,          
@@ -66,7 +66,7 @@ logic [WIDTH*HEIGHT:0][$clog2(HEIGHT)-1:0] y_coms;  // y coms of all blobs
 // ===== TL_FRAME =====
 logic [$clog2(WIDTH)-1:0] x_tl;
 logic [$clog2(HEIGHT)-1:0] y_tl;
-logic [WIDTH*HEIGHT:0] label_tl;
+logic [LABEL_WIDTH-1:0] label_tl;
 logic [1:0] read_wait_tl;
 logic valid_label_tl;
 // ===== TL_FRAME =====
