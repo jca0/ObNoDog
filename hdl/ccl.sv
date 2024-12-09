@@ -7,24 +7,24 @@ module ccl #(
     parameter LABEL_WIDTH = 16,
     parameter MIN_AREA = 50      // Minimum blob size to retain
 )(
-    input  logic         clk_in,          
-    input  logic         rst_in,          
-    input  logic [10:0]  x_in,       
-    input  logic [9:0]   y_in,       
-    input  logic         mask_in,
-    input  logic         new_frame_in,         
-    input  logic         valid_in,       
+    input  wire                 clk_in,          
+    input  wire                 rst_in,          
+    input  wire [10:0]          x_in,       
+    input  wire [9:0]           y_in,       
+    input  wire                 mask_in,
+    input  wire                 new_frame_in,         
+    input  wire                 valid_in,       
 
-    output logic         valid_out,       // Valid output signal
-    output logic         busy_out,        // Busy output signal
-    output logic [2:0][15:0]  blob_labels, // Array of distinct blob labels
-    output logic [10:0] x_out,
-    output logic [9:0]  y_out,
-    output logic [2:0][15:0] area_out,       // Array of blob areas
-    output logic [2:0][15:0] com_x_out, // Array of blob centroid x-coordinates
-    output logic [2:0][15:0] com_y_out, // Array of blob centroid y-coordinates
-    output logic [15:0] curr_pix_label,
-    output logic curr_pix_valid
+    output logic                valid_out,       // Valid output signal
+    output logic                busy_out,        // Busy output signal
+    output logic [2:0][15:0]    blob_labels, // Array of distinct blob labels
+    output logic [10:0]         x_out,
+    output logic [9:0]          y_out,
+    output logic [2:0][15:0]    area_out,       // Array of blob areas
+    output logic [2:0][15:0]    com_x_out, // Array of blob centroid x-coordinates
+    output logic [2:0][15:0]    com_y_out, // Array of blob centroid y-coordinates
+    output logic [15:0]         curr_pix_label,
+    output logic                curr_pix_valid
 
 );
 
@@ -39,13 +39,12 @@ logic [15:0] resolve_pass;
 logic [15:0] max_passes;
 
 logic [WIDTH*HEIGHT:0][15:0] area_table;
-logic [WIDTH*HEIGHT:0][31:0] sum_x_table, sum_y_table; 
+logic [(WIDTH*HEIGHT) >> 2:0][23:0] sum_x_table, sum_y_table; 
 
 // ===== PRUNING =====
-logic [WIDTH*HEIGHT:0][23:0] x_sums;                // x sums of positions of all blobs
-logic [WIDTH*HEIGHT:0][23:0] y_sums;                // y sums of positions of all blobs
+logic [(WIDTH*HEIGHT) >> 2:0][23:0] x_sums, y_sums; // x sums of positions of all blobs
 logic [2:0][15:0] largest_areas;                    // areas of 3 largest blobs
-logic [2:0][WIDTH*HEIGHT:0] largest_labels;         // labels of 3 largest blobs
+logic [2:0][LABEL_WIDTH-1:0] largest_labels;         // labels of 3 largest blobs
 logic [2:0][$clog2(WIDTH)-1:0] largest_x_coms;      // x coms of 3 largest blobs
 logic [2:0][$clog2(HEIGHT)-1:0] largest_y_coms;     // y coms of 3 largest blobs
 logic largest_smallest;                             // is the most recently looked at label greater than some value in our array of largest values
@@ -105,7 +104,6 @@ always_ff @(posedge clk_in) begin
         
         busy_out <= 0;
         valid_out <= 0;
-        num_blobs <= 0;
         blob_labels <= 0;
         curr_label <= 0;
         label_counter <= 0;
@@ -306,36 +304,42 @@ always_ff @(posedge clk_in) begin
                             
                             // otherwise, we have a label with a valid area
                             end else begin
-                                com_div_busy <= 1;                      // keep track that we're busy dividing
-                                x_dividend <= x_sums[prune_iter];       // dividend is sum of all pixels
-                                x_divisor <= areas[prune_iter];         // divisor is the area
-                                y_dividend <= y_sums[prune_iter];
-                                y_divisor <= areas[prune_iter];
-                                x_div_begin <= 1;                       // tell the dividers to begin
-                                y_div_begin <= 1;
-                                x_div_out_waiting <= 0;                 // also keep track that we're still waiting for a divider output
-                                y_div_out_waiting <= 0;
+                                
+                                // if this area is smaller than the 3 largest, we don't care about dividing
+                                if(areas[prune_iter] <= largest_areas[0] && areas[prune_iter] <= largest_areas[1] && areas[prune_iter] <= largest_areas[2]) begin
+                                    prune_iter <= prune_iter + 1;           // and continue
 
+                                end else begin
+                                    com_div_busy <= 1;                      // keep track that we're busy dividing
+                                    x_dividend <= x_sums[prune_iter];       // dividend is sum of all pixels
+                                    x_divisor <= areas[prune_iter];         // divisor is the area
+                                    y_dividend <= y_sums[prune_iter];
+                                    y_divisor <= areas[prune_iter];
+                                    x_div_begin <= 1;                       // tell the dividers to begin
+                                    y_div_begin <= 1;
+                                    x_div_out_waiting <= 0;                 // also keep track that we're still waiting for a divider output
+                                    y_div_out_waiting <= 0;
 
-                                // keep track of 3 largest values
-                                if(areas[prune_iter] > largest_areas[0] && largest_areas[0] <= largest_areas[1] && largest_areas[0] <= largest_areas[2]) begin
-                                    largest_smallest <= 1;
-                                    largest_smallest_ind <= 0;
-                                    largest_areas[0] <= areas[prune_iter];
-                                    largest_labels[0] <= second_pass_labels[prune_iter];
+                                    // keep track of 3 largest values
+                                    if(areas[prune_iter] > largest_areas[0] && largest_areas[0] <= largest_areas[1] && largest_areas[0] <= largest_areas[2]) begin
+                                        largest_smallest <= 1;
+                                        largest_smallest_ind <= 0;
+                                        largest_areas[0] <= areas[prune_iter];
+                                        largest_labels[0] <= second_pass_labels[prune_iter];
 
-                                end else if (areas[prune_iter] > largest_areas[1] && largest_areas[1] <= largest_areas[0] && largest_areas[1] <= largest_areas[0]) begin
-                                    largest_smallest <= 1;
-                                    largest_smallest_ind <= 1;
-                                    largest_areas[1] <= areas[prune_iter];
-                                    largest_labels[1] <= second_pass_labels[prune_iter];
+                                    end else if (areas[prune_iter] > largest_areas[1] && largest_areas[1] <= largest_areas[0] && largest_areas[1] <= largest_areas[2]) begin
+                                        largest_smallest <= 1;
+                                        largest_smallest_ind <= 1;
+                                        largest_areas[1] <= areas[prune_iter];
+                                        largest_labels[1] <= second_pass_labels[prune_iter];
 
-                                end else if (areas[prune_iter] > largest_areas[2] && largest_areas[2] <= largest_areas[0] && largest_areas[2] <= largest_areas[1]) begin
-                                    largest_smallest <= 1;
-                                    largest_smallest_ind <= 2;
-                                    largest_areas[2] <= areas[prune_iter];
-                                    largest_labels[2] <= second_pass_labels[prune_iter];
+                                    end else if (areas[prune_iter] > largest_areas[2] && largest_areas[2] <= largest_areas[0] && largest_areas[2] <= largest_areas[1]) begin
+                                        largest_smallest <= 1;
+                                        largest_smallest_ind <= 2;
+                                        largest_areas[2] <= areas[prune_iter];
+                                        largest_labels[2] <= second_pass_labels[prune_iter];
 
+                                    end
                                 end
                             end
                         end else begin
@@ -694,3 +698,5 @@ xilinx_true_dual_port_read_first_2_clock_ram
     );
 
 endmodule
+
+`default_nettype wire

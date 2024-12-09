@@ -437,9 +437,9 @@ module top_level
   // chooses one of them to output as an 8 bit value
   channel_select mcs(
      .sel_in(channel_sel),
-     .r_in(fb_red),    //TODO: needs to use pipelined signal (PS1)
-     .g_in(fb_green),  //TODO: needs to use pipelined signal (PS1)
-     .b_in(fb_blue),   //TODO: needs to use pipelined signal (PS1)
+     .r_in(fb_red),    //: needs to use pipelined signal (PS1)
+     .g_in(fb_green),  //: needs to use pipelined signal (PS1)
+     .b_in(fb_blue),   //: needs to use pipelined signal (PS1)
      .y_in(y),
      .cr_in(cr),
      .cb_in(cb),
@@ -483,7 +483,7 @@ module top_level
   logic [15:0] perimeter_temp;
   logic [19:0] area_raw;
   logic [15:0] area;
-  logic [15:0] circularity;
+  logic [7:0] circularity;
   logic [1:0] shape;
   logic both_valid;
   logic ccl_valid;
@@ -535,35 +535,252 @@ module top_level
   //Center of Mass Calculation: (you need to do)
   //using x_com_calc and y_com_calc values
   //Center of Mass:
-  center_of_mass com_m(
-    .clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .x_in(hcount_hdmi),  //TODO: needs to use pipelined signal! (PS3)
-    .y_in(vcount_hdmi), //TODO: needs to use pipelined signal! (PS3)
-    .valid_in(mask), //aka threshold
-    .tabulate_in((nf_hdmi)),
-    .x_out(x_com_calc),
-    .y_out(y_com_calc),
-    .area_out(area_raw),
-    .valid_out(new_com)
+  // center_of_mass com_m(
+  //   .clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .x_in(hcount_hdmi),  //: needs to use pipelined signal! (PS3)
+  //   .y_in(vcount_hdmi), //: needs to use pipelined signal! (PS3)
+  //   .valid_in(mask), //aka threshold
+  //   .tabulate_in((nf_hdmi)),
+  //   .x_out(x_com_calc),
+  //   .y_out(y_com_calc),
+  //   .area_out(area_raw),
+  //   .valid_out(new_com)
+  // );
+
+  // NOW USING CCL:
+  logic ccl_valid_out;
+  logic ccl_busy_out;
+  logic [2:0][15:0] largest_labels;
+  logic [2:0][15:0] largest_areas;
+  logic [2:0][15:0] largest_x_coms;
+  logic [2:0][15:0] largest_y_coms;
+  logic [10:0] ccl_x_out;
+  logic [9:0] ccl_y_out;
+  logic [15:0] ccl_pixel_label;
+  logic ccl_pixel_valid;
+
+
+  ccl #(
+    .WIDTH(320),        // Horizontal resolution
+    .HEIGHT(180),       // Vertical resolution
+    .LABEL_WIDTH(16),   // Maximum number of labels supported
+    .MIN_AREA(50)       // Minimum blob size to retain
+  ) my_ccl (
+  .clk_in(clk_pixel),    
+  .rst_in(sys_rst_pixel),          
+  .x_in(hcount_hdmi >> 2),       
+  .y_in(vcount_hdmi >> 2), // TODO: if something is fucked up, this shifting could very well be why
+  .mask_in(mask),
+  .new_frame_in(hcount_hdmi == 0 && vcount_hdmi == 0 && !moore_busy),         
+  .valid_in(hcount_hdmi[1:0] == 1 && vcount_hdmi[1:0] == 1), // only give valid once every 4 pixels sure
+
+  .valid_out(ccl_valid_out),
+  .busy_out(ccl_busy_out),
+  .blob_labels(largest_labels),
+  .x_out(ccl_x_out),
+  .y_out(ccl_y_out),
+  .area_out(largest_areas),
+  .com_x_out(largest_x_coms),
+  .com_y_out(largest_y_coms),
+  .curr_pix_label(ccl_pixel_label),
+  .curr_pix_valid(ccl_pixel_valid)
   );
 
+
+
+  // TODO: SET COM X AND Y AND VALID BASED ON THE OUTPUTS FROM CCL[0]
+  // *** THIS SHOULD BE REPLACED LATER WHEN WE DECIDE TO DETECT MORE THAN 1 SHAPE
   always_comb begin
-    area <= (area_raw >> 4);
+    // area = (area_raw >> 4);
+    area = largest_areas[0];
+    x_com_calc = largest_x_coms[0]; // TODO: we may want to shift this over by << 2 so that it appears on the screen in the right spot
+    y_com_calc = largest_y_coms[0];
+    new_com = ccl_valid_out; // just set this because it works with previous code
   end
 
-  moore_neighbor_tracing mnt (
+
+  // logic to handle whether addresses should come from moore or ccl
+  logic [7:0][15:0] ccl_moore_addr;
+  logic [2:0][2:0] ccl_moore_pixels;
+  always_comb begin
+    if(sys_rst_pixel) begin
+      ccl_moore_addr = 0;
+    end else begin
+      if(ccl_busy_out) begin
+        ccl_moore_addr[0] = ccl_x_out + ccl_y_out*320;
+        ccl_moore_addr[2] = ccl_moore_addr[0];
+        ccl_moore_addr[4] = ccl_moore_addr[0];
+        ccl_moore_addr[6] = ccl_moore_addr[0];
+
+        ccl_moore_addr[1] = 0;
+        ccl_moore_addr[3] = 0;
+        ccl_moore_addr[5] = 0;
+        ccl_moore_addr[7] = 0;
+      end else begin
+        ccl_moore_addr[0] = moore_addrs[0];
+        ccl_moore_addr[1] = moore_addrs[1];
+        ccl_moore_addr[2] = moore_addrs[2];
+        ccl_moore_addr[3] = moore_addrs[3];
+        ccl_moore_addr[4] = moore_addrs[4];
+        ccl_moore_addr[5] = moore_addrs[5];
+        ccl_moore_addr[6] = moore_addrs[6];
+        ccl_moore_addr[7] = moore_addrs[7];
+      end
+    end
+  end
+
+  // FBs to hold Moore data for Moore 1
+  xilinx_true_dual_port_read_first_2_clock_ram
+    #(.RAM_WIDTH(1),
+    .RAM_DEPTH(320*180))
+    moore_fb_00
+    (
+    // PORT A
+    .addra(ccl_moore_addr[0]), 
+    .clka(clk_pixel),
+    .wea(ccl_pixel_valid),
+    .dina(ccl_pixel_label == largest_labels[0]),
+    .ena(1'b1),
+    .douta(ccl_moore_pixels[0][0]),
+    .rsta(sys_rst_pixel),
+    .regcea(1'b1),
+
+    // PORT B
+    .addrb(ccl_moore_addr[1]),
+    .dinb(1'b0),
+    .clkb(clk_pixel),
+    .web(1'b0),
+    .enb(1'b1),
+    .doutb(ccl_moore_pixels[0][1]),
+    .rstb(sys_rst_pixel),
+    .regceb(1'b1)
+    );
+
+  xilinx_true_dual_port_read_first_2_clock_ram
+    #(.RAM_WIDTH(1),
+    .RAM_DEPTH(320*180))
+    moore_fb_01
+    (
+    // PORT A
+    .addra(ccl_moore_addr[2]), 
+    .clka(clk_pixel),
+    .wea(ccl_pixel_valid),
+    .dina(ccl_pixel_label == largest_labels[0]),
+    .ena(1'b1),
+    .douta(ccl_moore_pixels[0][2]),
+    .rsta(sys_rst_pixel),
+    .regcea(1'b1),
+
+    // PORT B
+    .addrb(ccl_moore_addr[3]),
+    .dinb(1'b0),
+    .clkb(clk_pixel),
+    .web(1'b0),
+    .enb(1'b1),
+    .doutb(ccl_moore_pixels[1][2]),
+    .rstb(sys_rst_pixel),
+    .regceb(1'b1)
+    );
+
+  xilinx_true_dual_port_read_first_2_clock_ram
+    #(.RAM_WIDTH(1),
+    .RAM_DEPTH(320*180))
+    moore_fb_02
+    (
+    // PORT A
+    .addra(ccl_moore_addr[4]), 
+    .clka(clk_pixel),
+    .wea(ccl_pixel_valid),
+    .dina(ccl_pixel_label == largest_labels[0]),
+    .ena(1'b1),
+    .douta(ccl_moore_pixels[2][2]),
+    .rsta(sys_rst_pixel),
+    .regcea(1'b1),
+
+    // PORT B
+    .addrb(ccl_moore_addr[5]),
+    .dinb(1'b0),
+    .clkb(clk_pixel),
+    .web(1'b0),
+    .enb(1'b1),
+    .doutb(ccl_moore_pixels[2][1]),
+    .rstb(sys_rst_pixel),
+    .regceb(1'b1)
+    );
+
+  xilinx_true_dual_port_read_first_2_clock_ram
+    #(.RAM_WIDTH(1),
+    .RAM_DEPTH(320*180))
+    moore_fb_03
+    (
+    // PORT A
+    .addra(ccl_moore_addr[6]), 
+    .clka(clk_pixel),
+    .wea(ccl_pixel_valid),
+    .dina(ccl_pixel_label == largest_labels[0]),
+    .ena(1'b1),
+    .douta(ccl_moore_pixels[2][0]),
+    .rsta(sys_rst_pixel),
+    .regcea(1'b1),
+
+    // PORT B
+    .addrb(ccl_moore_addr[7]),
+    .dinb(1'b0),
+    .clkb(clk_pixel),
+    .web(1'b0),
+    .enb(1'b1),
+    .doutb(ccl_moore_pixels[1][0]),
+    .rstb(sys_rst_pixel),
+    .regceb(1'b1)
+    );
+
+
+
+  logic [7:0][15:0] moore_addrs;
+  moore_neighbor_tracing_ccl #(
+    .WIDTH(320),
+    .HEIGHT(180))
+    mnt_ccl_1 
+    (
     .clk_in(clk_pixel),
     .rst_in(sys_rst_pixel),
-    .x_in(hcount_hdmi >> 2),
-    .y_in(vcount_hdmi >> 2),
-    .valid_in(active_draw_hdmi),
-    .masked_in(mask),
-    .new_frame_in(nf_hdmi),
+    .ready_in(ccl_valid_out),
+    .pixel_upleft(ccl_moore_pixels[0][0]), // frame buffer direct outputs: neighboring pixels
+    .pixel_up(ccl_moore_pixels[0][1]),
+    .pixel_upright(ccl_moore_pixels[0][2]),
+    .pixel_right(ccl_moore_pixels[1][2]),
+    .pixel_downright(ccl_moore_pixels[2][2]),
+    .pixel_down(ccl_moore_pixels[2][1]),
+    .pixel_downleft(ccl_moore_pixels[2][0]),
+    .pixel_left(ccl_moore_pixels[1][0]),
+    .addra_1(moore_addrs[0]),
+    .addrb_1(moore_addrs[1]),
+    .addra_2(moore_addrs[2]),
+    .addrb_2(moore_addrs[3]),
+    .addra_3(moore_addrs[4]),
+    .addrb_3(moore_addrs[5]),
+    .addra_4(moore_addrs[6]),
+    .addrb_4(moore_addrs[7]),
+                         
     .perimeter(perimeter),
     .busy_out(moore_busy),
     .valid_out(moore_valid)
   );
+
+
+  // moore_neighbor_tracing mnt (
+  //   .clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .x_in(hcount_hdmi >> 2),
+  //   .y_in(vcount_hdmi >> 2),
+  //   .valid_in(active_draw_hdmi),
+  //   .masked_in(mask),
+  //   .new_frame_in(nf_hdmi),
+  //   .perimeter(perimeter),
+  //   .busy_out(moore_busy),
+  //   .valid_out(moore_valid)
+  // );
 
   // circularity circularity_m (
   //   .clk_in(clk_pixel),
@@ -586,7 +803,7 @@ module top_level
   logic [15:0] area_saved;
   logic [15:0] perimeter_saved;
 
-  // dont use this for now
+  // using this for now
   always_ff @(posedge clk_pixel)begin
     if (new_com && !both_valid && !circularity_busy) begin
       com_waiting <= 1;
@@ -646,7 +863,7 @@ module top_level
   //   end
   // end
 
-  logic [31:0] circularity;
+  // logic [31:0] circularity;
 
   logic [15:0] circ_temp [4:0];     // 2D array for circ_temp[stage]
   logic [15:0] area_temp [4:0];
@@ -694,6 +911,8 @@ module top_level
     end
   end
 
+
+  // TODO: make 2 more of these for the other 2 shapes
   logic draw_classifier;
   image_sprite_transparent #(
     .WIDTH(256),
@@ -1207,385 +1426,6 @@ end
 
 
 
-
-
-  // logic [3:0] number_0;
-  // logic [3:0] number_1;
-  // logic [3:0] number_2;
-  // logic [3:0] number_3;
-
-  // // pulling the numbers from circularity
-  // always_comb begin
-
-  //   //circ_temp[0] <= circularity;
-
-  //   if (circ_temp >= 10000) begin
-  //     number_0 = 9;
-  //     number_1 = 9;
-  //     number_2 = 9;
-  //     number_3 = 9;
-  //   end else begin
-  //     // THOUSANDS
-  //     if (circ_temp >= 9000) begin
-  //       number_0 = 9;
-  //       circ_temp = circ_temp - 9000;
-  //     end else if (circ_temp >= 8000) begin
-  //       number_0 = 8;
-  //       circ_temp = circ_temp - 8000;
-  //     end else if (circ_temp >= 7000) begin
-  //       number_0 = 7;
-  //       circ_temp = circ_temp - 7000;
-  //     end else if (circ_temp >= 6000) begin
-  //       number_0 = 6;
-  //       circ_temp = circ_temp - 6000;
-  //     end else if (circ_temp >= 5000) begin
-  //       number_0 = 5;
-  //       circ_temp = circ_temp - 5000;
-  //     end else if (circ_temp >= 4000) begin
-  //       number_0 = 4;
-  //       circ_temp = circ_temp - 4000;
-  //     end else if (circ_temp >= 3000) begin
-  //       number_0 = 3;
-  //       circ_temp = circ_temp - 3000;
-  //     end else if (circ_temp >= 2000) begin
-  //       number_0 = 2;
-  //       circ_temp = circ_temp - 2000;
-  //     end else if (circ_temp >= 1000) begin
-  //       number_0 = 1;
-  //       circ_temp = circ_temp - 1000;
-  //     end else begin
-  //       number_0 = 0;
-  //     end
-
-  //     // HUNDREDS
-  //     if (circ_temp >= 900) begin
-  //       number_1 = 9;
-  //       circ_temp = circ_temp - 900;
-  //     end else if (circ_temp >= 800) begin
-  //       number_1 = 8;
-  //       circ_temp = circ_temp - 800;
-  //     end else if (circ_temp >= 700) begin
-  //       number_1 = 7;
-  //       circ_temp = circ_temp - 700;
-  //     end else if (circ_temp >= 600) begin
-  //       number_1 = 6;
-  //       circ_temp = circ_temp - 600;
-  //     end else if (circ_temp >= 500) begin
-  //       number_1 = 5;
-  //       circ_temp = circ_temp - 500;
-  //     end else if (circ_temp >= 400) begin
-  //       number_1 = 4;
-  //       circ_temp = circ_temp - 400;
-  //     end else if (circ_temp >= 300) begin
-  //       number_1 = 3;
-  //       circ_temp = circ_temp - 300;
-  //     end else if (circ_temp >= 200) begin
-  //       number_1 = 2;
-  //       circ_temp = circ_temp - 200;
-  //     end else if (circ_temp >= 100) begin
-  //       number_1 = 1;
-  //       circ_temp = circ_temp - 100;
-  //     end else begin
-  //       number_1 = 0;
-  //     end
-      
-  //     // TENS
-  //     if (circ_temp >= 90) begin
-  //       number_2 = 9;
-  //       circ_temp = circ_temp - 90;
-  //     end else if (circ_temp >= 80) begin
-  //       number_2 = 8;
-  //       circ_temp = circ_temp - 80;
-  //     end else if (circ_temp >= 70) begin
-  //       number_2 = 7;
-  //       circ_temp = circ_temp - 70;
-  //     end else if (circ_temp >= 60) begin
-  //       number_2 = 6;
-  //       circ_temp = circ_temp - 60;
-  //     end else if (circ_temp >= 50) begin
-  //       number_2 = 5;
-  //       circ_temp = circ_temp - 50;
-  //     end else if (circ_temp >= 40) begin
-  //       number_2 = 4;
-  //       circ_temp = circ_temp - 40;
-  //     end else if (circ_temp >= 30) begin
-  //       number_2 = 3;
-  //       circ_temp = circ_temp - 30;
-  //     end else if (circ_temp >= 20) begin
-  //       number_2 = 2;
-  //       circ_temp = circ_temp - 20;
-  //     end else if (circ_temp >= 10) begin
-  //       number_2 = 1;
-  //       circ_temp = circ_temp - 10;
-  //     end else begin
-  //       number_2 = 0;
-  //     end
-
-  //     // ONES
-  //     if (circ_temp <= 9) begin
-  //       number_3 = circ_temp;
-  //     end else begin
-  //       number_3 = 0;
-  //     end
-
-  //   end
-
-  // end
-
-
-
-
-  // logic [15:0] area_temp;
-  // logic [3:0] a_number_0;
-  // logic [3:0] a_number_1;
-  // logic [3:0] a_number_2;
-  // logic [3:0] a_number_3;
-
-  // // pulling the numbers from area
-  // always_comb begin
-
-  //   area_temp = area_stored;
-
-  //   if (area_temp >= 10000) begin
-  //     a_number_0 = 9;
-  //     a_number_1 = 9;
-  //     a_number_2 = 9;
-  //     a_number_3 = 9;
-  //   end else begin
-  //     // THOUSANDS
-  //     if (area_temp >= 9000) begin
-  //       a_number_0 = 9;
-  //       area_temp = area_temp - 9000;
-  //     end else if (area_temp >= 8000) begin
-  //       a_number_0 = 8;
-  //       area_temp = area_temp - 8000;
-  //     end else if (area_temp >= 7000) begin
-  //       a_number_0 = 7;
-  //       area_temp = area_temp - 7000;
-  //     end else if (area_temp >= 6000) begin
-  //       a_number_0 = 6;
-  //       area_temp = area_temp - 6000;
-  //     end else if (area_temp >= 5000) begin
-  //       a_number_0 = 5;
-  //       area_temp = area_temp - 5000;
-  //     end else if (area_temp >= 4000) begin
-  //       a_number_0 = 4;
-  //       area_temp = area_temp - 4000;
-  //     end else if (area_temp >= 3000) begin
-  //       a_number_0 = 3;
-  //       area_temp = area_temp - 3000;
-  //     end else if (area_temp >= 2000) begin
-  //       a_number_0 = 2;
-  //       area_temp = area_temp - 2000;
-  //     end else if (area_temp >= 1000) begin
-  //       a_number_0 = 1;
-  //       area_temp = area_temp - 1000;
-  //     end else begin
-  //       a_number_0 = 0;
-  //     end
-
-  //     // HUNDREDS
-  //     if (area_temp >= 900) begin
-  //       a_number_1 = 9;
-  //       area_temp = area_temp - 900;
-  //     end else if (area_temp >= 800) begin
-  //       a_number_1 = 8;
-  //       area_temp = area_temp - 800;
-  //     end else if (area_temp >= 700) begin
-  //       a_number_1 = 7;
-  //       area_temp = area_temp - 700;
-  //     end else if (area_temp >= 600) begin
-  //       a_number_1 = 6;
-  //       area_temp = area_temp - 600;
-  //     end else if (area_temp >= 500) begin
-  //       a_number_1 = 5;
-  //       area_temp = area_temp - 500;
-  //     end else if (area_temp >= 400) begin
-  //       a_number_1 = 4;
-  //       area_temp = area_temp - 400;
-  //     end else if (area_temp >= 300) begin
-  //       a_number_1 = 3;
-  //       area_temp = area_temp - 300;
-  //     end else if (area_temp >= 200) begin
-  //       a_number_1 = 2;
-  //       area_temp = area_temp - 200;
-  //     end else if (area_temp >= 100) begin
-  //       a_number_1 = 1;
-  //       area_temp = area_temp - 100;
-  //     end else begin
-  //       a_number_1 = 0;
-  //     end
-      
-  //     // TENS
-  //     if (area_temp >= 90) begin
-  //       a_number_2 = 9;
-  //       area_temp = area_temp - 90;
-  //     end else if (area_temp >= 80) begin
-  //       a_number_2 = 8;
-  //       area_temp = area_temp - 80;
-  //     end else if (area_temp >= 70) begin
-  //       a_number_2 = 7;
-  //       area_temp = area_temp - 70;
-  //     end else if (area_temp >= 60) begin
-  //       a_number_2 = 6;
-  //       area_temp = area_temp - 60;
-  //     end else if (area_temp >= 50) begin
-  //       a_number_2 = 5;
-  //       area_temp = area_temp - 50;
-  //     end else if (area_temp >= 40) begin
-  //       a_number_2 = 4;
-  //       area_temp = area_temp - 40;
-  //     end else if (area_temp >= 30) begin
-  //       a_number_2 = 3;
-  //       area_temp = area_temp - 30;
-  //     end else if (area_temp >= 20) begin
-  //       a_number_2 = 2;
-  //       area_temp = area_temp - 20;
-  //     end else if (area_temp >= 10) begin
-  //       a_number_2 = 1;
-  //       area_temp = area_temp - 10;
-  //     end else begin
-  //       a_number_2 = 0;
-  //     end
-
-  //     // ONES
-  //     if (area_temp <= 9) begin
-  //       a_number_3 = area_temp;
-  //     end else begin
-  //       a_number_3 = 0;
-  //     end
-
-  //   end
-
-  // end
-
-
-  // logic [15:0] perim_temp;
-  // logic [3:0] p_number_0;
-  // logic [3:0] p_number_1;
-  // logic [3:0] p_number_2;
-  // logic [3:0] p_number_3;
-
-  // always_comb begin
-
-  //     perim_temp = area_stored;
-
-  //     if (perim_temp >= 10000) begin
-  //       p_number_0 = 9;
-  //       p_number_1 = 9;
-  //       p_number_2 = 9;
-  //       p_number_3 = 9;
-  //     end else begin
-  //       // THOUSANDS
-  //       if (perim_temp >= 9000) begin
-  //         p_number_0 = 9;
-  //         perim_temp = perim_temp - 9000;
-  //       end else if (perim_temp >= 8000) begin
-  //         p_number_0 = 8;
-  //         perim_temp = perim_temp - 8000;
-  //       end else if (perim_temp >= 7000) begin
-  //         p_number_0 = 7;
-  //         perim_temp = perim_temp - 7000;
-  //       end else if (perim_temp >= 6000) begin
-  //         p_number_0 = 6;
-  //         perim_temp = perim_temp - 6000;
-  //       end else if (perim_temp >= 5000) begin
-  //         p_number_0 = 5;
-  //         perim_temp = perim_temp - 5000;
-  //       end else if (perim_temp >= 4000) begin
-  //         p_number_0 = 4;
-  //         perim_temp = perim_temp - 4000;
-  //       end else if (perim_temp >= 3000) begin
-  //         p_number_0 = 3;
-  //         perim_temp = perim_temp - 3000;
-  //       end else if (perim_temp >= 2000) begin
-  //         p_number_0 = 2;
-  //         perim_temp = perim_temp - 2000;
-  //       end else if (perim_temp >= 1000) begin
-  //         p_number_0 = 1;
-  //         perim_temp = perim_temp - 1000;
-  //       end else begin
-  //         p_number_0 = 0;
-  //       end
-
-  //       // HUNDREDS
-  //       if (perim_temp >= 900) begin
-  //         p_number_1 = 9;
-  //         perim_temp = perim_temp - 900;
-  //       end else if (perim_temp >= 800) begin
-  //         p_number_1 = 8;
-  //         perim_temp = perim_temp - 800;
-  //       end else if (perim_temp >= 700) begin
-  //         p_number_1 = 7;
-  //         perim_temp = perim_temp - 700;
-  //       end else if (perim_temp >= 600) begin
-  //         p_number_1 = 6;
-  //         perim_temp = perim_temp - 600;
-  //       end else if (perim_temp >= 500) begin
-  //         p_number_1 = 5;
-  //         perim_temp = perim_temp - 500;
-  //       end else if (perim_temp >= 400) begin
-  //         p_number_1 = 4;
-  //         perim_temp = perim_temp - 400;
-  //       end else if (perim_temp >= 300) begin
-  //         p_number_1 = 3;
-  //         perim_temp = perim_temp - 300;
-  //       end else if (perim_temp >= 200) begin
-  //         p_number_1 = 2;
-  //         perim_temp = perim_temp - 200;
-  //       end else if (perim_temp >= 100) begin
-  //         p_number_1 = 1;
-  //         perim_temp = perim_temp - 100;
-  //       end else begin
-  //         p_number_1 = 0;
-  //       end
-        
-  //       // TENS
-  //       if (perim_temp >= 90) begin
-  //         p_number_2 = 9;
-  //         perim_temp = perim_temp - 90;
-  //       end else if (perim_temp >= 80) begin
-  //         p_number_2 = 8;
-  //         perim_temp = perim_temp - 80;
-  //       end else if (perim_temp >= 70) begin
-  //         p_number_2 = 7;
-  //         perim_temp = perim_temp - 70;
-  //       end else if (perim_temp >= 60) begin
-  //         p_number_2 = 6;
-  //         perim_temp = perim_temp - 60;
-  //       end else if (perim_temp >= 50) begin
-  //         p_number_2 = 5;
-  //         perim_temp = perim_temp - 50;
-  //       end else if (perim_temp >= 40) begin
-  //         p_number_2 = 4;
-  //         perim_temp = perim_temp - 40;
-  //       end else if (perim_temp >= 30) begin
-  //         p_number_2 = 3;
-  //         perim_temp = perim_temp - 30;
-  //       end else if (perim_temp >= 20) begin
-  //         p_number_2 = 2;
-  //         perim_temp = perim_temp - 20;
-  //       end else if (perim_temp >= 10) begin
-  //         p_number_2 = 1;
-  //         perim_temp = perim_temp - 10;
-  //       end else begin
-  //         p_number_2 = 0;
-  //       end
-
-  //       // ONES
-  //       if (perim_temp <= 9) begin
-  //         p_number_3 = perim_temp;
-  //       end else begin
-  //         p_number_3 = 0;
-  //       end
-
-  //     end
-
-  //   end
-
-
-
-
   // for placing the numbers easier
   logic [15:0] circ_number_x = 6;
   logic [15:0] circ_number_y = 4;
@@ -1723,9 +1563,6 @@ end
 
 
 
-
-
-
   image_sprite_transparent_numbers_8 #(
     .WIDTH(24),
     .HEIGHT(24),
@@ -1820,7 +1657,7 @@ end
 
   //Create Crosshair patter on center of mass:
   //0 cycle latency
-  //TODO: Should be using output of (PS3)
+  //: Should be using output of (PS3)
   always_comb begin
     ch_red   = ((vcount_hdmi==y_com) || (hcount_hdmi==x_com))?8'hFF:8'h00;
     ch_green = ((vcount_hdmi==y_com) || (hcount_hdmi==x_com))?8'hFF:8'h00;
@@ -1863,15 +1700,17 @@ end
   // * 'b10: sprite on top
   // * 'b11: nothing
 
+
+  // TODO: make the mask that's output to the screen only the pixels that are output by ccl
   video_mux mvm(
     .bg_in(display_choice), //choose background
     .target_in(target_choice), //choose target
-    .camera_pixel_in({fb_red, fb_green, fb_blue}), //TODO: needs (PS2)
-    .camera_y_in(y), //luminance TODO: needs (PS6)
-    .channel_in(selected_channel), //current channel being drawn TODO: needs (PS5)
-    .thresholded_pixel_in(mask), //one bit mask signal TODO: needs (PS4)
-    .crosshair_in({ch_red, ch_green, ch_blue}), //TODO: needs (PS8)
-    .com_sprite_pixel_in({img_red, img_green, img_blue}), //TODO: needs (PS9) maybe?
+    .camera_pixel_in({fb_red, fb_green, fb_blue}), //: needs (PS2)
+    .camera_y_in(y), //luminance : needs (PS6)
+    .channel_in(selected_channel), //current channel being drawn : needs (PS5)
+    .thresholded_pixel_in(mask), //one bit mask signal : needs (PS4)
+    .crosshair_in({ch_red, ch_green, ch_blue}), //: needs (PS8)
+    .com_sprite_pixel_in({img_red, img_green, img_blue}), //: needs (PS9) maybe?
     .draw_sprite(draw_sprite), //draw sprite signal
     .pixel_out({red,green,blue}) //output to tmds
   );
