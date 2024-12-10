@@ -560,7 +560,7 @@ module top_level
   .x_in(hcount_hdmi >> 2),       
   .y_in(vcount_hdmi >> 2), // TODO: if something is fucked up, this shifting could very well be why
   .mask_in(mask),
-  .new_frame_in(hcount_hdmi == 0 && vcount_hdmi == 0 && !moore_busy_0 /* && !moore_busy_1 */ /* && !moore_busy_2 */),         
+  .new_frame_in(hcount_hdmi == 0 && vcount_hdmi == 0 && !moore_busy_0 && !moore_busy_1 /* && !moore_busy_2 */),         
   .valid_in(hcount_hdmi[1:0] == 1 && vcount_hdmi[1:0] == 1), // only give valid once every 4 pixels sure
 
   .valid_out(ccl_valid_out),
@@ -581,10 +581,10 @@ module top_level
 
   // logic to handle whether addresses should come from moore or ccl
   logic [7:0][15:0] ccl_moore_addr_0;
-  // logic [7:0][15:0] ccl_moore_addr_1;
+  logic [7:0][15:0] ccl_moore_addr_1;
   // logic [7:0][15:0] ccl_moore_addr_2;
   logic [2:0][2:0] ccl_moore_pixels_0;
-  // logic [2:0][2:0] ccl_moore_pixels_1;
+  logic [2:0][2:0] ccl_moore_pixels_1;
   // logic [2:0][2:0] ccl_moore_pixels_2;
 
   always_comb begin
@@ -607,15 +607,15 @@ module top_level
 
 
         // // fb1
-        // ccl_moore_addr_1[0] = ccl_x_out + ccl_y_out*320;
-        // ccl_moore_addr_1[2] = ccl_moore_addr_1[0];
-        // ccl_moore_addr_1[4] = ccl_moore_addr_1[0];
-        // ccl_moore_addr_1[6] = ccl_moore_addr_1[0];
+        ccl_moore_addr_1[0] = ccl_x_out + ccl_y_out*320;
+        ccl_moore_addr_1[2] = ccl_moore_addr_1[0];
+        ccl_moore_addr_1[4] = ccl_moore_addr_1[0];
+        ccl_moore_addr_1[6] = ccl_moore_addr_1[0];
 
-        // ccl_moore_addr_1[1] = 0;
-        // ccl_moore_addr_1[3] = 0;
-        // ccl_moore_addr_1[5] = 0;
-        // ccl_moore_addr_1[7] = 0;
+        ccl_moore_addr_1[1] = 0;
+        ccl_moore_addr_1[3] = 0;
+        ccl_moore_addr_1[5] = 0;
+        ccl_moore_addr_1[7] = 0;
 
 
         // //fb2
@@ -640,14 +640,14 @@ module top_level
         ccl_moore_addr_0[7] = moore_addrs_0[7];
 
 
-        // ccl_moore_addr_1[0] = moore_addrs_1[0];
-        // ccl_moore_addr_1[1] = moore_addrs_1[1];
-        // ccl_moore_addr_1[2] = moore_addrs_1[2];
-        // ccl_moore_addr_1[3] = moore_addrs_1[3];
-        // ccl_moore_addr_1[4] = moore_addrs_1[4];
-        // ccl_moore_addr_1[5] = moore_addrs_1[5];
-        // ccl_moore_addr_1[6] = moore_addrs_1[6];
-        // ccl_moore_addr_1[7] = moore_addrs_1[7];
+        ccl_moore_addr_1[0] = moore_addrs_1[0];
+        ccl_moore_addr_1[1] = moore_addrs_1[1];
+        ccl_moore_addr_1[2] = moore_addrs_1[2];
+        ccl_moore_addr_1[3] = moore_addrs_1[3];
+        ccl_moore_addr_1[4] = moore_addrs_1[4];
+        ccl_moore_addr_1[5] = moore_addrs_1[5];
+        ccl_moore_addr_1[6] = moore_addrs_1[6];
+        ccl_moore_addr_1[7] = moore_addrs_1[7];
 
 
 
@@ -778,109 +778,109 @@ module top_level
 
 
 // MOORE FB 1
-// xilinx_true_dual_port_read_first_2_clock_ram
-//     #(.RAM_WIDTH(1),
-//     .RAM_DEPTH(320*180))
-//     moore_fb_10
-//     (
-//     // PORT A
-//     .addra(ccl_moore_addr_1[0]), 
-//     .clka(clk_pixel),
-//     .wea(ccl_pixel_valid),
-//     .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[1]),
-//     .ena(1'b1),
-//     .douta(ccl_moore_pixels_1[0][0]),
-//     .rsta(sys_rst_pixel),
-//     .regcea(1'b1),
+xilinx_true_dual_port_read_first_2_clock_ram
+    #(.RAM_WIDTH(1),
+    .RAM_DEPTH(320*180))
+    moore_fb_10
+    (
+    // PORT A
+    .addra(ccl_moore_addr_1[0]), 
+    .clka(clk_pixel),
+    .wea(ccl_pixel_valid),
+    .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[1]),
+    .ena(1'b1),
+    .douta(ccl_moore_pixels_1[0][0]),
+    .rsta(sys_rst_pixel),
+    .regcea(1'b1),
 
-//     // PORT B
-//     .addrb(ccl_moore_addr_1[1]),
-//     .dinb(1'b0),
-//     .clkb(clk_pixel),
-//     .web(1'b0),
-//     .enb(1'b1),
-//     .doutb(ccl_moore_pixels_1[0][1]),
-//     .rstb(sys_rst_pixel),
-//     .regceb(1'b1)
-//     );
+    // PORT B
+    .addrb(ccl_moore_addr_1[1]),
+    .dinb(1'b0),
+    .clkb(clk_pixel),
+    .web(1'b0),
+    .enb(1'b1),
+    .doutb(ccl_moore_pixels_1[0][1]),
+    .rstb(sys_rst_pixel),
+    .regceb(1'b1)
+    );
 
-//   xilinx_true_dual_port_read_first_2_clock_ram
-//     #(.RAM_WIDTH(1),
-//     .RAM_DEPTH(320*180))
-//     moore_fb_11
-//     (
-//     // PORT A
-//     .addra(ccl_moore_addr_1[2]), 
-//     .clka(clk_pixel),
-//     .wea(ccl_pixel_valid),
-//     .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[1]),
-//     .ena(1'b1),
-//     .douta(ccl_moore_pixels_1[0][2]),
-//     .rsta(sys_rst_pixel),
-//     .regcea(1'b1),
+  xilinx_true_dual_port_read_first_2_clock_ram
+    #(.RAM_WIDTH(1),
+    .RAM_DEPTH(320*180))
+    moore_fb_11
+    (
+    // PORT A
+    .addra(ccl_moore_addr_1[2]), 
+    .clka(clk_pixel),
+    .wea(ccl_pixel_valid),
+    .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[1]),
+    .ena(1'b1),
+    .douta(ccl_moore_pixels_1[0][2]),
+    .rsta(sys_rst_pixel),
+    .regcea(1'b1),
 
-//     // PORT B
-//     .addrb(ccl_moore_addr_1[3]),
-//     .dinb(1'b0),
-//     .clkb(clk_pixel),
-//     .web(1'b0),
-//     .enb(1'b1),
-//     .doutb(ccl_moore_pixels_1[1][2]),
-//     .rstb(sys_rst_pixel),
-//     .regceb(1'b1)
-//     );
+    // PORT B
+    .addrb(ccl_moore_addr_1[3]),
+    .dinb(1'b0),
+    .clkb(clk_pixel),
+    .web(1'b0),
+    .enb(1'b1),
+    .doutb(ccl_moore_pixels_1[1][2]),
+    .rstb(sys_rst_pixel),
+    .regceb(1'b1)
+    );
 
-//   xilinx_true_dual_port_read_first_2_clock_ram
-//     #(.RAM_WIDTH(1),
-//     .RAM_DEPTH(320*180))
-//     moore_fb_12
-//     (
-//     // PORT A
-//     .addra(ccl_moore_addr_1[4]), 
-//     .clka(clk_pixel),
-//     .wea(ccl_pixel_valid),
-//     .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[1]),
-//     .ena(1'b1),
-//     .douta(ccl_moore_pixels_1[2][2]),
-//     .rsta(sys_rst_pixel),
-//     .regcea(1'b1),
+  xilinx_true_dual_port_read_first_2_clock_ram
+    #(.RAM_WIDTH(1),
+    .RAM_DEPTH(320*180))
+    moore_fb_12
+    (
+    // PORT A
+    .addra(ccl_moore_addr_1[4]), 
+    .clka(clk_pixel),
+    .wea(ccl_pixel_valid),
+    .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[1]),
+    .ena(1'b1),
+    .douta(ccl_moore_pixels_1[2][2]),
+    .rsta(sys_rst_pixel),
+    .regcea(1'b1),
 
-//     // PORT B
-//     .addrb(ccl_moore_addr_1[5]),
-//     .dinb(1'b0),
-//     .clkb(clk_pixel),
-//     .web(1'b0),
-//     .enb(1'b1),
-//     .doutb(ccl_moore_pixels_1[2][1]),
-//     .rstb(sys_rst_pixel),
-//     .regceb(1'b1)
-//     );
+    // PORT B
+    .addrb(ccl_moore_addr_1[5]),
+    .dinb(1'b0),
+    .clkb(clk_pixel),
+    .web(1'b0),
+    .enb(1'b1),
+    .doutb(ccl_moore_pixels_1[2][1]),
+    .rstb(sys_rst_pixel),
+    .regceb(1'b1)
+    );
 
-//   xilinx_true_dual_port_read_first_2_clock_ram
-//     #(.RAM_WIDTH(1),
-//     .RAM_DEPTH(320*180))
-//     moore_fb_13
-//     (
-//     // PORT A
-//     .addra(ccl_moore_addr_1[6]), 
-//     .clka(clk_pixel),
-//     .wea(ccl_pixel_valid),
-//     .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[1]),
-//     .ena(1'b1),
-//     .douta(ccl_moore_pixels_1[2][0]),
-//     .rsta(sys_rst_pixel),
-//     .regcea(1'b1),
+  xilinx_true_dual_port_read_first_2_clock_ram
+    #(.RAM_WIDTH(1),
+    .RAM_DEPTH(320*180))
+    moore_fb_13
+    (
+    // PORT A
+    .addra(ccl_moore_addr_1[6]), 
+    .clka(clk_pixel),
+    .wea(ccl_pixel_valid),
+    .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[1]),
+    .ena(1'b1),
+    .douta(ccl_moore_pixels_1[2][0]),
+    .rsta(sys_rst_pixel),
+    .regcea(1'b1),
 
-//     // PORT B
-//     .addrb(ccl_moore_addr_1[7]),
-//     .dinb(1'b0),
-//     .clkb(clk_pixel),
-//     .web(1'b0),
-//     .enb(1'b1),
-//     .doutb(ccl_moore_pixels_1[1][0]),
-//     .rstb(sys_rst_pixel),
-//     .regceb(1'b1)
-//     );
+    // PORT B
+    .addrb(ccl_moore_addr_1[7]),
+    .dinb(1'b0),
+    .clkb(clk_pixel),
+    .web(1'b0),
+    .enb(1'b1),
+    .doutb(ccl_moore_pixels_1[1][0]),
+    .rstb(sys_rst_pixel),
+    .regceb(1'b1)
+    );
 
 
 
@@ -1030,32 +1030,32 @@ module top_level
     );
 
 
-  // logic mask_fb_1;
-  // xilinx_true_dual_port_read_first_2_clock_ram
-  //   #(.RAM_WIDTH(1),
-  //   .RAM_DEPTH(320*180))
-  //   moore_fb_14
-  //   (
-  //   // PORT A
-  //   .addra(ccl_moore_addr_1[0]), 
-  //   .clka(clk_pixel),
-  //   .wea(ccl_pixel_valid),
-  //   .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[1]),
-  //   .ena(1'b1),
-  //   .douta(),
-  //   .rsta(sys_rst_pixel),
-  //   .regcea(1'b1),
+  logic mask_fb_1;
+  xilinx_true_dual_port_read_first_2_clock_ram
+    #(.RAM_WIDTH(1),
+    .RAM_DEPTH(320*180))
+    moore_fb_14
+    (
+    // PORT A
+    .addra(ccl_moore_addr_1[0]), 
+    .clka(clk_pixel),
+    .wea(ccl_pixel_valid),
+    .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[1]),
+    .ena(1'b1),
+    .douta(),
+    .rsta(sys_rst_pixel),
+    .regcea(1'b1),
 
-  //   // PORT B
-  //   .addrb(hcount_hdmi + vcount_hdmi*320),
-  //   .dinb(1'b0),
-  //   .clkb(clk_pixel),
-  //   .web(1'b0),
-  //   .enb(1'b1),
-  //   .doutb(mask_fb_1),
-  //   .rstb(sys_rst_pixel),
-  //   .regceb(1'b1)
-  //   );
+    // PORT B
+    .addrb(hcount_hdmi + vcount_hdmi*320),
+    .dinb(1'b0),
+    .clkb(clk_pixel),
+    .web(1'b0),
+    .enb(1'b1),
+    .doutb(mask_fb_1),
+    .rstb(sys_rst_pixel),
+    .regceb(1'b1)
+    );
 
   // logic mask_fb_2;
   // xilinx_true_dual_port_read_first_2_clock_ram
@@ -1134,39 +1134,39 @@ module top_level
 
 
 
-  // logic [7:0][15:0] moore_addrs_1;
-  // logic [15:0] perimeter_1;
-  // logic moore_busy_1;
-  // logic moore_valid_1;
-  // moore_neighbor_tracing_ccl #(
-  //   .WIDTH(320),
-  //   .HEIGHT(180))
-  //   mnt_ccl_1
-  //   (
-  //   .clk_in(clk_pixel),
-  //   .rst_in(sys_rst_pixel),
-  //   .ready_in(ccl_valid_out),
-  //   .pixel_upleft(ccl_moore_pixels_1[0][0]), // frame buffer direct outputs: neighboring pixels
-  //   .pixel_up(ccl_moore_pixels_1[0][1]),
-  //   .pixel_upright(ccl_moore_pixels_1[0][2]),
-  //   .pixel_right(ccl_moore_pixels_1[1][2]),
-  //   .pixel_downright(ccl_moore_pixels_1[2][2]),
-  //   .pixel_down(ccl_moore_pixels_1[2][1]),
-  //   .pixel_downleft(ccl_moore_pixels_1[2][0]),
-  //   .pixel_left(ccl_moore_pixels_1[1][0]),
-  //   .addra_1(moore_addrs_1[0]),
-  //   .addrb_1(moore_addrs_1[1]),
-  //   .addra_2(moore_addrs_1[2]),
-  //   .addrb_2(moore_addrs_1[3]),
-  //   .addra_3(moore_addrs_1[4]),
-  //   .addrb_3(moore_addrs_1[5]),
-  //   .addra_4(moore_addrs_1[6]),
-  //   .addrb_4(moore_addrs_1[7]),
+  logic [7:0][15:0] moore_addrs_1;
+  logic [15:0] perimeter_1;
+  logic moore_busy_1;
+  logic moore_valid_1;
+  moore_neighbor_tracing_ccl #(
+    .WIDTH(320),
+    .HEIGHT(180))
+    mnt_ccl_1
+    (
+    .clk_in(clk_pixel),
+    .rst_in(sys_rst_pixel),
+    .ready_in(ccl_valid_out),
+    .pixel_upleft(ccl_moore_pixels_1[0][0]), // frame buffer direct outputs: neighboring pixels
+    .pixel_up(ccl_moore_pixels_1[0][1]),
+    .pixel_upright(ccl_moore_pixels_1[0][2]),
+    .pixel_right(ccl_moore_pixels_1[1][2]),
+    .pixel_downright(ccl_moore_pixels_1[2][2]),
+    .pixel_down(ccl_moore_pixels_1[2][1]),
+    .pixel_downleft(ccl_moore_pixels_1[2][0]),
+    .pixel_left(ccl_moore_pixels_1[1][0]),
+    .addra_1(moore_addrs_1[0]),
+    .addrb_1(moore_addrs_1[1]),
+    .addra_2(moore_addrs_1[2]),
+    .addrb_2(moore_addrs_1[3]),
+    .addra_3(moore_addrs_1[4]),
+    .addrb_3(moore_addrs_1[5]),
+    .addra_4(moore_addrs_1[6]),
+    .addrb_4(moore_addrs_1[7]),
                          
-  //   .perimeter(perimeter_1),
-  //   .busy_out(moore_busy_1),
-  //   .valid_out(moore_valid_1)
-  // );
+    .perimeter(perimeter_1),
+    .busy_out(moore_busy_1),
+    .valid_out(moore_valid_1)
+  );
 
 
 
@@ -1209,10 +1209,10 @@ module top_level
 
 
 
-  logic [15:0] area_0; //, area_1, area_2;
+  logic [15:0] area_0, area_1;//, area_2;
 
-  logic [10:0] x_com_calc_0; //, x_com_calc_1, x_com_calc_2; //long term x_com and output from module, resp
-  logic [9:0] y_com_calc_0; //, y_com_calc_1, y_com_calc_2; //long term y_com and output from module, resp
+  logic [10:0] x_com_calc_0, x_com_calc_1; //, x_com_calc_2; //long term x_com and output from module, resp
+  logic [9:0] y_com_calc_0, y_com_calc_1; //, y_com_calc_2; //long term y_com and output from module, resp
 
   // TODO: SET COM X AND Y AND VALID BASED ON THE OUTPUTS FROM CCL[0]
   // *** THIS SHOULD BE REPLACED LATER WHEN WE DECIDE TO DETECT MORE THAN 1 SHAPE
@@ -1221,14 +1221,14 @@ module top_level
 
     if(ccl_pixel_valid || ccl_valid_out) begin
       area_0 = largest_areas[0]; // TODO: Make sure to only store this on a valid output
-      // area_1 = largest_areas[1];
+      area_1 = largest_areas[1];
       // area_2 = largest_areas[2];
 
       x_com_calc_0 = largest_x_coms[0]; // TODO: we may want to shift this over by << 2 so that it appears on the screen in the right spot
       y_com_calc_0 = largest_y_coms[0];
 
-      // x_com_calc_1 = largest_x_coms[1]; // TODO: we may want to shift this over by << 2 so that it appears on the screen in the right spot
-      // y_com_calc_1 = largest_y_coms[1];
+      x_com_calc_1 = largest_x_coms[1]; // TODO: we may want to shift this over by << 2 so that it appears on the screen in the right spot
+      y_com_calc_1 = largest_y_coms[1];
 
       // x_com_calc_2 = largest_x_coms[2]; // TODO: we may want to shift this over by << 2 so that it appears on the screen in the right spot
       // y_com_calc_2 = largest_y_coms[2];
@@ -1240,16 +1240,16 @@ module top_level
 
 
 
-  logic com_waiting_0; //, com_waiting_1, com_waiting_2;
-  logic [31:0] area_stored_0; //, area_stored_1, area_stored_2;
-  logic moore_waiting_0; //, moore_waiting_1, moore_waiting_2;
-  logic [31:0] perimeter_stored_0; //, perimeter_stored_1, perimeter_stored_2;
+  logic com_waiting_0, com_waiting_1; //, com_waiting_2;
+  logic [31:0] area_stored_0, area_stored_1; //, area_stored_2;
+  logic moore_waiting_0, moore_waiting_1; //, moore_waiting_2;
+  logic [31:0] perimeter_stored_0, perimeter_stored_1; //, perimeter_stored_2;
 
-  logic [15:0] area_saved_0; //, area_saved_1, area_saved_2;
-  logic [15:0] perimeter_saved_0; //, perimeter_saved_1, perimeter_saved_2;
+  logic [15:0] area_saved_0, area_saved_1; //, area_saved_2;
+  logic [15:0] perimeter_saved_0, perimeter_saved_1; //, perimeter_saved_2;
   
-  logic both_valid_0; //, both_valid_1, both_valid_2;
-  logic circularity_busy_0; //, circularity_busy_1, circularity_busy_2;
+  logic both_valid_0, both_valid_1; //, both_valid_2;
+  logic circularity_busy_0, circularity_busy_1; //, circularity_busy_2;
 
   // using this for now
   always_ff @(posedge clk_pixel)begin
@@ -1274,26 +1274,26 @@ module top_level
   end
 
 
-  // always_ff @(posedge clk_pixel) begin
-  //   if (new_com && !both_valid_1 && !circularity_busy_1) begin
-  //       com_waiting_1 <= 1;
-  //       area_stored_1 <= area_1;
-  //   end
-  //   if (moore_valid_1 && !both_valid_1 && !circularity_busy_1) begin
-  //       moore_waiting_1 <= 1;
-  //       perimeter_stored_1 <= perimeter_1;
-  //   end
-  //   if (com_waiting_1 && moore_waiting_1) begin
-  //       both_valid_1 <= 1;
-  //       com_waiting_1 <= 0;
-  //       moore_waiting_1 <= 0;
-  //   end
-  //   if (both_valid_1 && !circularity_busy_1) begin
-  //       both_valid_1 <= 0;
-  //       area_saved_1 <= area_stored_1;
-  //       perimeter_saved_1 <= perimeter_stored_1;
-  //   end
-  // end
+  always_ff @(posedge clk_pixel) begin
+    if (new_com && !both_valid_1 && !circularity_busy_1) begin
+        com_waiting_1 <= 1;
+        area_stored_1 <= area_1;
+    end
+    if (moore_valid_1 && !both_valid_1 && !circularity_busy_1) begin
+        moore_waiting_1 <= 1;
+        perimeter_stored_1 <= perimeter_1;
+    end
+    if (com_waiting_1 && moore_waiting_1) begin
+        both_valid_1 <= 1;
+        com_waiting_1 <= 0;
+        moore_waiting_1 <= 0;
+    end
+    if (both_valid_1 && !circularity_busy_1) begin
+        both_valid_1 <= 0;
+        area_saved_1 <= area_stored_1;
+        perimeter_saved_1 <= perimeter_stored_1;
+    end
+  end
 
 
   // always_ff @(posedge clk_pixel) begin
@@ -1324,20 +1324,20 @@ module top_level
 
 
 
-  logic [31:0] dividend_0; //, dividend_1, dividend_2;
-  logic [31:0] divisor_0; //, divisor_1, divisor_2;
-  logic [31:0] circularity_raw_0; //, circularity_raw_1, circularity_raw_2;
+  logic [31:0] dividend_0, dividend_1; //, dividend_2;
+  logic [31:0] divisor_0, divisor_1; //, divisor_2;
+  logic [31:0] circularity_raw_0, circularity_raw_1; //, circularity_raw_2;
   assign dividend_0 = 4 * area_stored_0 * 314;
-  // assign dividend_1 = 4 * area_stored_1 * 314;
+  assign dividend_1 = 4 * area_stored_1 * 314;
   // assign dividend_2 = 4 * area_stored_2 * 314;
 
   assign divisor_0 = perimeter_stored_0 * perimeter_stored_0; // area is 16* what it should be --> divide out without losing information
-  // assign divisor_1 = perimeter_stored_1 * perimeter_stored_1; // area is 16* what it should be --> divide out without losing information
+  assign divisor_1 = perimeter_stored_1 * perimeter_stored_1; // area is 16* what it should be --> divide out without losing information
   // assign divisor_2 = perimeter_stored_2 * perimeter_stored_2; // area is 16* what it should be --> divide out without losing information
 
 
 
-  logic circularity_valid_0; //, circularity_valid_1, circularity_valid_2;
+  logic circularity_valid_0, circularity_valid_1; //, circularity_valid_2;
 
   divider
     #(.WIDTH(32)
@@ -1354,20 +1354,20 @@ module top_level
         .busy_out(circularity_busy_0)
     );
 
-  // divider
-  //   #(.WIDTH(32)
-  //   ) my_divider_1
-  //   (.clk_in(clk_pixel),
-  //       .rst_in(sys_rst_pixel),
-  //       .dividend_in(dividend_1),
-  //       .divisor_in(divisor_1),
-  //       .data_valid_in(both_valid_1 && !circularity_busy_1),
-  //       .quotient_out(circularity_raw_1), // outputs
-  //       .remainder_out(),
-  //       .data_valid_out(circularity_valid_1),
-  //       .error_out(),
-  //       .busy_out(circularity_busy_1)
-  //   );
+  divider
+    #(.WIDTH(32)
+    ) my_divider_1
+    (.clk_in(clk_pixel),
+        .rst_in(sys_rst_pixel),
+        .dividend_in(dividend_1),
+        .divisor_in(divisor_1),
+        .data_valid_in(both_valid_1 && !circularity_busy_1),
+        .quotient_out(circularity_raw_1), // outputs
+        .remainder_out(),
+        .data_valid_out(circularity_valid_1),
+        .error_out(),
+        .busy_out(circularity_busy_1)
+    );
 
   // divider
   //   #(.WIDTH(32)
@@ -1388,14 +1388,14 @@ module top_level
 
 
 
-  logic [7:0] circularity_0; //, circularity_1, circularity_2;
-  logic [1:0] shape_0; //, shape_1, shape_2;
+  logic [7:0] circularity_0, circularity_1; //, circularity_2;
+  logic [1:0] shape_0, shape_1; //, shape_2;
 
   logic [15:0] circ_temp [4:0];     // 2D array for circ_temp[stage]
   logic [15:0] area_temp [4:0];
   logic [15:0] perim_temp [4:0];
 
-  // logic [15:0] perim_temp_1, perim_temp_2;
+  logic [15:0] perim_temp_1; //, perim_temp_2;
 
   always_ff @(posedge clk_pixel) begin
     if(circularity_valid_0 && circularity_raw_0 < 200) begin // throw out obviously garbage circularity values --> should be in the 0-100 range (but circle can be a bit bigger)
@@ -1405,10 +1405,10 @@ module top_level
       perim_temp[0] <= perimeter_saved_0;
     end
 
-    // if(circularity_valid_1 && circularity_raw_1 < 200) begin // throw out obviously garbage circularity values --> should be in the 0-100 range (but circle can be a bit bigger)
-    //   circularity_1 <= circularity_raw_1;
-    //   perim_temp_1 <= perimeter_saved_1;
-    // end
+    if(circularity_valid_1 && circularity_raw_1 < 200) begin // throw out obviously garbage circularity values --> should be in the 0-100 range (but circle can be a bit bigger)
+      circularity_1 <= circularity_raw_1;
+      perim_temp_1 <= perimeter_saved_1;
+    end
 
     // if(circularity_valid_2 && circularity_raw_2 < 200) begin // throw out obviously garbage circularity values --> should be in the 0-100 range (but circle can be a bit bigger)
     //   circularity_2 <= circularity_raw_2;
@@ -1438,15 +1438,15 @@ module top_level
     end
     
 
-    // if (circularity_1 > CIRC_MIN) begin
-    //   shape_1 = 0; // circle
-    // end else if (circularity_1 > SQ_MIN) begin
-    //   shape_1 = 1; // square
-    // end else if (circularity_1 > TRI_MIN) begin
-    //   shape_1 = 2; // triangle
-    // end else begin
-    //   shape_1 = 3; // plus
-    // end
+    if (circularity_1 > CIRC_MIN) begin
+      shape_1 = 0; // circle
+    end else if (circularity_1 > SQ_MIN) begin
+      shape_1 = 1; // square
+    end else if (circularity_1 > TRI_MIN) begin
+      shape_1 = 2; // triangle
+    end else begin
+      shape_1 = 3; // plus
+    end
 
 
     // if (circularity_2 > CIRC_MIN) begin
@@ -1473,7 +1473,7 @@ module top_level
 
   //if any of the draw_outs from any of the sprite modules are true, then set draw_out to be true
   always_comb begin                                                                                    // commenting this out removes all of the upstream label[3] logic
-    if ((draw_classifier_0 && !(perim_temp[0] == 0)) || /*(draw_classifier_1 && !(perim_temp_1 == 0)) ||*/ /*(draw_classifier_2 && !(perim_temp_2 == 0)) ||*/ draw_number[0] || draw_number[1] || draw_number[2] || draw_number[3] || draw_number[4] || draw_number[5] || draw_number[6] || draw_number[7] || draw_number[8] || draw_number[9] || draw_number[10] || draw_number[11]) begin
+    if ((draw_classifier_0 && !(perim_temp[0] == 0)) || (draw_classifier_1 && !(perim_temp_1 == 0)) || /*(draw_classifier_2 && !(perim_temp_2 == 0)) ||*/ draw_number[0] || draw_number[1] || draw_number[2] || draw_number[3] || draw_number[4] || draw_number[5] || draw_number[6] || draw_number[7] || draw_number[8] || draw_number[9] || draw_number[10] || draw_number[11]) begin
       draw_sprite = 1;
     end else begin
       draw_sprite = 0;
@@ -1486,16 +1486,16 @@ module top_level
   //grab logic for above
   //update center of mass x_com, y_com based on new_com signal
 
-  logic [10:0] x_com_0; //, x_com_1, x_com_2; //long term x_com and output from module, resp
-  logic [9:0] y_com_0; //, y_com_1, y_com_2; //long term y_com and output from module, resp
+  logic [10:0] x_com_0, x_com_1; //, x_com_2; //long term x_com and output from module, resp
+  logic [9:0] y_com_0, y_com_1; //, y_com_2; //long term y_com and output from module, resp
 
   always_ff @(posedge clk_pixel)begin
     if (sys_rst_pixel)begin
       x_com_0 <= 0;
       y_com_0 <= 0;
 
-      // x_com_1 <= 0;
-      // y_com_1 <= 0;
+      x_com_1 <= 0;
+      y_com_1 <= 0;
 
       // x_com_2 <= 0;
       // y_com_2 <= 0;
@@ -1503,8 +1503,8 @@ module top_level
       x_com_0 <= x_com_calc_0;
       y_com_0 <= y_com_calc_0;
 
-      // x_com_1 <= x_com_calc_1;
-      // y_com_1 <= y_com_calc_1;
+      x_com_1 <= x_com_calc_1;
+      y_com_1 <= y_com_calc_1;
 
       // x_com_2 <= x_com_calc_2;
       // y_com_2 <= y_com_calc_2;
@@ -1531,21 +1531,21 @@ module top_level
     .draw_out(draw_classifier_0)
   );
 
-  // logic draw_classifier_1;
-  // image_sprite_transparent_1 #(
-  //   .WIDTH(IMG_SPRITE_WIDTH),
-  //   .HEIGHT(IMG_SPRITE_WIDTH),
-  //   .NUM_IMGS(4)
-  // ) classifier_1 (
-  //   .pixel_clk_in(clk_pixel),
-  //   .rst_in(sys_rst_pixel),
-  //   .x_in(x_com_1>(IMG_SPRITE_WIDTH>>1) ? x_com_1-(IMG_SPRITE_WIDTH>>1) : 0),
-  //   .y_in(y_com_1>(IMG_SPRITE_WIDTH>>1) ? y_com_1-(IMG_SPRITE_WIDTH>>1) : 0),
-  //   .hcount_in(hcount_hdmi),
-  //   .vcount_in(vcount_hdmi),
-  //   .shape(shape_1),
-  //   .draw_out(draw_classifier_1)
-  // );
+  logic draw_classifier_1;
+  image_sprite_transparent_1 #(
+    .WIDTH(IMG_SPRITE_WIDTH),
+    .HEIGHT(IMG_SPRITE_WIDTH),
+    .NUM_IMGS(4)
+  ) classifier_1 (
+    .pixel_clk_in(clk_pixel),
+    .rst_in(sys_rst_pixel),
+    .x_in(x_com_1>(IMG_SPRITE_WIDTH>>1) ? x_com_1-(IMG_SPRITE_WIDTH>>1) : 0),
+    .y_in(y_com_1>(IMG_SPRITE_WIDTH>>1) ? y_com_1-(IMG_SPRITE_WIDTH>>1) : 0),
+    .hcount_in(hcount_hdmi),
+    .vcount_in(vcount_hdmi),
+    .shape(shape_1),
+    .draw_out(draw_classifier_1)
+  );
 
   // logic draw_classifier_2;
   // image_sprite_transparent_2 #(
@@ -2334,9 +2334,9 @@ end
     if(sw[0]) begin
       mask_tot = mask_tot || mask_fb_0;
     end
-    // if(sw[1]) begin
-    //   mask_tot = mask_tot || mask_fb_1;
-    // end
+    if(sw[1]) begin
+      mask_tot = mask_tot || mask_fb_1;
+    end
     // if(sw[2]) begin
     //   mask_tot = mask_tot || mask_fb_2;
     // end
