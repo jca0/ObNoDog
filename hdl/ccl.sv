@@ -26,13 +26,15 @@ module ccl #(
     output logic [1:0][15:0]    com_x_out,          // Array of blob centroid x-coordinates
     output logic [1:0][15:0]    com_y_out,          // Array of blob centroid y-coordinates
     output logic [15:0]         curr_pix_label,
-    output logic                curr_pix_valid
+    output logic                curr_pix_valid,
+    output logic [3:0]          curr_state
 
 );
 
 parameter LABEL_WIDTH = $clog2(MAX_LABELS);
 
 enum {IDLE, STORE_FRAME, FIRST_PASS, RESOLVE_EQUIV, PROPERTY_CALC, STORE_IN_ARRS, PRUNE, TL_FRAME, OUTPUT} state;
+assign curr_state = state;
 
 // logic [MAX_LABELS:0][15:0] first_pass_labels;
 logic [MAX_LABELS:0][LABEL_WIDTH-1:0] second_pass_labels;
@@ -100,7 +102,7 @@ logic [15:0] w_pixel_label, nw_pixel_label, n_pixel_label, ne_pixel_label;
 
 logic [10:0] curr_x;
 logic [9:0] curr_y;
-logic [LABEL_WIDTH-1:0] curr_label;
+logic [15:0] curr_label;
 logic [LABEL_WIDTH-1:0] min_label;
 
 logic [1:0] bram_wait;
@@ -140,6 +142,7 @@ always_ff @(posedge clk_in) begin
         case (state) 
             IDLE: begin
                 valid_out <= 0;
+                largest_areas <= 0;
 
                 if (new_frame_in) begin
                     state <= STORE_FRAME;
@@ -253,6 +256,7 @@ always_ff @(posedge clk_in) begin
                                 resolve_index <= 0;
                                 resolve_pass <= 0;
                                 max_passes <= curr_label;
+
                                 curr_y <= 0;
                             end else begin
                                 curr_y <= curr_y + 1;
@@ -268,17 +272,17 @@ always_ff @(posedge clk_in) begin
 
 
 
-
             RESOLVE_EQUIV: begin
+                curr_label <= 1;
                 equiv_table[resolve_index] <= equiv_table[equiv_table[resolve_index]];
-                if (resolve_index == curr_label - 1) begin
+                if (resolve_index == max_passes - 1) begin
                     resolve_index <= 0;
-                    resolve_pass <= resolve_pass + 1;
                     if (resolve_pass == max_passes) begin
                         state <= PROPERTY_CALC;
-                        resolve_index <= 0;
                         resolve_pass <= 0;
-                    end
+                    end else begin
+                        resolve_pass <= resolve_pass + 1;
+                    end 
                 end else begin
                     resolve_index <= resolve_index + 1;
                 end
@@ -290,14 +294,14 @@ always_ff @(posedge clk_in) begin
                     sum_x_table[equiv_table[resolve_index]] <= sum_x_table[equiv_table[resolve_index]] + sum_x_table[resolve_index];
                     sum_y_table[equiv_table[resolve_index]] <= sum_y_table[equiv_table[resolve_index]] + sum_y_table[resolve_index];
                 end
-                if (resolve_index == curr_label - 1) begin
+                if (resolve_index == max_passes - 1) begin
                     resolve_index <= 0;
-                    resolve_pass <= resolve_pass + 1;
                     if (resolve_pass == max_passes) begin
                         state <= STORE_IN_ARRS;
-                        resolve_index <= 0;
                         resolve_pass <= 0;
-                    end
+                    end else begin
+                        resolve_pass <= resolve_pass + 1;
+                    end 
                 end else begin
                     resolve_index <= resolve_index + 1;
                 end
@@ -308,7 +312,7 @@ always_ff @(posedge clk_in) begin
                 areas[equiv_table[resolve_index]] <= area_table[equiv_table[resolve_index]];
                 x_sums[equiv_table[resolve_index]] <= sum_x_table[equiv_table[resolve_index]];
                 y_sums[equiv_table[resolve_index]] <= sum_y_table[equiv_table[resolve_index]];
-                if (resolve_index == curr_label - 1) begin
+                if (resolve_index == max_passes - 1) begin
                     resolve_index <= 0;
                     resolve_pass <= resolve_pass + 1;
                     if (resolve_pass == max_passes) begin
@@ -327,7 +331,9 @@ always_ff @(posedge clk_in) begin
                         largest_y_coms <= 0;
                         largest_smallest <= 0;
                         largest_smallest_ind <= 0;
-                    end
+                    end else begin
+                        resolve_pass <= resolve_pass + 1;
+                    end 
                 end else begin
                     resolve_index <= resolve_index + 1;
                 end
@@ -366,7 +372,7 @@ always_ff @(posedge clk_in) begin
                             end else begin
                                 
                                 // if this area is smaller than the 3 largest, we don't care about dividing
-                                if(areas[prune_iter] <= largest_areas[0] && areas[prune_iter] <= largest_areas[1]]) begin
+                                if(areas[prune_iter] <= largest_areas[0] && areas[prune_iter] <= largest_areas[1]) begin
                                     prune_iter <= prune_iter + 1;           // and continue
 
                                 end else begin
@@ -475,25 +481,25 @@ end
 // SETTING OUTPUTS FOR 3 LARGEST BLOBS
 // CRITICAL FOR TL_FRAME
 always_comb begin
-    if(rst_in) begin
-        blob_labels = 0;
-        area_out = 0;
-        com_x_out = 0;
-        com_y_out = 0;
-        curr_pix_label = 0;
-        curr_pix_valid = 0;
-        x_out = 0;
-        y_out = 0;
-    end else begin
-        blob_labels = largest_labels;
-        area_out = largest_areas;
-        com_x_out = largest_x_coms;
-        com_y_out = largest_y_coms;
-        curr_pix_label = label_tl;
-        curr_pix_valid = valid_label_tl;
-        x_out = x_tl;
-        y_out = y_tl;
-    end
+    // if(rst_in) begin
+    //     blob_labels = 0;
+    //     area_out = 0;
+    //     com_x_out = 0;
+    //     com_y_out = 0;
+    //     curr_pix_label = 0;
+    //     curr_pix_valid = 0;
+    //     x_out = 0;
+    //     y_out = 0;
+    // end else begin
+    blob_labels = largest_labels;
+    area_out = largest_areas;
+    com_x_out = largest_x_coms;
+    com_y_out = largest_y_coms;
+    curr_pix_label = label_tl;
+    curr_pix_valid = valid_label_tl;
+    x_out = x_tl;
+    y_out = y_tl;
+    // end
 end
 
 
@@ -524,86 +530,86 @@ divider #(.WIDTH(24)) div_y (
 
 
 always_comb begin
-    if(rst_in) begin
-        addra_mask = 0;
-        addrb_mask = 0;
-        addra_label = 0;
-        addrb_label = 0;
+    // if(rst_in) begin
+    //     addra_mask = 0;
+    //     addrb_mask = 0;
+    //     addra_label = 0;
+    //     addrb_label = 0;
 
-        store_label = 0;
+    //     store_label = 0;
 
-    end else begin
-        if (state == STORE_FRAME) begin
-            addra_mask = x_in + y_in * WIDTH; // STORING TO THIS INDEX
-        end else if (state == FIRST_PASS) begin
-            addra_mask = curr_x + curr_y * WIDTH; // get the mask pixel at the center index --> mask_a_out
+    // end else begin
+    if (state == STORE_FRAME) begin
+        addra_mask = x_in + y_in * WIDTH; // STORING TO THIS INDEX
+    end else if (state == FIRST_PASS) begin
+        addra_mask = curr_x + curr_y * WIDTH; // get the mask pixel at the center index --> mask_a_out
 
-            
-            // SETTING ADDRS AND STORING NEIGHBORS
-            // logic [15:0] w_pixel_label, nw_pixel_label, n_pixel_label, ne_pixel_label;
-            if(mask_a_out) begin
-                if(read_signal) begin
-                    if(read_neighbor_wait == 0 || read_neighbor_wait == 1) begin
-                        addra_label = (curr_x != 0 && curr_y != 0)? (curr_x-1) + (curr_y-1)*WIDTH : 0;          // nw
-                        addrb_label = (curr_y != 0)? (curr_x) + (curr_y-1)*WIDTH : 0;                           // n
-                    end else if(read_neighbor_wait == 2) begin
-                        nw_pixel_label = (curr_x != 0 && curr_y != 0)? label_a_out : 0;
-                        n_pixel_label = (curr_y != 0)? label_b_out : 0;
-                    end else if(read_neighbor_wait == 3 || read_neighbor_wait == 4) begin
-                        addra_label = (curr_x != WIDTH-1 && curr_y != 0)? (curr_x+1) + (curr_y-1)*WIDTH : 0;    // ne
-                        addrb_label = (curr_x != 0)? (curr_x-1) + (curr_y)*WIDTH : 0;                           // w
-                    end else if(read_neighbor_wait == 5) begin
-                        ne_pixel_label = (curr_x != WIDTH-1 && curr_y != 0)? label_a_out : 0;
-                        w_pixel_label = (curr_x != 0)? label_b_out : 0;
-                    end
-                end else begin
-                    // if we need to store a label to BRAM, decide what label to store
-                    if(min_label == 6'b111111) begin
-                        store_label = curr_label;   // store a new label
-                    end else begin
-                        store_label = min_label;    // store the minimum label among neighbors
-                    end
-
-                    addra_label = curr_x + curr_y * WIDTH; // if we're writing, store to this label
+        
+        // SETTING ADDRS AND STORING NEIGHBORS
+        // logic [15:0] w_pixel_label, nw_pixel_label, n_pixel_label, ne_pixel_label;
+        if(mask_a_out) begin
+            if(read_signal) begin
+                if(read_neighbor_wait == 0 || read_neighbor_wait == 1) begin
+                    addra_label = (curr_x != 0 && curr_y != 0)? (curr_x-1) + (curr_y-1)*WIDTH : 0;          // nw
+                    addrb_label = (curr_y != 0)? (curr_x) + (curr_y-1)*WIDTH : 0;                           // n
+                end else if(read_neighbor_wait == 2) begin
+                    nw_pixel_label = (curr_x != 0 && curr_y != 0)? label_a_out : 0;
+                    n_pixel_label = (curr_y != 0)? label_b_out : 0;
+                end else if(read_neighbor_wait == 3 || read_neighbor_wait == 4) begin
+                    addra_label = (curr_x != WIDTH-1 && curr_y != 0)? (curr_x+1) + (curr_y-1)*WIDTH : 0;    // ne
+                    addrb_label = (curr_x != 0)? (curr_x-1) + (curr_y)*WIDTH : 0;                           // w
+                end else if(read_neighbor_wait == 5) begin
+                    ne_pixel_label = (curr_x != WIDTH-1 && curr_y != 0)? label_a_out : 0;
+                    w_pixel_label = (curr_x != 0)? label_b_out : 0;
                 end
-            end else begin // if there is no mask here, write 0 to label
-                addra_label = curr_x + curr_y * WIDTH;
-                store_label = 0;
+            end else begin
+                // if we need to store a label to BRAM, decide what label to store
+                if(min_label == 6'b111111) begin
+                    store_label = curr_label;   // store a new label
+                end else begin
+                    store_label = min_label;    // store the minimum label among neighbors
+                end
+
+                addra_label = curr_x + curr_y * WIDTH; // if we're writing, store to this label
             end
-
-            // addra11 = (curr_x != 0 && curr_y != 0)? (curr_x-1) + (curr_y-1)*WIDTH : 0;                  // nw
-            // addrb11 = (curr_y != 0)? (curr_x) + (curr_y-1)*WIDTH : 0;                                   // n
-            // addra12 = (curr_x != WIDTH-1 && curr_y != 0)? (curr_x+1) + (curr_y-1)*WIDTH : 0;          // ne
-            // addrb12 = (curr_x != 0)? (curr_x-1) + (curr_y)*WIDTH : 0;                                 // w
-            // addra13 = curr_x + curr_y*WIDTH;
-
-            // // labels
-            // addra21 = curr_x + curr_y*WIDTH;
-            // addra22 = curr_x + curr_y*WIDTH;
-            // addra23 = curr_x + curr_y*WIDTH;
-            // addra24 = curr_x + curr_y*WIDTH;
-            // addrb21 = (curr_x != 0 && curr_y != 0)? (curr_x-1) + (curr_y-1)*WIDTH : 0;                  // nw
-            // addrb22 = (curr_y != 0)? (curr_x) + (curr_y-1)*WIDTH : 0;                                   // n
-            // addrb23 = (curr_x != WIDTH-1 && curr_y != 0)? (curr_x+1) + (curr_y-1)*WIDTH : 0;          // ne
-            // addrb24 = (curr_x != 0)? (curr_x-1) + (curr_y)*WIDTH : 0;                                 // w
-
-            // nw_pixel_mask = (curr_x != 0 && curr_y != 0)? nw_pixel_temp : 0;      
-            // n_pixel_mask = (curr_y != 0)? n_pixel_temp : 0;                       
-            // ne_pixel_mask = (curr_x != WIDTH-1 && curr_y != 0)? ne_pixel_temp : 0;
-            // w_pixel_mask = (curr_x != 0)? w_pixel_temp : 0; 
-
-            // nw_pixel_label = (curr_x != 0 && curr_y != 0)? nw_pixel_temp_label : 0;      
-            // n_pixel_label = (curr_y != 0)? n_pixel_temp_label : 0;                       
-            // ne_pixel_label = (curr_x != WIDTH-1 && curr_y != 0)? ne_pixel_temp_label : 0;
-            // w_pixel_label = (curr_x != 0)? w_pixel_temp_label : 0; 
-
-
-
-        end else if (state == TL_FRAME) begin
-            addra_label = x_tl + y_tl*WIDTH; // read label from center & pull corresponding value
-            label_tl = equiv_table[label_a_out];
+        end else begin // if there is no mask here, write 0 to label
+            addra_label = curr_x + curr_y * WIDTH;
+            store_label = 0;
         end
+
+        // addra11 = (curr_x != 0 && curr_y != 0)? (curr_x-1) + (curr_y-1)*WIDTH : 0;                  // nw
+        // addrb11 = (curr_y != 0)? (curr_x) + (curr_y-1)*WIDTH : 0;                                   // n
+        // addra12 = (curr_x != WIDTH-1 && curr_y != 0)? (curr_x+1) + (curr_y-1)*WIDTH : 0;          // ne
+        // addrb12 = (curr_x != 0)? (curr_x-1) + (curr_y)*WIDTH : 0;                                 // w
+        // addra13 = curr_x + curr_y*WIDTH;
+
+        // // labels
+        // addra21 = curr_x + curr_y*WIDTH;
+        // addra22 = curr_x + curr_y*WIDTH;
+        // addra23 = curr_x + curr_y*WIDTH;
+        // addra24 = curr_x + curr_y*WIDTH;
+        // addrb21 = (curr_x != 0 && curr_y != 0)? (curr_x-1) + (curr_y-1)*WIDTH : 0;                  // nw
+        // addrb22 = (curr_y != 0)? (curr_x) + (curr_y-1)*WIDTH : 0;                                   // n
+        // addrb23 = (curr_x != WIDTH-1 && curr_y != 0)? (curr_x+1) + (curr_y-1)*WIDTH : 0;          // ne
+        // addrb24 = (curr_x != 0)? (curr_x-1) + (curr_y)*WIDTH : 0;                                 // w
+
+        // nw_pixel_mask = (curr_x != 0 && curr_y != 0)? nw_pixel_temp : 0;      
+        // n_pixel_mask = (curr_y != 0)? n_pixel_temp : 0;                       
+        // ne_pixel_mask = (curr_x != WIDTH-1 && curr_y != 0)? ne_pixel_temp : 0;
+        // w_pixel_mask = (curr_x != 0)? w_pixel_temp : 0; 
+
+        // nw_pixel_label = (curr_x != 0 && curr_y != 0)? nw_pixel_temp_label : 0;      
+        // n_pixel_label = (curr_y != 0)? n_pixel_temp_label : 0;                       
+        // ne_pixel_label = (curr_x != WIDTH-1 && curr_y != 0)? ne_pixel_temp_label : 0;
+        // w_pixel_label = (curr_x != 0)? w_pixel_temp_label : 0; 
+
+
+
+    end else if (state == TL_FRAME) begin
+        addra_label = x_tl + y_tl*WIDTH; // read label from center & pull corresponding value
+        label_tl = equiv_table[label_a_out];
     end
+    // end
 end
 
 
