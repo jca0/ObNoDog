@@ -272,8 +272,10 @@ module top_level
   //101 Sobel X-axis Edge Detection
   //110 Total Sobel Edge Detection
   //111 Output of Line Buffer Directly (Helpful for debugging line buffer in first part)
+  
+  //REMOVED sw[2:0]
   always_ff @(posedge clk_pixel)begin
-    case (sw[2:0])
+    case (3'b001)
       3'b000: begin
         fmux_hcount <= f_hcount[0];
         fmux_vcount <= f_vcount[0];
@@ -341,6 +343,34 @@ module top_level
       valid_camera_mem <= 0;
     end
   end
+
+
+  // ========== LAB 5 ==========
+  // localparam FB_DEPTH = 320*180;
+  // localparam FB_SIZE = $clog2(FB_DEPTH);
+  // logic [FB_SIZE-1:0] addra; //used to specify address to write to in frame buffer
+
+  // logic valid_camera_mem; //used to enable writing pixel data to frame buffer
+  // logic [15:0] camera_mem; //used to pass pixel data into frame buffer
+
+
+  // //TO DO in camera part 1: ***DONE***
+  // always_ff @(posedge clk_camera)begin
+  //   //create logic to handle wriiting of camera.
+  //   //we want to down sample the data from the camera by a factor of four in both
+  //   //the x and y dimensions! TO DO
+
+  //   // if the camera pixel is valid and the lower 2 bits of v and h are 0 (divisible by 4)
+  //   if(camera_valid && (camera_hcount[0] == 0 && camera_hcount[1] == 0) && (camera_vcount[0] == 0 && camera_vcount[1] == 0)) begin
+  //     valid_camera_mem <= 1;      // say we have a valid input to memory
+  //     camera_mem <= camera_pixel; // set that input
+  //     addra <= ((1280-camera_hcount) >> 2) + 320*(camera_vcount >> 2);
+  //   end else begin
+  //     valid_camera_mem <= 0;      // we don't have a valid input to memory
+  //   end
+  // end
+  // ========== LAB 5 ==========
+
 
   //frame buffer from IP
   blk_mem_gen_0 frame_buffer (
@@ -413,8 +443,8 @@ module top_level
   logic mask; //Whether or not thresholded pixel is 1 or 0
 
   //Center of Mass variables (tally all mask=1 pixels for a frame and calculate their center of mass)
-  logic [10:0] x_com, x_com_calc; //long term x_com and output from module, resp
-  logic [9:0] y_com, y_com_calc; //long term y_com and output from module, resp
+  // logic [10:0] x_com, x_com_calc; //long term x_com and output from module, resp
+  // logic [9:0] y_com, y_com_calc; //long term y_com and output from module, resp
   logic new_com; //used to know when to update x_com and y_com ...
 
   //take lower 8 of full outputs.
@@ -423,7 +453,8 @@ module top_level
   assign cr = {!cr_full[7],cr_full[6:0]};
   assign cb = {!cb_full[7],cb_full[6:0]};
 
-  assign channel_sel = {1'b1, sw[4:3]}; //[3:1];
+  // WE ALWAYS SAY CR
+  assign channel_sel = 3'b101; //{1'b1, sw[4:3]}; //[3:1];
   //modified from before...ignoring red, green, blue
   // * 3'b000: green (not possible now)
   // * 3'b001: red (not possible now)
@@ -447,8 +478,8 @@ module top_level
   );
 
   //threshold values used to determine what value  passes:
-  assign lower_threshold = {sw[11:8],4'b0};
-  assign upper_threshold = {sw[15:12],4'b0};
+  assign lower_threshold = 8'b1010_0000; // {sw[11:8],4'b0};
+  assign upper_threshold = 8'b1111_0000; //{sw[15:12],4'b0};
 
   //Thresholder: Takes in the full selected channedl and
   //based on upper and lower bounds provides a binary mask bit
@@ -479,60 +510,12 @@ module top_level
   assign ss0_c = ss_c; //control upper four digit's cathodes!
   assign ss1_c = ss_c; //same as above but for lower four digits!
 
-  logic [15:0] perimeter;
-  logic [15:0] perimeter_temp;
-  logic [19:0] area_raw;
-  logic [15:0] area;
-  logic [7:0] circularity;
-  logic [1:0] shape;
-  logic both_valid;
-  logic ccl_valid;
-  logic ccl_temp;
-  logic moore_busy;
-  logic moore_valid;
-  logic moore_temp;
-  logic circularity_busy;
-  logic circularity_valid;
 
-  // // dont use this for now
-  // always_ff @(posedge clk_pixel)begin
-  //   if (ccl_valid) begin
-  //     ccl_temp <= 1;
-  //   end
-  //   if (moore_valid) begin
-  //     moore_temp <= 1;
-  //     perimeter_temp <= perimeter;
-  //   end
-  //   if (moore_temp && ccl_temp) begin
-  //     both_valid <= 1;
-  //     ccl_temp <= 0;
-  //     moore_temp <= 0;
-  //   end
-  //   if (both_valid) begin
-  //     both_valid <= 0;
-  //   end
-  // end
-  
 
-  // connected_components #(
-  //   .HRES(320),
-  //   .VRES(180),
-  //   .MAX_LABELS(20),
-  //   .MIN_AREA(40)
-  // ) cc(
-  //   .clk_in(clk_pixel),
-  //   .rst_in(sys_rst_pixel),
-  //   .hcount_in(fmux_hcount),
-  //   .vcount_in(fmux_vcount),
-  //   .mask_in(mask),
-  //   .valid_in(fmux_valid),
-  //   .label_out(),
-  //   .hcount_out(),
-  //   .vcount_out(),
-  //   .valid_out()
-  // );
 
-  //Center of Mass Calculation: (you need to do)
+
+
+  //Center of Mass Calculation:
   //using x_com_calc and y_com_calc values
   //Center of Mass:
   // center_of_mass com_m(
@@ -547,6 +530,11 @@ module top_level
   //   .area_out(area_raw),
   //   .valid_out(new_com)
   // );
+
+
+
+
+
 
   // NOW USING CCL:
   logic ccl_valid_out;
@@ -572,7 +560,7 @@ module top_level
   .x_in(hcount_hdmi >> 2),       
   .y_in(vcount_hdmi >> 2), // TODO: if something is fucked up, this shifting could very well be why
   .mask_in(mask),
-  .new_frame_in(hcount_hdmi == 0 && vcount_hdmi == 0 && !moore_busy),         
+  .new_frame_in(hcount_hdmi == 0 && vcount_hdmi == 0 && !moore_busy_0 /* && !moore_busy_1 */ /* && !moore_busy_2 */),         
   .valid_in(hcount_hdmi[1:0] == 1 && vcount_hdmi[1:0] == 1), // only give valid once every 4 pixels sure
 
   .valid_out(ccl_valid_out),
@@ -589,70 +577,117 @@ module top_level
 
 
 
-  // TODO: SET COM X AND Y AND VALID BASED ON THE OUTPUTS FROM CCL[0]
-  // *** THIS SHOULD BE REPLACED LATER WHEN WE DECIDE TO DETECT MORE THAN 1 SHAPE
-  always_comb begin
-    // area = (area_raw >> 4);
-    area = largest_areas[0];
-    x_com_calc = largest_x_coms[0]; // TODO: we may want to shift this over by << 2 so that it appears on the screen in the right spot
-    y_com_calc = largest_y_coms[0];
-    new_com = ccl_valid_out; // just set this because it works with previous code
-  end
-
 
   // logic to handle whether addresses should come from moore or ccl
-  logic [7:0][15:0] ccl_moore_addr;
-  logic [2:0][2:0] ccl_moore_pixels;
+  logic [7:0][15:0] ccl_moore_addr_0;
+  // logic [7:0][15:0] ccl_moore_addr_1;
+  // logic [7:0][15:0] ccl_moore_addr_2;
+  logic [2:0][2:0] ccl_moore_pixels_0;
+  // logic [2:0][2:0] ccl_moore_pixels_1;
+  // logic [2:0][2:0] ccl_moore_pixels_2;
+
   always_comb begin
     if(sys_rst_pixel) begin
-      ccl_moore_addr = 0;
+      ccl_moore_addr_0 = 0;
+      // ccl_moore_addr_1 = 0;
+      // ccl_moore_addr_2 = 0;
     end else begin
       if(ccl_busy_out) begin
-        ccl_moore_addr[0] = ccl_x_out + ccl_y_out*320;
-        ccl_moore_addr[2] = ccl_moore_addr[0];
-        ccl_moore_addr[4] = ccl_moore_addr[0];
-        ccl_moore_addr[6] = ccl_moore_addr[0];
+        //fb0
+        ccl_moore_addr_0[0] = ccl_x_out + ccl_y_out*320;
+        ccl_moore_addr_0[2] = ccl_moore_addr_0[0];
+        ccl_moore_addr_0[4] = ccl_moore_addr_0[0];
+        ccl_moore_addr_0[6] = ccl_moore_addr_0[0];
 
-        ccl_moore_addr[1] = 0;
-        ccl_moore_addr[3] = 0;
-        ccl_moore_addr[5] = 0;
-        ccl_moore_addr[7] = 0;
+        ccl_moore_addr_0[1] = 0;
+        ccl_moore_addr_0[3] = 0;
+        ccl_moore_addr_0[5] = 0;
+        ccl_moore_addr_0[7] = 0;
+
+
+        // // fb1
+        // ccl_moore_addr_1[0] = ccl_x_out + ccl_y_out*320;
+        // ccl_moore_addr_1[2] = ccl_moore_addr_1[0];
+        // ccl_moore_addr_1[4] = ccl_moore_addr_1[0];
+        // ccl_moore_addr_1[6] = ccl_moore_addr_1[0];
+
+        // ccl_moore_addr_1[1] = 0;
+        // ccl_moore_addr_1[3] = 0;
+        // ccl_moore_addr_1[5] = 0;
+        // ccl_moore_addr_1[7] = 0;
+
+
+        // //fb2
+        // ccl_moore_addr_2[0] = ccl_x_out + ccl_y_out*320;
+        // ccl_moore_addr_2[2] = ccl_moore_addr_2[0];
+        // ccl_moore_addr_2[4] = ccl_moore_addr_2[0];
+        // ccl_moore_addr_2[6] = ccl_moore_addr_2[0];
+
+        // ccl_moore_addr_2[1] = 0;
+        // ccl_moore_addr_2[3] = 0;
+        // ccl_moore_addr_2[5] = 0;
+        // ccl_moore_addr_2[7] = 0;
+
       end else begin
-        ccl_moore_addr[0] = moore_addrs[0];
-        ccl_moore_addr[1] = moore_addrs[1];
-        ccl_moore_addr[2] = moore_addrs[2];
-        ccl_moore_addr[3] = moore_addrs[3];
-        ccl_moore_addr[4] = moore_addrs[4];
-        ccl_moore_addr[5] = moore_addrs[5];
-        ccl_moore_addr[6] = moore_addrs[6];
-        ccl_moore_addr[7] = moore_addrs[7];
+        ccl_moore_addr_0[0] = moore_addrs_0[0];
+        ccl_moore_addr_0[1] = moore_addrs_0[1];
+        ccl_moore_addr_0[2] = moore_addrs_0[2];
+        ccl_moore_addr_0[3] = moore_addrs_0[3];
+        ccl_moore_addr_0[4] = moore_addrs_0[4];
+        ccl_moore_addr_0[5] = moore_addrs_0[5];
+        ccl_moore_addr_0[6] = moore_addrs_0[6];
+        ccl_moore_addr_0[7] = moore_addrs_0[7];
+
+
+        // ccl_moore_addr_1[0] = moore_addrs_1[0];
+        // ccl_moore_addr_1[1] = moore_addrs_1[1];
+        // ccl_moore_addr_1[2] = moore_addrs_1[2];
+        // ccl_moore_addr_1[3] = moore_addrs_1[3];
+        // ccl_moore_addr_1[4] = moore_addrs_1[4];
+        // ccl_moore_addr_1[5] = moore_addrs_1[5];
+        // ccl_moore_addr_1[6] = moore_addrs_1[6];
+        // ccl_moore_addr_1[7] = moore_addrs_1[7];
+
+
+
+        // ccl_moore_addr_2[0] = moore_addrs_2[0];
+        // ccl_moore_addr_2[1] = moore_addrs_2[1];
+        // ccl_moore_addr_2[2] = moore_addrs_2[2];
+        // ccl_moore_addr_2[3] = moore_addrs_2[3];
+        // ccl_moore_addr_2[4] = moore_addrs_2[4];
+        // ccl_moore_addr_2[5] = moore_addrs_2[5];
+        // ccl_moore_addr_2[6] = moore_addrs_2[6];
+        // ccl_moore_addr_2[7] = moore_addrs_2[7];
       end
     end
   end
 
-  // FBs to hold Moore data for Moore 1
+
+
+
+  // FBs to hold Moore data for Moore 0
   xilinx_true_dual_port_read_first_2_clock_ram
     #(.RAM_WIDTH(1),
     .RAM_DEPTH(320*180))
     moore_fb_00
     (
     // PORT A
-    .addra(ccl_moore_addr[0]), 
+    .addra(ccl_moore_addr_0[0]), 
     .clka(clk_pixel),
     .wea(ccl_pixel_valid),
-    .dina(ccl_pixel_label == largest_labels[0]),
+    .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[0]),
     .ena(1'b1),
-    .douta(ccl_moore_pixels[0][0]),
+    .douta(ccl_moore_pixels_0[0][0]),
     .rsta(sys_rst_pixel),
     .regcea(1'b1),
 
     // PORT B
-    .addrb(ccl_moore_addr[1]),
+    .addrb(ccl_moore_addr_0[1]),
     .dinb(1'b0),
     .clkb(clk_pixel),
     .web(1'b0),
     .enb(1'b1),
-    .doutb(ccl_moore_pixels[0][1]),
+    .doutb(ccl_moore_pixels_0[0][1]),
     .rstb(sys_rst_pixel),
     .regceb(1'b1)
     );
@@ -663,22 +698,22 @@ module top_level
     moore_fb_01
     (
     // PORT A
-    .addra(ccl_moore_addr[2]), 
+    .addra(ccl_moore_addr_0[2]), 
     .clka(clk_pixel),
     .wea(ccl_pixel_valid),
-    .dina(ccl_pixel_label == largest_labels[0]),
+    .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[0]),
     .ena(1'b1),
-    .douta(ccl_moore_pixels[0][2]),
+    .douta(ccl_moore_pixels_0[0][2]),
     .rsta(sys_rst_pixel),
     .regcea(1'b1),
 
     // PORT B
-    .addrb(ccl_moore_addr[3]),
+    .addrb(ccl_moore_addr_0[3]),
     .dinb(1'b0),
     .clkb(clk_pixel),
     .web(1'b0),
     .enb(1'b1),
-    .doutb(ccl_moore_pixels[1][2]),
+    .doutb(ccl_moore_pixels_0[1][2]),
     .rstb(sys_rst_pixel),
     .regceb(1'b1)
     );
@@ -689,22 +724,22 @@ module top_level
     moore_fb_02
     (
     // PORT A
-    .addra(ccl_moore_addr[4]), 
+    .addra(ccl_moore_addr_0[4]), 
     .clka(clk_pixel),
     .wea(ccl_pixel_valid),
-    .dina(ccl_pixel_label == largest_labels[0]),
+    .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[0]),
     .ena(1'b1),
-    .douta(ccl_moore_pixels[2][2]),
+    .douta(ccl_moore_pixels_0[2][2]),
     .rsta(sys_rst_pixel),
     .regcea(1'b1),
 
     // PORT B
-    .addrb(ccl_moore_addr[5]),
+    .addrb(ccl_moore_addr_0[5]),
     .dinb(1'b0),
     .clkb(clk_pixel),
     .web(1'b0),
     .enb(1'b1),
-    .doutb(ccl_moore_pixels[2][1]),
+    .doutb(ccl_moore_pixels_0[2][1]),
     .rstb(sys_rst_pixel),
     .regceb(1'b1)
     );
@@ -715,196 +750,723 @@ module top_level
     moore_fb_03
     (
     // PORT A
-    .addra(ccl_moore_addr[6]), 
+    .addra(ccl_moore_addr_0[6]), 
     .clka(clk_pixel),
     .wea(ccl_pixel_valid),
-    .dina(ccl_pixel_label == largest_labels[0]),
+    .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[0]),
     .ena(1'b1),
-    .douta(ccl_moore_pixels[2][0]),
+    .douta(ccl_moore_pixels_0[2][0]),
     .rsta(sys_rst_pixel),
     .regcea(1'b1),
 
     // PORT B
-    .addrb(ccl_moore_addr[7]),
+    .addrb(ccl_moore_addr_0[7]),
     .dinb(1'b0),
     .clkb(clk_pixel),
     .web(1'b0),
     .enb(1'b1),
-    .doutb(ccl_moore_pixels[1][0]),
+    .doutb(ccl_moore_pixels_0[1][0]),
     .rstb(sys_rst_pixel),
     .regceb(1'b1)
     );
 
 
 
-  logic [7:0][15:0] moore_addrs;
+
+
+
+
+// MOORE FB 1
+// xilinx_true_dual_port_read_first_2_clock_ram
+//     #(.RAM_WIDTH(1),
+//     .RAM_DEPTH(320*180))
+//     moore_fb_10
+//     (
+//     // PORT A
+//     .addra(ccl_moore_addr_1[0]), 
+//     .clka(clk_pixel),
+//     .wea(ccl_pixel_valid),
+//     .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[1]),
+//     .ena(1'b1),
+//     .douta(ccl_moore_pixels_1[0][0]),
+//     .rsta(sys_rst_pixel),
+//     .regcea(1'b1),
+
+//     // PORT B
+//     .addrb(ccl_moore_addr_1[1]),
+//     .dinb(1'b0),
+//     .clkb(clk_pixel),
+//     .web(1'b0),
+//     .enb(1'b1),
+//     .doutb(ccl_moore_pixels_1[0][1]),
+//     .rstb(sys_rst_pixel),
+//     .regceb(1'b1)
+//     );
+
+//   xilinx_true_dual_port_read_first_2_clock_ram
+//     #(.RAM_WIDTH(1),
+//     .RAM_DEPTH(320*180))
+//     moore_fb_11
+//     (
+//     // PORT A
+//     .addra(ccl_moore_addr_1[2]), 
+//     .clka(clk_pixel),
+//     .wea(ccl_pixel_valid),
+//     .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[1]),
+//     .ena(1'b1),
+//     .douta(ccl_moore_pixels_1[0][2]),
+//     .rsta(sys_rst_pixel),
+//     .regcea(1'b1),
+
+//     // PORT B
+//     .addrb(ccl_moore_addr_1[3]),
+//     .dinb(1'b0),
+//     .clkb(clk_pixel),
+//     .web(1'b0),
+//     .enb(1'b1),
+//     .doutb(ccl_moore_pixels_1[1][2]),
+//     .rstb(sys_rst_pixel),
+//     .regceb(1'b1)
+//     );
+
+//   xilinx_true_dual_port_read_first_2_clock_ram
+//     #(.RAM_WIDTH(1),
+//     .RAM_DEPTH(320*180))
+//     moore_fb_12
+//     (
+//     // PORT A
+//     .addra(ccl_moore_addr_1[4]), 
+//     .clka(clk_pixel),
+//     .wea(ccl_pixel_valid),
+//     .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[1]),
+//     .ena(1'b1),
+//     .douta(ccl_moore_pixels_1[2][2]),
+//     .rsta(sys_rst_pixel),
+//     .regcea(1'b1),
+
+//     // PORT B
+//     .addrb(ccl_moore_addr_1[5]),
+//     .dinb(1'b0),
+//     .clkb(clk_pixel),
+//     .web(1'b0),
+//     .enb(1'b1),
+//     .doutb(ccl_moore_pixels_1[2][1]),
+//     .rstb(sys_rst_pixel),
+//     .regceb(1'b1)
+//     );
+
+//   xilinx_true_dual_port_read_first_2_clock_ram
+//     #(.RAM_WIDTH(1),
+//     .RAM_DEPTH(320*180))
+//     moore_fb_13
+//     (
+//     // PORT A
+//     .addra(ccl_moore_addr_1[6]), 
+//     .clka(clk_pixel),
+//     .wea(ccl_pixel_valid),
+//     .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[1]),
+//     .ena(1'b1),
+//     .douta(ccl_moore_pixels_1[2][0]),
+//     .rsta(sys_rst_pixel),
+//     .regcea(1'b1),
+
+//     // PORT B
+//     .addrb(ccl_moore_addr_1[7]),
+//     .dinb(1'b0),
+//     .clkb(clk_pixel),
+//     .web(1'b0),
+//     .enb(1'b1),
+//     .doutb(ccl_moore_pixels_1[1][0]),
+//     .rstb(sys_rst_pixel),
+//     .regceb(1'b1)
+//     );
+
+
+
+
+
+
+  // FB 2
+  // xilinx_true_dual_port_read_first_2_clock_ram
+  //   #(.RAM_WIDTH(1),
+  //   .RAM_DEPTH(320*180))
+  //   moore_fb_20
+  //   (
+  //   // PORT A
+  //   .addra(ccl_moore_addr_2[0]), 
+  //   .clka(clk_pixel),
+  //   .wea(ccl_pixel_valid),
+  //   .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[2]),
+  //   .ena(1'b1),
+  //   .douta(ccl_moore_pixels_2[0][0]),
+  //   .rsta(sys_rst_pixel),
+  //   .regcea(1'b1),
+
+  //   // PORT B
+  //   .addrb(ccl_moore_addr_2[1]),
+  //   .dinb(1'b0),
+  //   .clkb(clk_pixel),
+  //   .web(1'b0),
+  //   .enb(1'b1),
+  //   .doutb(ccl_moore_pixels_2[0][1]),
+  //   .rstb(sys_rst_pixel),
+  //   .regceb(1'b1)
+  //   );
+
+  // xilinx_true_dual_port_read_first_2_clock_ram
+  //   #(.RAM_WIDTH(1),
+  //   .RAM_DEPTH(320*180))
+  //   moore_fb_21
+  //   (
+  //   // PORT A
+  //   .addra(ccl_moore_addr_2[2]), 
+  //   .clka(clk_pixel),
+  //   .wea(ccl_pixel_valid),
+  //   .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[2]),
+  //   .ena(1'b1),
+  //   .douta(ccl_moore_pixels_2[0][2]),
+  //   .rsta(sys_rst_pixel),
+  //   .regcea(1'b1),
+
+  //   // PORT B
+  //   .addrb(ccl_moore_addr_2[3]),
+  //   .dinb(1'b0),
+  //   .clkb(clk_pixel),
+  //   .web(1'b0),
+  //   .enb(1'b1),
+  //   .doutb(ccl_moore_pixels_2[1][2]),
+  //   .rstb(sys_rst_pixel),
+  //   .regceb(1'b1)
+  //   );
+
+  // xilinx_true_dual_port_read_first_2_clock_ram
+  //   #(.RAM_WIDTH(1),
+  //   .RAM_DEPTH(320*180))
+  //   moore_fb_22
+  //   (
+  //   // PORT A
+  //   .addra(ccl_moore_addr_2[4]), 
+  //   .clka(clk_pixel),
+  //   .wea(ccl_pixel_valid),
+  //   .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[2]),
+  //   .ena(1'b1),
+  //   .douta(ccl_moore_pixels_2[2][2]),
+  //   .rsta(sys_rst_pixel),
+  //   .regcea(1'b1),
+
+  //   // PORT B
+  //   .addrb(ccl_moore_addr_2[5]),
+  //   .dinb(1'b0),
+  //   .clkb(clk_pixel),
+  //   .web(1'b0),
+  //   .enb(1'b1),
+  //   .doutb(ccl_moore_pixels_2[2][1]),
+  //   .rstb(sys_rst_pixel),
+  //   .regceb(1'b1)
+  //   );
+
+  // xilinx_true_dual_port_read_first_2_clock_ram
+  //   #(.RAM_WIDTH(1),
+  //   .RAM_DEPTH(320*180))
+  //   moore_fb_23
+  //   (
+  //   // PORT A
+  //   .addra(ccl_moore_addr_2[6]), 
+  //   .clka(clk_pixel),
+  //   .wea(ccl_pixel_valid),
+  //   .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[2]),
+  //   .ena(1'b1),
+  //   .douta(ccl_moore_pixels_2[2][0]),
+  //   .rsta(sys_rst_pixel),
+  //   .regcea(1'b1),
+
+  //   // PORT B
+  //   .addrb(ccl_moore_addr_2[7]),
+  //   .dinb(1'b0),
+  //   .clkb(clk_pixel),
+  //   .web(1'b0),
+  //   .enb(1'b1),
+  //   .doutb(ccl_moore_pixels_2[1][0]),
+  //   .rstb(sys_rst_pixel),
+  //   .regceb(1'b1)
+  //   );
+
+
+
+
+
+
+
+
+
+
+  // for writing mask to display
+  logic mask_fb_0;
+  xilinx_true_dual_port_read_first_2_clock_ram
+    #(.RAM_WIDTH(1),
+    .RAM_DEPTH(320*180))
+    moore_fb_04
+    (
+    // PORT A
+    .addra(ccl_moore_addr_0[0]), 
+    .clka(clk_pixel),
+    .wea(ccl_pixel_valid),
+    .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[0]),
+    .ena(1'b1),
+    .douta(),
+    .rsta(sys_rst_pixel),
+    .regcea(1'b1),
+
+    // PORT B
+    .addrb(hcount_hdmi + vcount_hdmi*320),
+    .dinb(1'b0),
+    .clkb(clk_pixel),
+    .web(1'b0),
+    .enb(1'b1),
+    .doutb(mask_fb_0),
+    .rstb(sys_rst_pixel),
+    .regceb(1'b1)
+    );
+
+
+  // logic mask_fb_1;
+  // xilinx_true_dual_port_read_first_2_clock_ram
+  //   #(.RAM_WIDTH(1),
+  //   .RAM_DEPTH(320*180))
+  //   moore_fb_14
+  //   (
+  //   // PORT A
+  //   .addra(ccl_moore_addr_1[0]), 
+  //   .clka(clk_pixel),
+  //   .wea(ccl_pixel_valid),
+  //   .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[1]),
+  //   .ena(1'b1),
+  //   .douta(),
+  //   .rsta(sys_rst_pixel),
+  //   .regcea(1'b1),
+
+  //   // PORT B
+  //   .addrb(hcount_hdmi + vcount_hdmi*320),
+  //   .dinb(1'b0),
+  //   .clkb(clk_pixel),
+  //   .web(1'b0),
+  //   .enb(1'b1),
+  //   .doutb(mask_fb_1),
+  //   .rstb(sys_rst_pixel),
+  //   .regceb(1'b1)
+  //   );
+
+  // logic mask_fb_2;
+  // xilinx_true_dual_port_read_first_2_clock_ram
+  //   #(.RAM_WIDTH(1),
+  //   .RAM_DEPTH(320*180))
+  //   moore_fb_24
+  //   (
+  //   // PORT A
+  //   .addra(ccl_moore_addr_2[0]), 
+  //   .clka(clk_pixel),
+  //   .wea(ccl_pixel_valid),
+  //   .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[2]),
+  //   .ena(1'b1),
+  //   .douta(),
+  //   .rsta(sys_rst_pixel),
+  //   .regcea(1'b1),
+
+  //   // PORT B
+  //   .addrb(hcount_hdmi + vcount_hdmi*320),
+  //   .dinb(1'b0),
+  //   .clkb(clk_pixel),
+  //   .web(1'b0),
+  //   .enb(1'b1),
+  //   .doutb(mask_fb_2),
+  //   .rstb(sys_rst_pixel),
+  //   .regceb(1'b1)
+  //   );
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  logic [7:0][15:0] moore_addrs_0;
+  logic [15:0] perimeter_0;
+  logic moore_busy_0;
+  logic moore_valid_0;
   moore_neighbor_tracing_ccl #(
     .WIDTH(320),
     .HEIGHT(180))
-    mnt_ccl_1 
+    mnt_ccl_0 
     (
     .clk_in(clk_pixel),
     .rst_in(sys_rst_pixel),
     .ready_in(ccl_valid_out),
-    .pixel_upleft(ccl_moore_pixels[0][0]), // frame buffer direct outputs: neighboring pixels
-    .pixel_up(ccl_moore_pixels[0][1]),
-    .pixel_upright(ccl_moore_pixels[0][2]),
-    .pixel_right(ccl_moore_pixels[1][2]),
-    .pixel_downright(ccl_moore_pixels[2][2]),
-    .pixel_down(ccl_moore_pixels[2][1]),
-    .pixel_downleft(ccl_moore_pixels[2][0]),
-    .pixel_left(ccl_moore_pixels[1][0]),
-    .addra_1(moore_addrs[0]),
-    .addrb_1(moore_addrs[1]),
-    .addra_2(moore_addrs[2]),
-    .addrb_2(moore_addrs[3]),
-    .addra_3(moore_addrs[4]),
-    .addrb_3(moore_addrs[5]),
-    .addra_4(moore_addrs[6]),
-    .addrb_4(moore_addrs[7]),
+    .pixel_upleft(ccl_moore_pixels_0[0][0]), // frame buffer direct outputs: neighboring pixels
+    .pixel_up(ccl_moore_pixels_0[0][1]),
+    .pixel_upright(ccl_moore_pixels_0[0][2]),
+    .pixel_right(ccl_moore_pixels_0[1][2]),
+    .pixel_downright(ccl_moore_pixels_0[2][2]),
+    .pixel_down(ccl_moore_pixels_0[2][1]),
+    .pixel_downleft(ccl_moore_pixels_0[2][0]),
+    .pixel_left(ccl_moore_pixels_0[1][0]),
+    .addra_1(moore_addrs_0[0]),
+    .addrb_1(moore_addrs_0[1]),
+    .addra_2(moore_addrs_0[2]),
+    .addrb_2(moore_addrs_0[3]),
+    .addra_3(moore_addrs_0[4]),
+    .addrb_3(moore_addrs_0[5]),
+    .addra_4(moore_addrs_0[6]),
+    .addrb_4(moore_addrs_0[7]),
                          
-    .perimeter(perimeter),
-    .busy_out(moore_busy),
-    .valid_out(moore_valid)
+    .perimeter(perimeter_0),
+    .busy_out(moore_busy_0),
+    .valid_out(moore_valid_0)
   );
 
 
-  // moore_neighbor_tracing mnt (
+
+  // logic [7:0][15:0] moore_addrs_1;
+  // logic [15:0] perimeter_1;
+  // logic moore_busy_1;
+  // logic moore_valid_1;
+  // moore_neighbor_tracing_ccl #(
+  //   .WIDTH(320),
+  //   .HEIGHT(180))
+  //   mnt_ccl_1
+  //   (
   //   .clk_in(clk_pixel),
   //   .rst_in(sys_rst_pixel),
-  //   .x_in(hcount_hdmi >> 2),
-  //   .y_in(vcount_hdmi >> 2),
-  //   .valid_in(active_draw_hdmi),
-  //   .masked_in(mask),
-  //   .new_frame_in(nf_hdmi),
-  //   .perimeter(perimeter),
-  //   .busy_out(moore_busy),
-  //   .valid_out(moore_valid)
+  //   .ready_in(ccl_valid_out),
+  //   .pixel_upleft(ccl_moore_pixels_1[0][0]), // frame buffer direct outputs: neighboring pixels
+  //   .pixel_up(ccl_moore_pixels_1[0][1]),
+  //   .pixel_upright(ccl_moore_pixels_1[0][2]),
+  //   .pixel_right(ccl_moore_pixels_1[1][2]),
+  //   .pixel_downright(ccl_moore_pixels_1[2][2]),
+  //   .pixel_down(ccl_moore_pixels_1[2][1]),
+  //   .pixel_downleft(ccl_moore_pixels_1[2][0]),
+  //   .pixel_left(ccl_moore_pixels_1[1][0]),
+  //   .addra_1(moore_addrs_1[0]),
+  //   .addrb_1(moore_addrs_1[1]),
+  //   .addra_2(moore_addrs_1[2]),
+  //   .addrb_2(moore_addrs_1[3]),
+  //   .addra_3(moore_addrs_1[4]),
+  //   .addrb_3(moore_addrs_1[5]),
+  //   .addra_4(moore_addrs_1[6]),
+  //   .addrb_4(moore_addrs_1[7]),
+                         
+  //   .perimeter(perimeter_1),
+  //   .busy_out(moore_busy_1),
+  //   .valid_out(moore_valid_1)
   // );
 
-  // circularity circularity_m (
+
+
+
+  // logic [7:0][15:0] moore_addrs_2;
+  // logic [15:0] perimeter_2;
+  // logic moore_busy_2;
+  // logic moore_valid_2;
+  // moore_neighbor_tracing_ccl #(
+  //   .WIDTH(320),
+  //   .HEIGHT(180))
+  //   mnt_ccl_2
+  //   (
   //   .clk_in(clk_pixel),
   //   .rst_in(sys_rst_pixel),
-  //   .area(area),
-  //   .perimeter(perimeter),
-  //   .data_valid_in(moore_valid && new_com),
-  //   .circularity(circularity),
-  //   .busy_out(circularity_busy),
-  //   .valid_out(circularity_valid)
+  //   .ready_in(ccl_valid_out),
+  //   .pixel_upleft(ccl_moore_pixels_2[0][0]), // frame buffer direct outputs: neighboring pixels
+  //   .pixel_up(ccl_moore_pixels_2[0][1]),
+  //   .pixel_upright(ccl_moore_pixels_2[0][2]),
+  //   .pixel_right(ccl_moore_pixels_2[1][2]),
+  //   .pixel_downright(ccl_moore_pixels_2[2][2]),
+  //   .pixel_down(ccl_moore_pixels_2[2][1]),
+  //   .pixel_downleft(ccl_moore_pixels_2[2][0]),
+  //   .pixel_left(ccl_moore_pixels_2[1][0]),
+  //   .addra_1(moore_addrs_2[0]),
+  //   .addrb_1(moore_addrs_2[1]),
+  //   .addra_2(moore_addrs_2[2]),
+  //   .addrb_2(moore_addrs_2[3]),
+  //   .addra_3(moore_addrs_2[4]),
+  //   .addrb_3(moore_addrs_2[5]),
+  //   .addra_4(moore_addrs_2[6]),
+  //   .addrb_4(moore_addrs_2[7]),
+                         
+  //   .perimeter(perimeter_2),
+  //   .busy_out(moore_busy_2),
+  //   .valid_out(moore_valid_2)
   // );
 
 
 
-  logic com_waiting;
-  logic [31:0] area_stored;
-  logic moore_waiting;
-  logic [31:0] perimeter_stored;
 
-  logic [15:0] area_saved;
-  logic [15:0] perimeter_saved;
+
+  logic [15:0] area_0; //, area_1, area_2;
+
+  logic [10:0] x_com_calc_0; //, x_com_calc_1, x_com_calc_2; //long term x_com and output from module, resp
+  logic [9:0] y_com_calc_0; //, y_com_calc_1, y_com_calc_2; //long term y_com and output from module, resp
+
+  // TODO: SET COM X AND Y AND VALID BASED ON THE OUTPUTS FROM CCL[0]
+  // *** THIS SHOULD BE REPLACED LATER WHEN WE DECIDE TO DETECT MORE THAN 1 SHAPE
+  always_comb begin
+    // area = (area_raw >> 4);
+    area_0 = largest_areas[0];
+    // area_1 = largest_areas[1];
+    // area_2 = largest_areas[2];
+
+    x_com_calc_0 = largest_x_coms[0]; // TODO: we may want to shift this over by << 2 so that it appears on the screen in the right spot
+    y_com_calc_0 = largest_y_coms[0];
+
+    // x_com_calc_1 = largest_x_coms[1]; // TODO: we may want to shift this over by << 2 so that it appears on the screen in the right spot
+    // y_com_calc_1 = largest_y_coms[1];
+
+    // x_com_calc_2 = largest_x_coms[2]; // TODO: we may want to shift this over by << 2 so that it appears on the screen in the right spot
+    // y_com_calc_2 = largest_y_coms[2];
+    
+    new_com = ccl_valid_out; // just set this because it works with previous code
+  end
+
+
+
+
+  logic com_waiting_0; //, com_waiting_1, com_waiting_2;
+  logic [31:0] area_stored_0; //, area_stored_1, area_stored_2;
+  logic moore_waiting_0; //, moore_waiting_1, moore_waiting_2;
+  logic [31:0] perimeter_stored_0; //, perimeter_stored_1, perimeter_stored_2;
+
+  logic [15:0] area_saved_0; //, area_saved_1, area_saved_2;
+  logic [15:0] perimeter_saved_0; //, perimeter_saved_1, perimeter_saved_2;
+  
+  logic both_valid_0; //, both_valid_1, both_valid_2;
+  logic circularity_busy_0; //, circularity_busy_1, circularity_busy_2;
 
   // using this for now
   always_ff @(posedge clk_pixel)begin
-    if (new_com && !both_valid && !circularity_busy) begin
-      com_waiting <= 1;
-      area_stored <= area;
+    if (new_com && !both_valid_0 && !circularity_busy_0) begin
+      com_waiting_0 <= 1;
+      area_stored_0 <= area_0;
     end
-    if (moore_valid && !both_valid && !circularity_busy) begin
-      moore_waiting <= 1;
-      perimeter_stored <= perimeter;
+    if (moore_valid_0 && !both_valid_0 && !circularity_busy_0) begin
+      moore_waiting_0 <= 1;
+      perimeter_stored_0 <= perimeter_0;
     end
-    if (com_waiting && moore_waiting) begin
-      both_valid <= 1;
-      com_waiting <= 0;
-      moore_waiting <= 0;
+    if (com_waiting_0 && moore_waiting_0) begin
+      both_valid_0 <= 1;
+      com_waiting_0 <= 0;
+      moore_waiting_0 <= 0;
     end
-    if (both_valid && !circularity_busy) begin
-      both_valid <= 0;
-      area_saved <= area_stored;
-      perimeter_saved <= perimeter_stored;
+    if (both_valid_0 && !circularity_busy_0) begin
+      both_valid_0 <= 0;
+      area_saved_0 <= area_stored_0;
+      perimeter_saved_0 <= perimeter_stored_0;
     end
   end
 
 
-  logic [31:0] dividend;
-  logic [31:0] divisor;
-  logic [31:0] circularity_raw;
-  assign dividend = 4 * area_stored * 314;
-  assign divisor = perimeter_stored * perimeter_stored; // area is 16* what it should be --> divide out without losing information
-
-  divider
-    #(.WIDTH(32)
-    ) my_divider
-    (.clk_in(clk_pixel),
-        .rst_in(sys_rst_pixel),
-        .dividend_in(dividend),
-        .divisor_in(divisor),
-        .data_valid_in(both_valid && !circularity_busy),
-        .quotient_out(circularity_raw), // outputs
-        .remainder_out(),
-        .data_valid_out(circularity_valid),
-        .error_out(),
-        .busy_out(circularity_busy)
-    );
-
-
-  // shape detector stuff
-  // always_ff @(posedge clk_pixel)begin
-  //   if (circularity_valid)begin
-  //     if (circularity > 80)begin
-  //       shape <= 0; // circle
-  //     end else if (circularity > 60)begin
-  //       shape <= 1; // square
-  //     end else if (circularity > 40)begin
-  //       shape <= 2; // triangle
-  //     end else begin
-  //       shape <= 3; // plus
-  //     end
+  // always_ff @(posedge clk_pixel) begin
+  //   if (new_com && !both_valid_1 && !circularity_busy_1) begin
+  //       com_waiting_1 <= 1;
+  //       area_stored_1 <= area_1;
+  //   end
+  //   if (moore_valid_1 && !both_valid_1 && !circularity_busy_1) begin
+  //       moore_waiting_1 <= 1;
+  //       perimeter_stored_1 <= perimeter_1;
+  //   end
+  //   if (com_waiting_1 && moore_waiting_1) begin
+  //       both_valid_1 <= 1;
+  //       com_waiting_1 <= 0;
+  //       moore_waiting_1 <= 0;
+  //   end
+  //   if (both_valid_1 && !circularity_busy_1) begin
+  //       both_valid_1 <= 0;
+  //       area_saved_1 <= area_stored_1;
+  //       perimeter_saved_1 <= perimeter_stored_1;
   //   end
   // end
 
-  // logic [31:0] circularity;
+
+  // always_ff @(posedge clk_pixel) begin
+  //   if (new_com && !both_valid_2 && !circularity_busy_2) begin
+  //       com_waiting_2 <= 1;
+  //       area_stored_2 <= area_2;
+  //   end
+  //   if (moore_valid_2 && !both_valid_2 && !circularity_busy_2) begin
+  //       moore_waiting_2 <= 1;
+  //       perimeter_stored_2 <= perimeter_2;
+  //   end
+  //   if (com_waiting_2 && moore_waiting_2) begin
+  //       both_valid_2 <= 1;
+  //       com_waiting_2 <= 0;
+  //       moore_waiting_2 <= 0;
+  //   end
+  //   if (both_valid_2 && !circularity_busy_2) begin
+  //       both_valid_2 <= 0;
+  //       area_saved_2 <= area_stored_2;
+  //       perimeter_saved_2 <= perimeter_stored_2;
+  //   end
+  // end
+
+
+
+
+
+
+
+
+  logic [31:0] dividend_0; //, dividend_1, dividend_2;
+  logic [31:0] divisor_0; //, divisor_1, divisor_2;
+  logic [31:0] circularity_raw_0; //, circularity_raw_1, circularity_raw_2;
+  assign dividend_0 = 4 * area_stored_0 * 314;
+  // assign dividend_1 = 4 * area_stored_1 * 314;
+  // assign dividend_2 = 4 * area_stored_2 * 314;
+
+  assign divisor_0 = perimeter_stored_0 * perimeter_stored_0; // area is 16* what it should be --> divide out without losing information
+  // assign divisor_1 = perimeter_stored_1 * perimeter_stored_1; // area is 16* what it should be --> divide out without losing information
+  // assign divisor_2 = perimeter_stored_2 * perimeter_stored_2; // area is 16* what it should be --> divide out without losing information
+
+
+
+  logic circularity_valid_0; //, circularity_valid_1, circularity_valid_2;
+
+  divider
+    #(.WIDTH(32)
+    ) my_divider_0
+    (.clk_in(clk_pixel),
+        .rst_in(sys_rst_pixel),
+        .dividend_in(dividend_0),
+        .divisor_in(divisor_0),
+        .data_valid_in(both_valid_0 && !circularity_busy_0),
+        .quotient_out(circularity_raw_0), // outputs
+        .remainder_out(),
+        .data_valid_out(circularity_valid_0),
+        .error_out(),
+        .busy_out(circularity_busy_0)
+    );
+
+  // divider
+  //   #(.WIDTH(32)
+  //   ) my_divider_1
+  //   (.clk_in(clk_pixel),
+  //       .rst_in(sys_rst_pixel),
+  //       .dividend_in(dividend_1),
+  //       .divisor_in(divisor_1),
+  //       .data_valid_in(both_valid_1 && !circularity_busy_1),
+  //       .quotient_out(circularity_raw_1), // outputs
+  //       .remainder_out(),
+  //       .data_valid_out(circularity_valid_1),
+  //       .error_out(),
+  //       .busy_out(circularity_busy_1)
+  //   );
+
+  // divider
+  //   #(.WIDTH(32)
+  //   ) my_divider_2
+  //   (.clk_in(clk_pixel),
+  //       .rst_in(sys_rst_pixel),
+  //       .dividend_in(dividend_2),
+  //       .divisor_in(divisor_2),
+  //       .data_valid_in(both_valid_2 && !circularity_busy_2),
+  //       .quotient_out(circularity_raw_2), // outputs
+  //       .remainder_out(),
+  //       .data_valid_out(circularity_valid_2),
+  //       .error_out(),
+  //       .busy_out(circularity_busy_2)
+  //   );
+
+
+
+
+
+  logic [7:0] circularity_0; //, circularity_1, circularity_2;
+  logic [1:0] shape_0; //, shape_1, shape_2;
 
   logic [15:0] circ_temp [4:0];     // 2D array for circ_temp[stage]
   logic [15:0] area_temp [4:0];
   logic [15:0] perim_temp [4:0];
 
+  logic [15:0] perim_temp_1, perim_temp_2;
+
   always_ff @(posedge clk_pixel) begin
-    if(circularity_valid && circularity_raw < 200) begin // throw out obviously garbage circularity values --> should be in the 0-100 range (but circle can be a bit bigger)
-      circularity <= circularity_raw;
-      circ_temp[0] <= circularity_raw;
-      area_temp[0] <= area_saved; // area is 16* what it should be because the screen is 4x larger in both directions
-      perim_temp[0] <= perimeter_saved;
+    if(circularity_valid_0 && circularity_raw_0 < 200) begin // throw out obviously garbage circularity values --> should be in the 0-100 range (but circle can be a bit bigger)
+      circularity_0 <= circularity_raw_0;
+      circ_temp[0] <= circularity_raw_0;
+      area_temp[0] <= area_saved_0; // area is 16* what it should be because the screen is 4x larger in both directions
+      perim_temp[0] <= perimeter_saved_0;
     end
+
+    // if(circularity_valid_1 && circularity_raw_1 < 200) begin // throw out obviously garbage circularity values --> should be in the 0-100 range (but circle can be a bit bigger)
+    //   circularity_1 <= circularity_raw_1;
+    //   perim_temp_1 <= perimeter_saved_1;
+    // end
+
+    // if(circularity_valid_2 && circularity_raw_2 < 200) begin // throw out obviously garbage circularity values --> should be in the 0-100 range (but circle can be a bit bigger)
+    //   circularity_2 <= circularity_raw_2;
+    //   perim_temp_2 <= perimeter_saved_2;
+    // end
   end
 
+
+
+
+  parameter CIRC_MIN = 95;
+  parameter SQ_MIN = 82;
+  parameter TRI_MIN = 50;
+
   always_comb begin
-    //if (circularity_valid) begin
-    if (circularity > 95)begin
-      shape = 0; // circle
-    end else if (circularity > 82)begin
-      shape = 1; // square
-    end else if (circularity > 50)begin
-      shape = 2; // triangle
+    if (circularity_0 > CIRC_MIN)begin
+      shape_0 = 0; // circle
+    end else if (circularity_0 > SQ_MIN)begin
+      shape_0 = 1; // square
+    end else if (circularity_0 > TRI_MIN)begin
+      shape_0 = 2; // triangle
     end else begin
-      shape = 3; // plus
+      shape_0 = 3; // plus
     end
-    //end
+    
+
+    // if (circularity_1 > CIRC_MIN) begin
+    //   shape_1 = 0; // circle
+    // end else if (circularity_1 > SQ_MIN) begin
+    //   shape_1 = 1; // square
+    // end else if (circularity_1 > TRI_MIN) begin
+    //   shape_1 = 2; // triangle
+    // end else begin
+    //   shape_1 = 3; // plus
+    // end
+
+
+    // if (circularity_2 > CIRC_MIN) begin
+    //   shape_2 = 0; // circle
+    // end else if (circularity_2 > SQ_MIN) begin
+    //   shape_2 = 1; // square
+    // end else if (circularity_2 > TRI_MIN) begin
+    //   shape_2 = 2; // triangle
+    // end else begin
+    //   shape_2 = 3; // plus
+    // end
+
   end
 
 
 
   //image_sprite output:
   logic [7:0] img_red, img_green, img_blue;
-  assign img_red =0;
-  assign img_green =0;
-  assign img_blue =0;
+  assign img_red = 0;
+  assign img_green = 0;
+  assign img_blue = 0;
   logic draw_sprite;
   //image sprite removed to keep builds focused.
 
   //if any of the draw_outs from any of the sprite modules are true, then set draw_out to be true
-  always_comb begin
-    if ((draw_classifier && !(perim_temp[0] == 0)) || draw_number[0] || draw_number[1] || draw_number[2] || draw_number[3] || draw_number[4] || draw_number[5] || draw_number[6] || draw_number[7] || draw_number[8] || draw_number[9] || draw_number[10] || draw_number[11]) begin
+  always_comb begin                                                                                    // commenting this out removes all of the upstream label[3] logic
+    if ((draw_classifier_0 && !(perim_temp[0] == 0)) || /*(draw_classifier_1 && !(perim_temp_1 == 0)) ||*/ /*(draw_classifier_2 && !(perim_temp_2 == 0)) ||*/ draw_number[0] || draw_number[1] || draw_number[2] || draw_number[3] || draw_number[4] || draw_number[5] || draw_number[6] || draw_number[7] || draw_number[8] || draw_number[9] || draw_number[10] || draw_number[11]) begin
       draw_sprite = 1;
     end else begin
       draw_sprite = 0;
@@ -912,23 +1474,87 @@ module top_level
   end
 
 
-  // TODO: make 2 more of these for the other 2 shapes
-  logic draw_classifier;
+
+
+  //grab logic for above
+  //update center of mass x_com, y_com based on new_com signal
+
+  logic [10:0] x_com_0; //, x_com_1, x_com_2; //long term x_com and output from module, resp
+  logic [9:0] y_com_0; //, y_com_1, y_com_2; //long term y_com and output from module, resp
+
+  always_ff @(posedge clk_pixel)begin
+    if (sys_rst_pixel)begin
+      x_com_0 <= 0;
+      y_com_0 <= 0;
+
+      // x_com_1 <= 0;
+      // y_com_1 <= 0;
+
+      // x_com_2 <= 0;
+      // y_com_2 <= 0;
+    end if(new_com)begin
+      x_com_0 <= x_com_calc_0;
+      y_com_0 <= y_com_calc_0;
+
+      // x_com_1 <= x_com_calc_1;
+      // y_com_1 <= y_com_calc_1;
+
+      // x_com_2 <= x_com_calc_2;
+      // y_com_2 <= y_com_calc_2;
+    end
+  end
+
+
   parameter IMG_SPRITE_WIDTH = 128;
+
+  // TODO: make 2 more of these for the other 2 shapes
+  logic draw_classifier_0;
   image_sprite_transparent #(
     .WIDTH(IMG_SPRITE_WIDTH),
     .HEIGHT(IMG_SPRITE_WIDTH),
     .NUM_IMGS(4)
-  ) classifier(
+  ) classifier_0 (
     .pixel_clk_in(clk_pixel),
     .rst_in(sys_rst_pixel),
-    .x_in(x_com>(IMG_SPRITE_WIDTH>>1) ? x_com-(IMG_SPRITE_WIDTH>>1) : 0),
-    .y_in(y_com>(IMG_SPRITE_WIDTH>>1) ? y_com-(IMG_SPRITE_WIDTH>>1) : 0),
+    .x_in(x_com_0>(IMG_SPRITE_WIDTH>>1) ? x_com_0-(IMG_SPRITE_WIDTH>>1) : 0),
+    .y_in(y_com_0>(IMG_SPRITE_WIDTH>>1) ? y_com_0-(IMG_SPRITE_WIDTH>>1) : 0),
     .hcount_in(hcount_hdmi),
     .vcount_in(vcount_hdmi),
-    .shape(shape),
-    .draw_out(draw_classifier)
+    .shape(shape_0),
+    .draw_out(draw_classifier_0)
   );
+
+  // logic draw_classifier_1;
+  // image_sprite_transparent_1 #(
+  //   .WIDTH(IMG_SPRITE_WIDTH),
+  //   .HEIGHT(IMG_SPRITE_WIDTH),
+  //   .NUM_IMGS(4)
+  // ) classifier_1 (
+  //   .pixel_clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .x_in(x_com_1>(IMG_SPRITE_WIDTH>>1) ? x_com_1-(IMG_SPRITE_WIDTH>>1) : 0),
+  //   .y_in(y_com_1>(IMG_SPRITE_WIDTH>>1) ? y_com_1-(IMG_SPRITE_WIDTH>>1) : 0),
+  //   .hcount_in(hcount_hdmi),
+  //   .vcount_in(vcount_hdmi),
+  //   .shape(shape_1),
+  //   .draw_out(draw_classifier_1)
+  // );
+
+  // logic draw_classifier_2;
+  // image_sprite_transparent_2 #(
+  //   .WIDTH(IMG_SPRITE_WIDTH),
+  //   .HEIGHT(IMG_SPRITE_WIDTH),
+  //   .NUM_IMGS(4)
+  // ) classifier_2 (
+  //   .pixel_clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .x_in(x_com_2>(IMG_SPRITE_WIDTH>>1) ? x_com_2-(IMG_SPRITE_WIDTH>>1) : 0),
+  //   .y_in(y_com_2>(IMG_SPRITE_WIDTH>>1) ? y_com_2-(IMG_SPRITE_WIDTH>>1) : 0),
+  //   .hcount_in(hcount_hdmi),
+  //   .vcount_in(vcount_hdmi),
+  //   .shape(shape_2),
+  //   .draw_out(draw_classifier_2)
+  // );
 
 
 
@@ -1640,17 +2266,7 @@ end
   //  * could be purely combinational?
   // SPRITE OVERLAY LOGIC 
 
-  //grab logic for above
-  //update center of mass x_com, y_com based on new_com signal
-  always_ff @(posedge clk_pixel)begin
-    if (sys_rst_pixel)begin
-      x_com <= 0;
-      y_com <= 0;
-    end if(new_com)begin
-      x_com <= x_com_calc;
-      y_com <= y_com_calc;
-    end
-  end
+  
 
 
   //crosshair output:
@@ -1660,9 +2276,9 @@ end
   //0 cycle latency
   //: Should be using output of (PS3)
   always_comb begin
-    ch_red   = ((vcount_hdmi==y_com) || (hcount_hdmi==x_com))?8'hFF:8'h00;
-    ch_green = ((vcount_hdmi==y_com) || (hcount_hdmi==x_com))?8'hFF:8'h00;
-    ch_blue  = ((vcount_hdmi==y_com) || (hcount_hdmi==x_com))?8'hFF:8'h00;
+    ch_red   = ((vcount_hdmi==y_com_0) || (hcount_hdmi==x_com_0))?8'hFF:8'h00;
+    ch_green = ((vcount_hdmi==y_com_0) || (hcount_hdmi==x_com_0))?8'hFF:8'h00;
+    ch_blue  = ((vcount_hdmi==y_com_0) || (hcount_hdmi==x_com_0))?8'hFF:8'h00;
   end
 
 
@@ -1687,7 +2303,7 @@ end
   logic [1:0] target_choice;
 
   assign display_choice = sw[6:5]; //was [5:4]; not anymore
-  assign target_choice =  {1'b1,sw[7]}; //was [7:6]; not anymore
+  assign target_choice =  {sw[7],1'b0}; //was [7:6]; not anymore
 
   //choose what to display from the camera:
   // * 'b00:  normal camera out
@@ -1701,6 +2317,29 @@ end
   // * 'b10: sprite on top
   // * 'b11: nothing
 
+  
+  // MASK PIXEL LOGIC
+  logic mask_tot;
+  always_comb begin
+    mask_tot = 0;
+
+    // independently put the other mask pixels in based on if we have those switches flipped
+    if(sw[0]) begin
+      mask_tot = mask_tot || mask_fb_0;
+    end
+    // if(sw[1]) begin
+    //   mask_tot = mask_tot || mask_fb_1;
+    // end
+    // if(sw[2]) begin
+    //   mask_tot = mask_tot || mask_fb_2;
+    // end
+
+    // if sw[3], we get the original mask
+    if(sw[2]) begin
+      mask_tot = mask_tot || mask;
+    end
+  end
+
 
   // TODO: make the mask that's output to the screen only the pixels that are output by ccl
   video_mux mvm(
@@ -1709,7 +2348,7 @@ end
     .camera_pixel_in({fb_red, fb_green, fb_blue}), //: needs (PS2)
     .camera_y_in(y), //luminance : needs (PS6)
     .channel_in(selected_channel), //current channel being drawn : needs (PS5)
-    .thresholded_pixel_in(mask), //one bit mask signal : needs (PS4)
+    .thresholded_pixel_in(mask_tot), //one bit mask signal : needs (PS4)
     .crosshair_in({ch_red, ch_green, ch_blue}), //: needs (PS8)
     .com_sprite_pixel_in({img_red, img_green, img_blue}), //: needs (PS9) maybe?
     .draw_sprite(draw_sprite), //draw sprite signal
@@ -1866,10 +2505,16 @@ end
       .bram_addr(registers_addr));
 
    // a handful of debug signals for writing to registers
-   assign led[0] = crw.bus_active;
-   assign led[1] = cr_init_valid;
-   assign led[2] = cr_init_ready;
-   assign led[15:3] = 0;
+  //  assign led[0] = crw.bus_active;
+  //  assign led[1] = cr_init_valid;
+  //  assign led[2] = cr_init_ready;
+  //  assign led[15:3] = 0;
+  
+  // set the LEDs that do stuff to the corresponding switches
+  assign led[2:0] = sw[3:0];
+  assign led[4:3] = 0;
+  assign led[7:5] = sw[7:5];
+  assign led[15:8] = 0;
 
 endmodule // top_level
 
