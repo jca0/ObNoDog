@@ -539,15 +539,15 @@ module top_level
   // NOW USING CCL:
   logic ccl_valid_out;
   logic ccl_busy_out;
-  logic [2:0][15:0] largest_labels;
-  logic [2:0][15:0] largest_areas;
-  logic [2:0][15:0] largest_x_coms;
-  logic [2:0][15:0] largest_y_coms;
+  logic [1:0][15:0] largest_labels;
+  logic [1:0][15:0] largest_areas;
+  logic [1:0][15:0] largest_x_coms;
+  logic [1:0][15:0] largest_y_coms;
   logic [10:0] ccl_x_out;
   logic [9:0] ccl_y_out;
   logic [15:0] ccl_pixel_label;
   logic ccl_pixel_valid;
-
+  logic [7:0] ccl_state;
 
   ccl #(
     .WIDTH(320),        // Horizontal resolution
@@ -572,7 +572,8 @@ module top_level
   .com_x_out(largest_x_coms),
   .com_y_out(largest_y_coms),
   .curr_pix_label(ccl_pixel_label),
-  .curr_pix_valid(ccl_pixel_valid)
+  .curr_pix_valid(ccl_pixel_valid),
+  .curr_state(ccl_state)
   );
 
 
@@ -1217,19 +1218,22 @@ module top_level
   // *** THIS SHOULD BE REPLACED LATER WHEN WE DECIDE TO DETECT MORE THAN 1 SHAPE
   always_comb begin
     // area = (area_raw >> 4);
-    area_0 = largest_areas[0];
-    // area_1 = largest_areas[1];
-    // area_2 = largest_areas[2];
 
-    x_com_calc_0 = largest_x_coms[0]; // TODO: we may want to shift this over by << 2 so that it appears on the screen in the right spot
-    y_com_calc_0 = largest_y_coms[0];
+    if(ccl_pixel_valid || ccl_valid_out) begin
+      area_0 = largest_areas[0]; // TODO: Make sure to only store this on a valid output
+      // area_1 = largest_areas[1];
+      // area_2 = largest_areas[2];
 
-    // x_com_calc_1 = largest_x_coms[1]; // TODO: we may want to shift this over by << 2 so that it appears on the screen in the right spot
-    // y_com_calc_1 = largest_y_coms[1];
+      x_com_calc_0 = largest_x_coms[0]; // TODO: we may want to shift this over by << 2 so that it appears on the screen in the right spot
+      y_com_calc_0 = largest_y_coms[0];
 
-    // x_com_calc_2 = largest_x_coms[2]; // TODO: we may want to shift this over by << 2 so that it appears on the screen in the right spot
-    // y_com_calc_2 = largest_y_coms[2];
-    
+      // x_com_calc_1 = largest_x_coms[1]; // TODO: we may want to shift this over by << 2 so that it appears on the screen in the right spot
+      // y_com_calc_1 = largest_y_coms[1];
+
+      // x_com_calc_2 = largest_x_coms[2]; // TODO: we may want to shift this over by << 2 so that it appears on the screen in the right spot
+      // y_com_calc_2 = largest_y_coms[2];
+    end
+
     new_com = ccl_valid_out; // just set this because it works with previous code
   end
 
@@ -1391,7 +1395,7 @@ module top_level
   logic [15:0] area_temp [4:0];
   logic [15:0] perim_temp [4:0];
 
-  logic [15:0] perim_temp_1, perim_temp_2;
+  // logic [15:0] perim_temp_1, perim_temp_2;
 
   always_ff @(posedge clk_pixel) begin
     if(circularity_valid_0 && circularity_raw_0 < 200) begin // throw out obviously garbage circularity values --> should be in the 0-100 range (but circle can be a bit bigger)
@@ -1410,6 +1414,9 @@ module top_level
     //   circularity_2 <= circularity_raw_2;
     //   perim_temp_2 <= perimeter_saved_2;
     // end
+
+    // TODO: REMOVE THIS
+    perim_temp[0] <= ccl_state;
   end
 
 
