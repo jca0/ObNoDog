@@ -102,7 +102,6 @@ logic [10:0] curr_x;
 logic [9:0] curr_y;
 logic [LABEL_WIDTH-1:0] curr_label;
 logic [LABEL_WIDTH-1:0] min_label;
-logic [15:0] label_counter;
 
 logic [1:0] bram_wait;
 logic read_signal; // if !read_signal, write to BRAM
@@ -128,7 +127,6 @@ always_ff @(posedge clk_in) begin
         valid_out <= 0;
         blob_labels <= 0;
         curr_label <= 0;
-        label_counter <= 0;
 
         // initially label maps to itself
         for (int i = 0; i < 16; i=i+1) begin
