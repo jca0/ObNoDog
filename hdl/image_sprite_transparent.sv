@@ -8,7 +8,7 @@
 `endif  /* ! SYNTHESIS */
 
 module image_sprite_transparent #(
-  parameter WIDTH=256, HEIGHT = 256, NUM_IMGS = 4) (
+  parameter WIDTH=128, HEIGHT = 128, NUM_IMGS = 4) (
   input wire pixel_clk_in,
   input wire rst_in,
   input wire [10:0] x_in, hcount_in,
@@ -70,7 +70,7 @@ module image_sprite_transparent #(
     .RAM_WIDTH(1),                       // Specify RAM data width
     .RAM_DEPTH(WIDTH*HEIGHT*NUM_IMGS),                     // Specify RAM depth (number of entries)
     .RAM_PERFORMANCE("HIGH_PERFORMANCE"), // Select "HIGH_PERFORMANCE" or "LOW_LATENCY" 
-    .INIT_FILE(`FPATH(all_shape_img_mask.mem))          // Specify name/location of RAM initialization file if using one (leave blank if not)
+    .INIT_FILE(`FPATH(all_shape_small_img_mask.mem))          // Specify name/location of RAM initialization file if using one (leave blank if not)
   ) pixel_BROM (
     .addra(image_addr),     // Address bus, width determined from RAM_DEPTH
     .dina(0),       // RAM input data, width determined from RAM_WIDTH
