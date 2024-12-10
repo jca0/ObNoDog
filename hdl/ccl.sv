@@ -4,7 +4,7 @@
 module ccl #(
     parameter WIDTH = 320,        // Horizontal resolution
     parameter HEIGHT = 180,        // Vertical resolution
-    parameter MAX_LABELS = 64,
+    parameter MAX_LABELS = 16,
     parameter MIN_AREA = 50      // Minimum blob size to retain
 
 )(
@@ -19,14 +19,15 @@ module ccl #(
     output logic                valid_out,          // Valid output signal
     output logic                busy_out,           // Busy output signal
 
-    output logic [2:0][15:0]    blob_labels,        // Array of distinct blob labels
+    output logic [1:0][15:0]    blob_labels,        // Array of distinct blob labels
     output logic [10:0]         x_out,
     output logic [9:0]          y_out,
-    output logic [2:0][15:0]    area_out,           // Array of blob areas
-    output logic [2:0][15:0]    com_x_out,          // Array of blob centroid x-coordinates
-    output logic [2:0][15:0]    com_y_out,          // Array of blob centroid y-coordinates
+    output logic [1:0][15:0]    area_out,           // Array of blob areas
+    output logic [1:0][15:0]    com_x_out,          // Array of blob centroid x-coordinates
+    output logic [1:0][15:0]    com_y_out,          // Array of blob centroid y-coordinates
     output logic [15:0]         curr_pix_label,
-    output logic                curr_pix_valid
+    output logic                curr_pix_valid,
+    output logic [7:0]          curr_state
 
 );
 
@@ -48,12 +49,12 @@ logic [MAX_LABELS:0][23:0] sum_x_table, sum_y_table;
 
 // ===== PRUNING =====
 logic [MAX_LABELS:0][23:0] x_sums, y_sums; // x sums of positions of all blobs
-logic [2:0][15:0] largest_areas;                    // areas of 3 largest blobs
-logic [2:0][LABEL_WIDTH-1:0] largest_labels;         // labels of 3 largest blobs
-logic [2:0][$clog2(WIDTH)-1:0] largest_x_coms;      // x coms of 3 largest blobs
-logic [2:0][$clog2(HEIGHT)-1:0] largest_y_coms;     // y coms of 3 largest blobs
+logic [1:0][15:0] largest_areas;                    // areas of 3 largest blobs
+logic [1:0][LABEL_WIDTH-1:0] largest_labels;         // labels of 3 largest blobs
+logic [1:0][$clog2(WIDTH)-1:0] largest_x_coms;      // x coms of 3 largest blobs
+logic [1:0][$clog2(HEIGHT)-1:0] largest_y_coms;     // y coms of 3 largest blobs
 logic largest_smallest;                             // is the most recently looked at label greater than some value in our array of largest values
-logic [2:0] largest_smallest_ind;                   // index of replaced value
+logic [1:0] largest_smallest_ind;                   // index of replaced value
 
 
 logic [MAX_LABELS:0][15:0] areas;                 // areas of all blobs
@@ -76,7 +77,6 @@ logic y_div_out_waiting;
 // ===== PRUNING =====
 
 
-
 // ===== TL_FRAME =====
 logic [$clog2(WIDTH)-1:0] x_tl;
 logic [$clog2(HEIGHT)-1:0] y_tl;
@@ -84,7 +84,6 @@ logic [LABEL_WIDTH-1:0] label_tl;
 logic [1:0] read_wait_tl;
 logic valid_label_tl;
 // ===== TL_FRAME =====
-
 
 
 // ===== FIRST_PASS =====
@@ -104,7 +103,6 @@ logic [10:0] curr_x;
 logic [9:0] curr_y;
 logic [LABEL_WIDTH-1:0] curr_label;
 logic [LABEL_WIDTH-1:0] min_label;
-logic [15:0] label_counter;
 
 logic [1:0] bram_wait;
 logic read_signal; // if !read_signal, write to BRAM
@@ -119,15 +117,9 @@ localparam FB_SIZE = $clog2(FB_DEPTH);
 
 
 
-
-
-
-
-
-
-
-
-
+always_comb begin
+    curr_state = state;
+end
 
 
 always_ff @(posedge clk_in) begin
@@ -140,9 +132,14 @@ always_ff @(posedge clk_in) begin
         
         busy_out <= 0;
         valid_out <= 0;
-        blob_labels <= 0;
-        curr_label <= 0;
-        label_counter <= 0;
+        largest_areas <= 0;
+        largest_labels <= 0;
+        largest_x_coms <= 0;
+        largest_y_coms <= 0;
+        label_tl <= 0;
+        valid_label_tl <= 0;
+        x_tl <= 0;
+        y_tl <= 0;
 
         // initially label maps to itself
         for (int i = 0; i < 16; i=i+1) begin
@@ -155,7 +152,16 @@ always_ff @(posedge clk_in) begin
     end else begin
         case (state) 
             IDLE: begin
+                busy_out <= 0;
                 valid_out <= 0;
+                largest_areas <= 0;
+                largest_labels <= 0;
+                largest_x_coms <= 0;
+                largest_y_coms <= 0;
+                label_tl <= 0;
+                valid_label_tl <= 0;
+                x_tl <= 0;
+                y_tl <= 0;
 
                 if (new_frame_in) begin
                     state <= STORE_FRAME;
@@ -180,12 +186,10 @@ always_ff @(posedge clk_in) begin
                 // x sums, y sums
                 // reads from masked frame buffer and writes to label frame buffer
                 if (bram_wait < 2) begin
-                    read_signal <= 1;
+                    // read_signal <= 1;
                     bram_wait <= bram_wait + 1;
                 end else begin
                     bram_wait <= 0;
-
-                    
                     if (mask_a_out) begin // IF WE HAVE TO LABEL
 
                         if(read_neighbor_wait < 6) begin // TODO: think harder about how many cycles we need
@@ -205,14 +209,14 @@ always_ff @(posedge clk_in) begin
                                 end else if(ne_pixel_label > 0 && ne_pixel_label <= w_pixel_label && ne_pixel_label <= nw_pixel_label && ne_pixel_label <= n_pixel_label) begin
                                     min_label <= ne_pixel_label;
                                 end else begin
-                                    min_label <= 16'hFFFF;
+                                    min_label <= 6'b111111;
                                 end
                                 
                                 read_signal <= 0; // write next cycle
                             end else begin // when we write to BRAM
                                 // STORE INTO BRAM
                                 // if no neighbors are labeled, assign new label
-                                if (min_label == 16'hFFFF) begin
+                                if (min_label == 6'b111111) begin
                                     // store label of current pixel in BRAM (ADD CODE)
                                     equiv_table[curr_label] <= curr_label;
                                     area_table[curr_label] <= area_table[curr_label] + 1;
@@ -288,11 +292,12 @@ always_ff @(posedge clk_in) begin
 
 
             RESOLVE_EQUIV: begin
+                curr_label <= 1;
                 equiv_table[resolve_index] <= equiv_table[equiv_table[resolve_index]];
-                if (resolve_index == curr_label - 1) begin
+                if (resolve_index >= max_passes - 1) begin
                     resolve_index <= 0;
                     resolve_pass <= resolve_pass + 1;
-                    if (resolve_pass == max_passes) begin
+                    if (resolve_pass >= max_passes) begin
                         state <= PROPERTY_CALC;
                         resolve_index <= 0;
                         resolve_pass <= 0;
@@ -308,10 +313,10 @@ always_ff @(posedge clk_in) begin
                     sum_x_table[equiv_table[resolve_index]] <= sum_x_table[equiv_table[resolve_index]] + sum_x_table[resolve_index];
                     sum_y_table[equiv_table[resolve_index]] <= sum_y_table[equiv_table[resolve_index]] + sum_y_table[resolve_index];
                 end
-                if (resolve_index == curr_label - 1) begin
+                if (resolve_index >= max_passes - 1) begin
                     resolve_index <= 0;
                     resolve_pass <= resolve_pass + 1;
-                    if (resolve_pass == max_passes) begin
+                    if (resolve_pass >= max_passes) begin
                         state <= STORE_IN_ARRS;
                         resolve_index <= 0;
                         resolve_pass <= 0;
@@ -326,10 +331,10 @@ always_ff @(posedge clk_in) begin
                 areas[equiv_table[resolve_index]] <= area_table[equiv_table[resolve_index]];
                 x_sums[equiv_table[resolve_index]] <= sum_x_table[equiv_table[resolve_index]];
                 y_sums[equiv_table[resolve_index]] <= sum_y_table[equiv_table[resolve_index]];
-                if (resolve_index == curr_label - 1) begin
+                if (resolve_index >= max_passes - 1) begin
                     resolve_index <= 0;
                     resolve_pass <= resolve_pass + 1;
-                    if (resolve_pass == max_passes) begin
+                    if (resolve_pass >= max_passes) begin
                         state <= PRUNE;
                         prune_iter <= 0;
                         com_div_busy <= 0;
@@ -345,6 +350,8 @@ always_ff @(posedge clk_in) begin
                         largest_y_coms <= 0;
                         largest_smallest <= 0;
                         largest_smallest_ind <= 0;
+                        x_div_out_waiting <= 0;
+                        y_div_out_waiting <= 0;
                     end
                 end else begin
                     resolve_index <= resolve_index + 1;
@@ -383,8 +390,8 @@ always_ff @(posedge clk_in) begin
                             // otherwise, we have a label with a valid area
                             end else begin
                                 
-                                // if this area is smaller than the 3 largest, we don't care about dividing
-                                if(areas[prune_iter] <= largest_areas[0] && areas[prune_iter] <= largest_areas[1] && areas[prune_iter] <= largest_areas[2]) begin
+                                // if this area is smaller than the 2 largest, we don't care about dividing
+                                if(areas[prune_iter] <= largest_areas[0] && areas[prune_iter] <= largest_areas[1]) begin
                                     prune_iter <= prune_iter + 1;           // and continue
 
                                 end else begin
@@ -398,24 +405,18 @@ always_ff @(posedge clk_in) begin
                                     x_div_out_waiting <= 0;                 // also keep track that we're still waiting for a divider output
                                     y_div_out_waiting <= 0;
 
-                                    // keep track of 3 largest values
-                                    if(areas[prune_iter] > largest_areas[0] && largest_areas[0] <= largest_areas[1] && largest_areas[0] <= largest_areas[2]) begin
+                                    // keep track of 2 largest values
+                                    if(areas[prune_iter] > largest_areas[0] && largest_areas[0] <= largest_areas[1]) begin
                                         largest_smallest <= 1;
                                         largest_smallest_ind <= 0;
                                         largest_areas[0] <= areas[prune_iter];
                                         largest_labels[0] <= second_pass_labels[prune_iter];
 
-                                    end else if (areas[prune_iter] > largest_areas[1] && largest_areas[1] <= largest_areas[0] && largest_areas[1] <= largest_areas[2]) begin
+                                    end else if (areas[prune_iter] > largest_areas[1] && largest_areas[1] < largest_areas[0]) begin
                                         largest_smallest <= 1;
                                         largest_smallest_ind <= 1;
                                         largest_areas[1] <= areas[prune_iter];
                                         largest_labels[1] <= second_pass_labels[prune_iter];
-
-                                    end else if (areas[prune_iter] > largest_areas[2] && largest_areas[2] <= largest_areas[0] && largest_areas[2] <= largest_areas[1]) begin
-                                        largest_smallest <= 1;
-                                        largest_smallest_ind <= 2;
-                                        largest_areas[2] <= areas[prune_iter];
-                                        largest_labels[2] <= second_pass_labels[prune_iter];
 
                                     end
                                 end
@@ -547,10 +548,6 @@ divider #(.WIDTH(24)) div_y (
     );
 
 
-
-
-
-
 always_comb begin
     if(rst_in) begin
         addra_mask = 0;
@@ -586,7 +583,7 @@ always_comb begin
                     end
                 end else begin
                     // if we need to store a label to BRAM, decide what label to store
-                    if(min_label == 16'hFFFF) begin
+                    if(min_label == 6'b111111) begin
                         store_label = curr_label;   // store a new label
                     end else begin
                         store_label = min_label;    // store the minimum label among neighbors
