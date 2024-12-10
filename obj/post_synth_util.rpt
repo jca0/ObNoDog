@@ -1,0 +1,162 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2024.1 (lin64) Build 5076996 Wed May 22 18:36:09 MDT 2024
+| Date         : Tue Dec 10 03:48:18 2024
+| Host         : eecs-digital-36 running 64-bit Ubuntu 24.04.1 LTS
+| Command      : report_utilization -file obj/post_synth_util.rpt -hierarchical -hierarchical_depth 4
+| Design       : top_level
+| Device       : xc7s50csga324-1
+| Speed File   : -1
+| Design State : Synthesized
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Utilization Design Information
+
+Table of Contents
+-----------------
+1. Utilization by Hierarchy
+
+1. Utilization by Hierarchy
+---------------------------
+
++----------------------------------------------+-----------------------------------------------------------------+------------+------------+---------+------+-------+--------+--------+------------+
+|                   Instance                   |                              Module                             | Total LUTs | Logic LUTs | LUTRAMs | SRLs |  FFs  | RAMB36 | RAMB18 | DSP Blocks |
++----------------------------------------------+-----------------------------------------------------------------+------------+------------+---------+------+-------+--------+--------+------------+
+| top_level                                    |                                                           (top) |       9028 |       8962 |       0 |   66 | 10493 |     53 |     43 |         44 |
+|   (top_level)                                |                                                           (top) |        699 |        699 |       0 |    0 |   529 |      0 |      0 |          5 |
+|   blue_ser                                   |                                                 tmds_serializer |          1 |          1 |       0 |    0 |     1 |      0 |      0 |          0 |
+|   cdc_fifo                                   |                                                            fifo |         39 |         39 |       0 |    0 |    82 |      1 |      0 |          0 |
+|     (cdc_fifo)                               |                                                            fifo |          0 |          0 |       0 |    0 |     0 |      0 |      0 |          0 |
+|     U0                                       |                                         fifo_generator_v13_2_10 |         39 |         39 |       0 |    0 |    82 |      1 |      0 |          0 |
+|       (U0)                                   |                                         fifo_generator_v13_2_10 |          0 |          0 |       0 |    0 |     0 |      0 |      0 |          0 |
+|       inst_fifo_gen                          |                                   fifo_generator_v13_2_10_synth |         39 |         39 |       0 |    0 |    82 |      1 |      0 |          0 |
+|         gconvfifo.rf                         |                                              fifo_generator_top |         39 |         39 |       0 |    0 |    82 |      1 |      0 |          0 |
+|   classifier                                 |                                        image_sprite_transparent |        414 |        393 |       0 |   21 |    21 |      2 |      0 |          0 |
+|     (classifier)                             |                                        image_sprite_transparent |        396 |        375 |       0 |   21 |    21 |      0 |      0 |          0 |
+|     pixel_BROM                               |                               xilinx_single_port_ram_read_first |         18 |         18 |       0 |    0 |     0 |      2 |      0 |          0 |
+|   crw                                        |                                                camera_registers |        106 |        106 |       0 |    0 |   104 |      0 |      0 |          0 |
+|     (crw)                                    |                                                camera_registers |          8 |          8 |       0 |    0 |    42 |      0 |      0 |          0 |
+|     aia                                      |                                                  addr_increment |          8 |          8 |       0 |    0 |     9 |      0 |      0 |          0 |
+|     sccb_c                                   |                                                      i2c_master |         90 |         90 |       0 |    0 |    53 |      0 |      0 |          0 |
+|   ds_lbuff                                   |                                                     line_buffer |         66 |         66 |       0 |    0 |    38 |      0 |      4 |          0 |
+|     (ds_lbuff)                               |                                                     line_buffer |         24 |         24 |       0 |    0 |    38 |      0 |      0 |          0 |
+|     genblk1[0].line_buffer_ram               |                 xilinx_true_dual_port_read_first_1_clock_ram_47 |         36 |         36 |       0 |    0 |     0 |      0 |      1 |          0 |
+|     genblk1[1].line_buffer_ram               |                 xilinx_true_dual_port_read_first_1_clock_ram_48 |          2 |          2 |       0 |    0 |     0 |      0 |      1 |          0 |
+|     genblk1[2].line_buffer_ram               |                 xilinx_true_dual_port_read_first_1_clock_ram_49 |          2 |          2 |       0 |    0 |     0 |      0 |      1 |          0 |
+|     genblk1[3].line_buffer_ram               |                 xilinx_true_dual_port_read_first_1_clock_ram_50 |          2 |          2 |       0 |    0 |     0 |      0 |      1 |          0 |
+|   filtern                                    |                                          filter__parameterized5 |        284 |        262 |       0 |   22 |   541 |      4 |      0 |          0 |
+|     m_lbuff                                  |                                     line_buffer__parameterized0 |        112 |        112 |       0 |    0 |    24 |      4 |      0 |          0 |
+|       (m_lbuff)                              |                                     line_buffer__parameterized0 |         12 |         12 |       0 |    0 |    24 |      0 |      0 |          0 |
+|       genblk1[0].line_buffer_ram             |    xilinx_true_dual_port_read_first_1_clock_ram__parameterized0 |         17 |         17 |       0 |    0 |     0 |      1 |      0 |          0 |
+|       genblk1[1].line_buffer_ram             | xilinx_true_dual_port_read_first_1_clock_ram__parameterized0_44 |         33 |         33 |       0 |    0 |     0 |      1 |      0 |          0 |
+|       genblk1[2].line_buffer_ram             | xilinx_true_dual_port_read_first_1_clock_ram__parameterized0_45 |         33 |         33 |       0 |    0 |     0 |      1 |      0 |          0 |
+|       genblk1[3].line_buffer_ram             | xilinx_true_dual_port_read_first_1_clock_ram__parameterized0_46 |         17 |         17 |       0 |    0 |     0 |      1 |      0 |          0 |
+|     mconv                                    |                                  convolution__parameterized0_43 |        172 |        150 |       0 |   22 |   517 |      0 |      0 |          0 |
+|   frame_buffer                               |                                                   blk_mem_gen_0 |        122 |        122 |       0 |    0 |    20 |     24 |      8 |          0 |
+|     (frame_buffer)                           |                                                   blk_mem_gen_0 |          0 |          0 |       0 |    0 |     0 |      0 |      0 |          0 |
+|     U0                                       |                                 blk_mem_gen_0blk_mem_gen_v8_4_8 |        122 |        122 |       0 |    0 |    20 |     24 |      8 |          0 |
+|       (U0)                                   |                                 blk_mem_gen_0blk_mem_gen_v8_4_8 |          0 |          0 |       0 |    0 |     0 |      0 |      0 |          0 |
+|       inst_blk_mem_gen                       |                           blk_mem_gen_0blk_mem_gen_v8_4_8_synth |        122 |        122 |       0 |    0 |    20 |     24 |      8 |          0 |
+|         gnbram.gnativebmg.native_blk_mem_gen |                                    blk_mem_gen_0blk_mem_gen_top |        122 |        122 |       0 |    0 |    20 |     24 |      8 |          0 |
+|   genblk1[0].filterm                         |                                                          filter |         32 |         31 |       0 |    1 |   100 |      0 |      4 |          0 |
+|     m_lbuff                                  |                                                  line_buffer_38 |         21 |         21 |       0 |    0 |     2 |      0 |      4 |          0 |
+|       (m_lbuff)                              |                                                  line_buffer_38 |          1 |          1 |       0 |    0 |     2 |      0 |      0 |          0 |
+|       genblk1[0].line_buffer_ram             |                 xilinx_true_dual_port_read_first_1_clock_ram_39 |         17 |         17 |       0 |    0 |     0 |      0 |      1 |          0 |
+|       genblk1[1].line_buffer_ram             |                 xilinx_true_dual_port_read_first_1_clock_ram_40 |          1 |          1 |       0 |    0 |     0 |      0 |      1 |          0 |
+|       genblk1[2].line_buffer_ram             |                 xilinx_true_dual_port_read_first_1_clock_ram_41 |          1 |          1 |       0 |    0 |     0 |      0 |      1 |          0 |
+|       genblk1[3].line_buffer_ram             |                 xilinx_true_dual_port_read_first_1_clock_ram_42 |          1 |          1 |       0 |    0 |     0 |      0 |      1 |          0 |
+|     mconv                                    |                                                     convolution |         11 |         10 |       0 |    1 |    98 |      0 |      0 |          0 |
+|   genblk1[1].filterm                         |                                          filter__parameterized0 |        174 |        174 |       0 |    0 |   472 |      0 |      4 |          0 |
+|     m_lbuff                                  |                                                  line_buffer_33 |         53 |         53 |       0 |    0 |     2 |      0 |      4 |          0 |
+|       (m_lbuff)                              |                                                  line_buffer_33 |          1 |          1 |       0 |    0 |     2 |      0 |      0 |          0 |
+|       genblk1[0].line_buffer_ram             |                 xilinx_true_dual_port_read_first_1_clock_ram_34 |         17 |         17 |       0 |    0 |     0 |      0 |      1 |          0 |
+|       genblk1[1].line_buffer_ram             |                 xilinx_true_dual_port_read_first_1_clock_ram_35 |         17 |         17 |       0 |    0 |     0 |      0 |      1 |          0 |
+|       genblk1[2].line_buffer_ram             |                 xilinx_true_dual_port_read_first_1_clock_ram_36 |          1 |          1 |       0 |    0 |     0 |      0 |      1 |          0 |
+|       genblk1[3].line_buffer_ram             |                 xilinx_true_dual_port_read_first_1_clock_ram_37 |         17 |         17 |       0 |    0 |     0 |      0 |      1 |          0 |
+|     mconv                                    |                                     convolution__parameterized0 |        121 |        121 |       0 |    0 |   470 |      0 |      0 |          0 |
+|   genblk1[2].filterm                         |                                          filter__parameterized1 |        316 |        311 |       0 |    5 |   474 |      0 |      4 |          0 |
+|     m_lbuff                                  |                                                  line_buffer_28 |         53 |         53 |       0 |    0 |     2 |      0 |      4 |          0 |
+|       (m_lbuff)                              |                                                  line_buffer_28 |          1 |          1 |       0 |    0 |     2 |      0 |      0 |          0 |
+|       genblk1[0].line_buffer_ram             |                 xilinx_true_dual_port_read_first_1_clock_ram_29 |         17 |         17 |       0 |    0 |     0 |      0 |      1 |          0 |
+|       genblk1[1].line_buffer_ram             |                 xilinx_true_dual_port_read_first_1_clock_ram_30 |         17 |         17 |       0 |    0 |     0 |      0 |      1 |          0 |
+|       genblk1[2].line_buffer_ram             |                 xilinx_true_dual_port_read_first_1_clock_ram_31 |          1 |          1 |       0 |    0 |     0 |      0 |      1 |          0 |
+|       genblk1[3].line_buffer_ram             |                 xilinx_true_dual_port_read_first_1_clock_ram_32 |         17 |         17 |       0 |    0 |     0 |      0 |      1 |          0 |
+|     mconv                                    |                                     convolution__parameterized1 |        263 |        258 |       0 |    5 |   472 |      0 |      0 |          0 |
+|   genblk1[3].filterm                         |                                          filter__parameterized2 |        433 |        426 |       0 |    7 |   654 |      0 |      4 |          0 |
+|     m_lbuff                                  |                                                  line_buffer_23 |         62 |         62 |       0 |    0 |    16 |      0 |      4 |          0 |
+|       (m_lbuff)                              |                                                  line_buffer_23 |         10 |         10 |       0 |    0 |    16 |      0 |      0 |          0 |
+|       genblk1[0].line_buffer_ram             |                 xilinx_true_dual_port_read_first_1_clock_ram_24 |         17 |         17 |       0 |    0 |     0 |      0 |      1 |          0 |
+|       genblk1[1].line_buffer_ram             |                 xilinx_true_dual_port_read_first_1_clock_ram_25 |         17 |         17 |       0 |    0 |     0 |      0 |      1 |          0 |
+|       genblk1[2].line_buffer_ram             |                 xilinx_true_dual_port_read_first_1_clock_ram_26 |          1 |          1 |       0 |    0 |     0 |      0 |      1 |          0 |
+|       genblk1[3].line_buffer_ram             |                 xilinx_true_dual_port_read_first_1_clock_ram_27 |         17 |         17 |       0 |    0 |     0 |      0 |      1 |          0 |
+|     mconv                                    |                                     convolution__parameterized2 |        371 |        364 |       0 |    7 |   638 |      0 |      0 |          0 |
+|   genblk1[4].filterm                         |                                          filter__parameterized3 |        282 |        282 |       0 |    0 |   454 |      0 |      4 |          0 |
+|     m_lbuff                                  |                                                  line_buffer_18 |         37 |         37 |       0 |    0 |     2 |      0 |      4 |          0 |
+|       (m_lbuff)                              |                                                  line_buffer_18 |          1 |          1 |       0 |    0 |     2 |      0 |      0 |          0 |
+|       genblk1[0].line_buffer_ram             |                 xilinx_true_dual_port_read_first_1_clock_ram_19 |          1 |          1 |       0 |    0 |     0 |      0 |      1 |          0 |
+|       genblk1[1].line_buffer_ram             |                 xilinx_true_dual_port_read_first_1_clock_ram_20 |         17 |         17 |       0 |    0 |     0 |      0 |      1 |          0 |
+|       genblk1[2].line_buffer_ram             |                 xilinx_true_dual_port_read_first_1_clock_ram_21 |          1 |          1 |       0 |    0 |     0 |      0 |      1 |          0 |
+|       genblk1[3].line_buffer_ram             |                 xilinx_true_dual_port_read_first_1_clock_ram_22 |         17 |         17 |       0 |    0 |     0 |      0 |      1 |          0 |
+|     mconv                                    |                                     convolution__parameterized3 |        245 |        245 |       0 |    0 |   452 |      0 |      0 |          0 |
+|   genblk1[5].filterm                         |                                          filter__parameterized4 |        325 |        315 |       0 |   10 |   524 |      0 |      4 |          0 |
+|     m_lbuff                                  |                                                  line_buffer_14 |         53 |         53 |       0 |    0 |     4 |      0 |      4 |          0 |
+|       (m_lbuff)                              |                                                  line_buffer_14 |          1 |          1 |       0 |    0 |     4 |      0 |      0 |          0 |
+|       genblk1[0].line_buffer_ram             |                    xilinx_true_dual_port_read_first_1_clock_ram |         17 |         17 |       0 |    0 |     0 |      0 |      1 |          0 |
+|       genblk1[1].line_buffer_ram             |                 xilinx_true_dual_port_read_first_1_clock_ram_15 |         17 |         17 |       0 |    0 |     0 |      0 |      1 |          0 |
+|       genblk1[2].line_buffer_ram             |                 xilinx_true_dual_port_read_first_1_clock_ram_16 |          1 |          1 |       0 |    0 |     0 |      0 |      1 |          0 |
+|       genblk1[3].line_buffer_ram             |                 xilinx_true_dual_port_read_first_1_clock_ram_17 |         17 |         17 |       0 |    0 |     0 |      0 |      1 |          0 |
+|     mconv                                    |                                     convolution__parameterized4 |        272 |        262 |       0 |   10 |   520 |      0 |      0 |          0 |
+|   green_ser                                  |                                               tmds_serializer_0 |          0 |          0 |       0 |    0 |     0 |      0 |      0 |          0 |
+|   mcs                                        |                                                  channel_select |          8 |          8 |       0 |    0 |     0 |      0 |      0 |          0 |
+|   mnt_ccl_1                                  |                                      moore_neighbor_tracing_ccl |        260 |        260 |       0 |    0 |   204 |      0 |      0 |         12 |
+|   mod                                        |                                               pixel_reconstruct |         22 |         22 |       0 |    0 |    49 |      0 |      0 |          0 |
+|   moore_fb_00                                |                    xilinx_true_dual_port_read_first_2_clock_ram |          1 |          1 |       0 |    0 |     0 |      2 |      0 |          0 |
+|   moore_fb_01                                |                  xilinx_true_dual_port_read_first_2_clock_ram_1 |          1 |          1 |       0 |    0 |     0 |      2 |      0 |          0 |
+|   moore_fb_02                                |                  xilinx_true_dual_port_read_first_2_clock_ram_2 |          1 |          1 |       0 |    0 |     0 |      2 |      0 |          0 |
+|   moore_fb_03                                |                  xilinx_true_dual_port_read_first_2_clock_ram_3 |          0 |          0 |       0 |    0 |     0 |      2 |      0 |          0 |
+|   mssc                                       |                                                       lab05_ssc |         35 |         35 |       0 |    0 |    25 |      0 |      0 |          0 |
+|   mt                                         |                                                       threshold |          0 |          0 |       0 |    0 |     1 |      0 |      0 |          0 |
+|   mvm                                        |                                                       video_mux |         37 |         37 |       0 |    0 |     0 |      0 |      0 |          0 |
+|   my_ccl                                     |                                                             ccl |       4432 |       4432 |       0 |    0 |  5988 |     14 |      0 |          8 |
+|     (my_ccl)                                 |                                                             ccl |       4035 |       4035 |       0 |    0 |  5870 |      0 |      0 |          8 |
+|     div_x                                    |                                                         divider |         64 |         64 |       0 |    0 |    60 |      0 |      0 |          0 |
+|     div_y                                    |                                                      divider_12 |         67 |         67 |       0 |    0 |    58 |      0 |      0 |          0 |
+|     fb1_labels                               |    xilinx_true_dual_port_read_first_2_clock_ram__parameterized0 |         92 |         92 |       0 |    0 |     0 |     12 |      0 |          0 |
+|     fb1_mask                                 |                 xilinx_true_dual_port_read_first_2_clock_ram_13 |        174 |        174 |       0 |    0 |     0 |      2 |      0 |          0 |
+|   my_divider                                 |                                         divider__parameterized0 |         86 |         86 |       0 |    0 |    99 |      0 |      0 |          0 |
+|   red_ser                                    |                                               tmds_serializer_4 |          0 |          0 |       0 |    0 |     0 |      0 |      0 |          0 |
+|   registers                                  |               xilinx_single_port_ram_read_first__parameterized1 |          6 |          6 |       0 |    0 |     0 |      0 |      1 |          0 |
+|   rgbtoycrcb_m                               |                                                    rgb_to_ycrcb |        185 |        185 |       0 |    0 |    50 |      0 |      0 |          7 |
+|   sprite_number_0                            |                                image_sprite_transparent_numbers |          7 |          7 |       0 |    0 |     0 |      0 |      0 |          1 |
+|   sprite_number_1                            |                              image_sprite_transparent_numbers_1 |         21 |         21 |       0 |    0 |     0 |      0 |      1 |          1 |
+|     (sprite_number_1)                        |                              image_sprite_transparent_numbers_1 |          0 |          0 |       0 |    0 |     0 |      0 |      0 |          1 |
+|     pixel_BROM                               |            xilinx_single_port_ram_read_first__parameterized0_11 |         21 |         21 |       0 |    0 |     0 |      0 |      1 |          0 |
+|   sprite_number_10                           |                             image_sprite_transparent_numbers_10 |          7 |          7 |       0 |    0 |     0 |      0 |      0 |          1 |
+|   sprite_number_11                           |                             image_sprite_transparent_numbers_11 |         81 |         81 |       0 |    0 |     0 |      0 |      1 |          1 |
+|     (sprite_number_11)                       |                             image_sprite_transparent_numbers_11 |         60 |         60 |       0 |    0 |     0 |      0 |      0 |          1 |
+|     pixel_BROM                               |            xilinx_single_port_ram_read_first__parameterized0_10 |         21 |         21 |       0 |    0 |     0 |      0 |      1 |          0 |
+|   sprite_number_2                            |                              image_sprite_transparent_numbers_2 |          7 |          7 |       0 |    0 |     0 |      0 |      0 |          1 |
+|   sprite_number_3                            |                              image_sprite_transparent_numbers_3 |         25 |         25 |       0 |    0 |     0 |      0 |      1 |          1 |
+|     (sprite_number_3)                        |                              image_sprite_transparent_numbers_3 |          4 |          4 |       0 |    0 |     0 |      0 |      0 |          1 |
+|     pixel_BROM                               |             xilinx_single_port_ram_read_first__parameterized0_9 |         21 |         21 |       0 |    0 |     0 |      0 |      1 |          0 |
+|   sprite_number_4                            |                              image_sprite_transparent_numbers_4 |          7 |          7 |       0 |    0 |     0 |      0 |      0 |          1 |
+|   sprite_number_5                            |                              image_sprite_transparent_numbers_5 |         21 |         21 |       0 |    0 |     0 |      0 |      1 |          1 |
+|     (sprite_number_5)                        |                              image_sprite_transparent_numbers_5 |          0 |          0 |       0 |    0 |     0 |      0 |      0 |          1 |
+|     pixel_BROM                               |             xilinx_single_port_ram_read_first__parameterized0_8 |         21 |         21 |       0 |    0 |     0 |      0 |      1 |          0 |
+|   sprite_number_6                            |                              image_sprite_transparent_numbers_6 |          7 |          7 |       0 |    0 |     0 |      0 |      0 |          1 |
+|   sprite_number_7                            |                              image_sprite_transparent_numbers_7 |         41 |         41 |       0 |    0 |     0 |      0 |      1 |          1 |
+|     (sprite_number_7)                        |                              image_sprite_transparent_numbers_7 |         20 |         20 |       0 |    0 |     0 |      0 |      0 |          1 |
+|     pixel_BROM                               |             xilinx_single_port_ram_read_first__parameterized0_7 |         21 |         21 |       0 |    0 |     0 |      0 |      1 |          0 |
+|   sprite_number_8                            |                              image_sprite_transparent_numbers_8 |          7 |          7 |       0 |    0 |     0 |      0 |      0 |          1 |
+|   sprite_number_9                            |                              image_sprite_transparent_numbers_9 |         21 |         21 |       0 |    0 |     0 |      0 |      1 |          1 |
+|     (sprite_number_9)                        |                              image_sprite_transparent_numbers_9 |          0 |          0 |       0 |    0 |     0 |      0 |      0 |          1 |
+|     pixel_BROM                               |               xilinx_single_port_ram_read_first__parameterized0 |         21 |         21 |       0 |    0 |     0 |      0 |      1 |          0 |
+|   tmds_blue                                  |                                                    tmds_encoder |          1 |          1 |       0 |    0 |    14 |      0 |      0 |          0 |
+|   tmds_green                                 |                                                  tmds_encoder_5 |          2 |          2 |       0 |    0 |    14 |      0 |      0 |          0 |
+|   tmds_red                                   |                                                  tmds_encoder_6 |         14 |         14 |       0 |    0 |    14 |      0 |      0 |          0 |
+|   vsg                                        |                                                   video_sig_gen |        393 |        393 |       0 |    0 |    21 |      0 |      0 |          0 |
+|   wizard_hdmi                                |                                                 cw_hdmi_clk_wiz |          0 |          0 |       0 |    0 |     0 |      0 |      0 |          0 |
+|   wizard_migcam                              |                                                 cw_fast_clk_wiz |          0 |          0 |       0 |    0 |     0 |      0 |      0 |          0 |
++----------------------------------------------+-----------------------------------------------------------------+------------+------------+---------+------+-------+--------+--------+------------+
+
+

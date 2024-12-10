@@ -1,0 +1,153 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2024.1 (lin64) Build 5076996 Wed May 22 18:36:09 MDT 2024
+| Date         : Tue Dec 10 03:49:55 2024
+| Host         : eecs-digital-36 running 64-bit Ubuntu 24.04.1 LTS
+| Command      : report_drc -file obj/post_imp_drc.rpt
+| Design       : top_level
+| Device       : xc7s50csga324-1
+| Speed File   : -1
+| Design State : Fully Routed
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Report DRC
+
+Table of Contents
+-----------------
+1. REPORT SUMMARY
+2. REPORT DETAILS
+
+1. REPORT SUMMARY
+-----------------
+            Netlist: top_level
+          Floorplan: design_1
+      Design limits: <entire design considered>
+           Ruledeck: default
+             Max violations: <unlimited>
+             Violations found: 23
++-----------+----------+-------------------+------------+
+| Rule      | Severity | Description       | Violations |
++-----------+----------+-------------------+------------+
+| DPIP-1    | Warning  | Input pipelining  | 13         |
+| PDRC-153  | Warning  | Gated clock check | 9          |
+| RTSTAT-10 | Warning  | No routable loads | 1          |
++-----------+----------+-------------------+------------+
+
+2. REPORT DETAILS
+-----------------
+DPIP-1#1 Warning
+Input pipelining  
+DSP ccl_moore_addr0 input ccl_moore_addr0/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#2 Warning
+Input pipelining  
+DSP sprite_number_0/image_addr1 input sprite_number_0/image_addr1/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#3 Warning
+Input pipelining  
+DSP sprite_number_1/image_addr1 input sprite_number_1/image_addr1/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#4 Warning
+Input pipelining  
+DSP sprite_number_10/image_addr1 input sprite_number_10/image_addr1/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#5 Warning
+Input pipelining  
+DSP sprite_number_11/image_addr1 input sprite_number_11/image_addr1/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#6 Warning
+Input pipelining  
+DSP sprite_number_2/image_addr1 input sprite_number_2/image_addr1/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#7 Warning
+Input pipelining  
+DSP sprite_number_3/image_addr1 input sprite_number_3/image_addr1/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#8 Warning
+Input pipelining  
+DSP sprite_number_4/image_addr1 input sprite_number_4/image_addr1/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#9 Warning
+Input pipelining  
+DSP sprite_number_5/image_addr1 input sprite_number_5/image_addr1/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#10 Warning
+Input pipelining  
+DSP sprite_number_6/image_addr1 input sprite_number_6/image_addr1/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#11 Warning
+Input pipelining  
+DSP sprite_number_7/image_addr1 input sprite_number_7/image_addr1/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#12 Warning
+Input pipelining  
+DSP sprite_number_8/image_addr1 input sprite_number_8/image_addr1/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#13 Warning
+Input pipelining  
+DSP sprite_number_9/image_addr1 input sprite_number_9/image_addr1/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+PDRC-153#1 Warning
+Gated clock check  
+Net mnt_ccl_1/addra_1_reg[15]_i_2_n_2 is a gated clock net sourced by a combinational pin mnt_ccl_1/addra_1_reg[15]_i_2/O, cell mnt_ccl_1/addra_1_reg[15]_i_2. This is not good design practice and will likely impact performance. For SLICE registers, for example, use the CE pin to control the loading of data.
+Related violations: <none>
+
+PDRC-153#2 Warning
+Gated clock check  
+Net mnt_ccl_1/frame_buff_pixel__0 is a gated clock net sourced by a combinational pin mnt_ccl_1/frame_buff_pixel_reg_i_1/O, cell mnt_ccl_1/frame_buff_pixel_reg_i_1. This is not good design practice and will likely impact performance. For SLICE registers, for example, use the CE pin to control the loading of data.
+Related violations: <none>
+
+PDRC-153#3 Warning
+Gated clock check  
+Net my_ccl/addra_mask_reg[15]_i_2_n_2 is a gated clock net sourced by a combinational pin my_ccl/addra_mask_reg[15]_i_2/O, cell my_ccl/addra_mask_reg[15]_i_2. This is not good design practice and will likely impact performance. For SLICE registers, for example, use the CE pin to control the loading of data.
+Related violations: <none>
+
+PDRC-153#4 Warning
+Gated clock check  
+Net my_ccl/fb1_mask/read_signal_reg[0] is a gated clock net sourced by a combinational pin my_ccl/fb1_mask/store_label_reg[5]_i_2/O, cell my_ccl/fb1_mask/store_label_reg[5]_i_2. This is not good design practice and will likely impact performance. For SLICE registers, for example, use the CE pin to control the loading of data.
+Related violations: <none>
+
+PDRC-153#5 Warning
+Gated clock check  
+Net my_ccl/fb1_mask/state_reg[0]_15[0] is a gated clock net sourced by a combinational pin my_ccl/fb1_mask/n_pixel_label_reg[5]_i_2/O, cell my_ccl/fb1_mask/n_pixel_label_reg[5]_i_2. This is not good design practice and will likely impact performance. For SLICE registers, for example, use the CE pin to control the loading of data.
+Related violations: <none>
+
+PDRC-153#6 Warning
+Gated clock check  
+Net my_ccl/fb1_mask/state_reg[0]_16[0] is a gated clock net sourced by a combinational pin my_ccl/fb1_mask/ne_pixel_label_reg[5]_i_2/O, cell my_ccl/fb1_mask/ne_pixel_label_reg[5]_i_2. This is not good design practice and will likely impact performance. For SLICE registers, for example, use the CE pin to control the loading of data.
+Related violations: <none>
+
+PDRC-153#7 Warning
+Gated clock check  
+Net my_ccl/fb1_mask/state_reg[1]_rep[0] is a gated clock net sourced by a combinational pin my_ccl/fb1_mask/addrb_label_reg[15]_i_2/O, cell my_ccl/fb1_mask/addrb_label_reg[15]_i_2. This is not good design practice and will likely impact performance. For SLICE registers, for example, use the CE pin to control the loading of data.
+Related violations: <none>
+
+PDRC-153#8 Warning
+Gated clock check  
+Net my_ccl/fb1_mask/state_reg[3][0] is a gated clock net sourced by a combinational pin my_ccl/fb1_mask/addra_label_reg[15]_i_2/O, cell my_ccl/fb1_mask/addra_label_reg[15]_i_2. This is not good design practice and will likely impact performance. For SLICE registers, for example, use the CE pin to control the loading of data.
+Related violations: <none>
+
+PDRC-153#9 Warning
+Gated clock check  
+Net my_ccl/label_tl__0 is a gated clock net sourced by a combinational pin my_ccl/label_tl_reg[3]_i_2/O, cell my_ccl/label_tl_reg[3]_i_2. This is not good design practice and will likely impact performance. For SLICE registers, for example, use the CE pin to control the loading of data.
+Related violations: <none>
+
+RTSTAT-10#1 Warning
+No routable loads  
+1 net(s) have no routable loads. The problem bus(es) and/or net(s) are cdc_fifo/U0/inst_fifo_gen/gconvfifo.rf/grf.rf/gntv_or_sync_fifo.gl0.wr/gwas.wsts/ram_full_i.
+Related violations: <none>
+
+

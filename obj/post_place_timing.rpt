@@ -1,0 +1,117 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2024.1 (lin64) Build 5076996 Wed May 22 18:36:09 MDT 2024
+| Date         : Tue Dec 10 03:49:01 2024
+| Host         : eecs-digital-36 running 64-bit Ubuntu 24.04.1 LTS
+| Command      : report_timing -file obj/post_place_timing.rpt
+| Design       : top_level
+| Device       : 7s50-csga324
+| Speed File   : -1  PRODUCTION 1.23 2018-06-13
+| Design State : Physopt postPlace
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Timing Report
+
+Slack (VIOLATED) :        -0.629ns  (required time - arrival time)
+  Source:                 vsg/vcount_out_reg[0]_replica_1/C
+                            (rising edge-triggered cell FDRE clocked by clk_pixel_cw_hdmi  {rise@0.000ns fall@6.734ns period=13.468ns})
+  Destination:            sprite_number_3/pixel_BROM/BRAM_reg/ADDRARDADDR[13]
+                            (rising edge-triggered cell RAMB18E1 clocked by clk_pixel_cw_hdmi  {rise@0.000ns fall@6.734ns period=13.468ns})
+  Path Group:             clk_pixel_cw_hdmi
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            13.468ns  (clk_pixel_cw_hdmi rise@13.468ns - clk_pixel_cw_hdmi rise@0.000ns)
+  Data Path Delay:        13.071ns  (logic 8.080ns (61.816%)  route 4.991ns (38.184%))
+  Logic Levels:           11  (CARRY4=6 DSP48E1=1 LUT1=2 LUT2=2)
+  Clock Path Skew:        -0.073ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    -2.091ns = ( 11.377 - 13.468 ) 
+    Source Clock Delay      (SCD):    -2.526ns
+    Clock Pessimism Removal (CPR):    -0.507ns
+  Clock Uncertainty:      0.210ns  ((TSJ^2 + DJ^2)^1/2) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Discrete Jitter          (DJ):    0.414ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_pixel_cw_hdmi rise edge)
+                                                      0.000     0.000 r  
+    N15                                               0.000     0.000 r  clk_100mhz (IN)
+                         net (fo=0)                   0.000     0.000    wizard_migcam/clk_100mhz
+    N15                  IBUF (Prop_ibuf_I_O)         1.440     1.440 r  wizard_migcam/clkin1_ibufg/O
+                         net (fo=1, estimated)        1.253     2.693    wizard_migcam/clk_in1_cw_fast
+    PLLE2_ADV_X0Y0       PLLE2_ADV (Prop_plle2_adv_CLKIN1_CLKOUT0)
+                                                     -8.525    -5.832 r  wizard_migcam/plle2_adv_inst/CLKOUT0
+                         net (fo=1, estimated)        1.660    -4.172    wizard_migcam/clk_100_cw_fast
+    BUFGCTRL_X0Y7        BUFG (Prop_bufg_I_O)         0.096    -4.076 r  wizard_migcam/clkout1_buf/O
+                         net (fo=1, estimated)        1.634    -2.442    wizard_hdmi/sysclk
+    MMCME2_ADV_X1Y0      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT0)
+                                                     -3.393    -5.835 r  wizard_hdmi/mmcm_adv_inst/CLKOUT0
+                         net (fo=1, estimated)        1.661    -4.174    wizard_hdmi/clk_pixel_cw_hdmi
+    BUFGCTRL_X0Y0        BUFG (Prop_bufg_I_O)         0.096    -4.078 r  wizard_hdmi/clkout1_buf/O
+                         net (fo=10375, estimated)    1.552    -2.526    vsg/clk_pixel
+    SLICE_X28Y53         FDRE                                         r  vsg/vcount_out_reg[0]_replica_1/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X28Y53         FDRE (Prop_fdre_C_Q)         0.456    -2.070 f  vsg/vcount_out_reg[0]_replica_1/Q
+                         net (fo=4, estimated)        0.731    -1.339    vsg/vcount_out[0]_repN_1
+    SLICE_X28Y49         LUT1 (Prop_lut1_I0_O)        0.124    -1.215 r  vsg/image_addr1_i_12__3/O
+                         net (fo=1, routed)           0.000    -1.215    sprite_number_3/S[0]
+    SLICE_X28Y49         CARRY4 (Prop_carry4_S[0]_CO[3])
+                                                      0.532    -0.683 r  sprite_number_3/image_addr1_i_3/CO[3]
+                         net (fo=1, estimated)        0.000    -0.683    sprite_number_3/image_addr1_i_3_n_2
+    SLICE_X28Y50         CARRY4 (Prop_carry4_CI_CO[3])
+                                                      0.114    -0.569 r  sprite_number_3/image_addr1_i_2/CO[3]
+                         net (fo=1, estimated)        0.000    -0.569    sprite_number_3/image_addr1_i_2_n_2
+    SLICE_X28Y51         CARRY4 (Prop_carry4_CI_O[2])
+                                                      0.239    -0.330 r  sprite_number_3/image_addr1_i_1/O[2]
+                         net (fo=3, estimated)        1.080     0.750    sprite_number_3/A[12]
+    DSP48_X0Y21          DSP48E1 (Prop_dsp48e1_A[12]_P[7])
+                                                      4.019     4.769 r  sprite_number_3/image_addr1/P[7]
+                         net (fo=2, estimated)        0.772     5.541    sprite_number_3/pixel_BROM/P[1]
+    SLICE_X15Y52         LUT2 (Prop_lut2_I0_O)        0.124     5.665 r  sprite_number_3/pixel_BROM/BRAM_reg_i_63__3/O
+                         net (fo=1, routed)           0.000     5.665    sprite_number_3/pixel_BROM/BRAM_reg_i_63__3_n_2
+    SLICE_X15Y52         CARRY4 (Prop_carry4_S[1]_O[3])
+                                                      0.640     6.305 r  sprite_number_3/pixel_BROM/BRAM_reg_i_52__3/O[3]
+                         net (fo=1, estimated)        0.787     7.092    vsg/BRAM_reg_i_37__4_0[3]
+    SLICE_X31Y53         LUT2 (Prop_lut2_I1_O)        0.306     7.398 r  vsg/BRAM_reg_i_50__3/O
+                         net (fo=1, routed)           0.000     7.398    vsg/BRAM_reg_i_50__3_n_2
+    SLICE_X31Y53         CARRY4 (Prop_carry4_S[1]_O[3])
+                                                      0.640     8.038 f  vsg/BRAM_reg_i_37__4/O[3]
+                         net (fo=1, estimated)        0.754     8.792    vsg/sprite_number_3/PCOUT__0[11]
+    SLICE_X40Y54         LUT1 (Prop_lut1_I0_O)        0.306     9.098 r  vsg/BRAM_reg_i_12__4/O
+                         net (fo=1, routed)           0.000     9.098    vsg/BRAM_reg_i_12__4_n_2
+    SLICE_X40Y54         CARRY4 (Prop_carry4_S[1]_O[2])
+                                                      0.580     9.678 r  vsg/BRAM_reg_i_1__35/O[2]
+                         net (fo=1, estimated)        0.867    10.545    sprite_number_3/pixel_BROM/ADDRARDADDR[12]
+    RAMB18_X1Y23         RAMB18E1                                     r  sprite_number_3/pixel_BROM/BRAM_reg/ADDRARDADDR[13]
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_pixel_cw_hdmi rise edge)
+                                                     13.468    13.468 r  
+    N15                                               0.000    13.468 r  clk_100mhz (IN)
+                         net (fo=0)                   0.000    13.468    wizard_migcam/clk_100mhz
+    N15                  IBUF (Prop_ibuf_I_O)         1.370    14.838 r  wizard_migcam/clkin1_ibufg/O
+                         net (fo=1, estimated)        1.190    16.029    wizard_migcam/clk_in1_cw_fast
+    PLLE2_ADV_X0Y0       PLLE2_ADV (Prop_plle2_adv_CLKIN1_CLKOUT0)
+                                                     -7.790     8.239 r  wizard_migcam/plle2_adv_inst/CLKOUT0
+                         net (fo=1, estimated)        1.577     9.816    wizard_migcam/clk_100_cw_fast
+    BUFGCTRL_X0Y7        BUFG (Prop_bufg_I_O)         0.091     9.907 r  wizard_migcam/clkout1_buf/O
+                         net (fo=1, estimated)        1.517    11.424    wizard_hdmi/sysclk
+    MMCME2_ADV_X1Y0      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT0)
+                                                     -3.187     8.237 r  wizard_hdmi/mmcm_adv_inst/CLKOUT0
+                         net (fo=1, estimated)        1.578     9.815    wizard_hdmi/clk_pixel_cw_hdmi
+    BUFGCTRL_X0Y0        BUFG (Prop_bufg_I_O)         0.091     9.906 r  wizard_hdmi/clkout1_buf/O
+                         net (fo=10375, estimated)    1.471    11.377    sprite_number_3/pixel_BROM/clk_pixel
+    RAMB18_X1Y23         RAMB18E1                                     r  sprite_number_3/pixel_BROM/BRAM_reg/CLKARDCLK
+                         clock pessimism             -0.507    10.870    
+                         clock uncertainty           -0.210    10.660    
+    RAMB18_X1Y23         RAMB18E1 (Setup_ramb18e1_CLKARDCLK_ADDRARDADDR[13])
+                                                     -0.744     9.916    sprite_number_3/pixel_BROM/BRAM_reg
+  -------------------------------------------------------------------
+                         required time                          9.916    
+                         arrival time                         -10.545    
+  -------------------------------------------------------------------
+                         slack                                 -0.629    
+
+
+
+

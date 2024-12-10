@@ -1655,8 +1655,6 @@ end
 
 
 
-  
-
 
   // NEW MODULES
   // CONNECTED COMPONENTS LABELLING MODULE
@@ -1738,7 +1736,7 @@ end
     .camera_pixel_in({fb_red, fb_green, fb_blue}), //: needs (PS2)
     .camera_y_in(y), //luminance : needs (PS6)
     .channel_in(selected_channel), //current channel being drawn : needs (PS5)
-    .thresholded_pixel_in(curr_pix_label ? 1 : 0), //one bit mask signal : needs (PS4)
+    .thresholded_pixel_in((ccl_pixel_label > 0) ? 1 : 0), //one bit mask signal : needs (PS4)
     .crosshair_in({ch_red, ch_green, ch_blue}), //: needs (PS8)
     .com_sprite_pixel_in({img_red, img_green, img_blue}), //: needs (PS9) maybe?
     .draw_sprite(draw_sprite), //draw sprite signal

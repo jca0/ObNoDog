@@ -1,0 +1,6 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1733827492" />
+    <testcase name="test_a" classname="test_temp_ccl" file="/Users/jingcao/Desktop/ObNoDog/sim/test_temp_ccl.py" lineno="14" time="0.009068727493286133" sim_time_ns="2205.001" ratio_time="243143.37393338067" />
+  </testsuite>
+</testsuites>
