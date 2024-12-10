@@ -914,15 +914,16 @@ module top_level
 
   // TODO: make 2 more of these for the other 2 shapes
   logic draw_classifier;
+  parameter IMG_SPRITE_WIDTH = 128;
   image_sprite_transparent #(
-    .WIDTH(256),
-    .HEIGHT(256),
+    .WIDTH(IMG_SPRITE_WIDTH),
+    .HEIGHT(IMG_SPRITE_WIDTH),
     .NUM_IMGS(4)
   ) classifier(
     .pixel_clk_in(clk_pixel),
     .rst_in(sys_rst_pixel),
-    .x_in(x_com>128 ? x_com-128 : 0),
-    .y_in(y_com>128 ? y_com-128 : 0),
+    .x_in(x_com>(IMG_SPRITE_WIDTH>>1) ? x_com-(IMG_SPRITE_WIDTH>>1) : 0),
+    .y_in(y_com>(IMG_SPRITE_WIDTH>>1) ? y_com-(IMG_SPRITE_WIDTH>>1) : 0),
     .hcount_in(hcount_hdmi),
     .vcount_in(vcount_hdmi),
     .shape(shape),
