@@ -102,7 +102,7 @@ logic [15:0] w_pixel_label, nw_pixel_label, n_pixel_label, ne_pixel_label;
 
 logic [10:0] curr_x;
 logic [9:0] curr_y;
-logic [15:0] curr_label;
+logic [LABEL_WIDTH-1:0] curr_label;
 logic [LABEL_WIDTH-1:0] min_label;
 
 logic [1:0] bram_wait;
@@ -131,18 +131,30 @@ always_ff @(posedge clk_in) begin
         curr_label <= 0;
 
         // initially label maps to itself
-        for (int i = 0; i < 16; i=i+1) begin
+        for (int i = 0; i < MAX_LABELS+1; i=i+1) begin
             equiv_table[i] <= i;
-            area_table[i] <= 0;
-            sum_x_table[i] <= 0;
-            sum_y_table[i] <= 0;
         end
+        area_table <= 0;
+        sum_x_table <= 0;
+        sum_y_table <= 0;
 
     end else begin
         case (state) 
             IDLE: begin
                 valid_out <= 0;
                 largest_areas <= 0;
+                largest_labels <= 0;
+                largest_x_coms <= 0;
+                largest_y_coms <= 0;
+
+                for (int i = 0; i < 16; i=i+1) begin
+                    equiv_table[i] <= i;
+                end
+                area_table <= 0;
+                sum_x_table <= 0;
+                sum_y_table <= 0;
+
+
 
                 if (new_frame_in) begin
                     state <= STORE_FRAME;
@@ -159,6 +171,14 @@ always_ff @(posedge clk_in) begin
                     curr_label <= 1;
                     bram_wait <= 0;
                     read_neighbor_wait <= 0;
+                    
+                    for (int i = 0; i < 16; i=i+1) begin
+                        equiv_table[i] <= i;
+                    end
+                    area_table <= 0;
+                    sum_x_table <= 0;
+                    sum_y_table <= 0;
+
                 end
             end
 
@@ -203,7 +223,11 @@ always_ff @(posedge clk_in) begin
                                     area_table[curr_label] <= area_table[curr_label] + 1;
                                     sum_x_table[curr_label] <= sum_x_table[curr_label] + curr_x;
                                     sum_y_table[curr_label] <= sum_y_table[curr_label] + curr_y;
-                                    curr_label <= curr_label + 1;
+
+                                    // DON'T OVERFLOW
+                                    if(curr_label < MAX_LABELS-1) begin
+                                        curr_label <= curr_label + 1;
+                                    end
                                 end else begin
                                     // the minimum label should be set for all neighbors
                                     // Should be handled in resolve equivalences? to deal with area mismatches
@@ -220,6 +244,7 @@ always_ff @(posedge clk_in) begin
                                     //     equiv_table[ne_pixel_label] <= min_label;
                                     // end
 
+                                    equiv_table[curr_label] <= min_label;
                                     area_table[min_label] <= area_table[min_label] + 1;
                                     sum_x_table[min_label] <= sum_x_table[min_label] + curr_x;
                                     sum_y_table[min_label] <= sum_y_table[min_label] + curr_y;
@@ -275,9 +300,9 @@ always_ff @(posedge clk_in) begin
             RESOLVE_EQUIV: begin
                 curr_label <= 1;
                 equiv_table[resolve_index] <= equiv_table[equiv_table[resolve_index]];
-                if (resolve_index == max_passes - 1) begin
+                if (resolve_index >= max_passes - 1) begin
                     resolve_index <= 0;
-                    if (resolve_pass == max_passes) begin
+                    if (resolve_pass >= max_passes) begin
                         state <= PROPERTY_CALC;
                         resolve_pass <= 0;
                     end else begin
@@ -294,11 +319,16 @@ always_ff @(posedge clk_in) begin
                     sum_x_table[equiv_table[resolve_index]] <= sum_x_table[equiv_table[resolve_index]] + sum_x_table[resolve_index];
                     sum_y_table[equiv_table[resolve_index]] <= sum_y_table[equiv_table[resolve_index]] + sum_y_table[resolve_index];
                 end
-                if (resolve_index == max_passes - 1) begin
+                if (resolve_index >= max_passes - 1) begin
                     resolve_index <= 0;
-                    if (resolve_pass == max_passes) begin
+                    if (resolve_pass >= max_passes) begin
                         state <= STORE_IN_ARRS;
                         resolve_pass <= 0;
+
+                        second_pass_labels <= 0;
+                        areas <= 0;
+                        x_sums <= 0;
+                        y_sums <= 0;
                     end else begin
                         resolve_pass <= resolve_pass + 1;
                     end 
@@ -312,28 +342,29 @@ always_ff @(posedge clk_in) begin
                 areas[equiv_table[resolve_index]] <= area_table[equiv_table[resolve_index]];
                 x_sums[equiv_table[resolve_index]] <= sum_x_table[equiv_table[resolve_index]];
                 y_sums[equiv_table[resolve_index]] <= sum_y_table[equiv_table[resolve_index]];
-                if (resolve_index == max_passes - 1) begin
-                    resolve_index <= 0;
-                    resolve_pass <= resolve_pass + 1;
-                    if (resolve_pass == max_passes) begin
-                        state <= PRUNE;
-                        prune_iter <= 0;
-                        com_div_busy <= 0;
-                        x_div_begin <= 0;
-                        y_div_begin <= 0;
-                        x_dividend <= 0;
-                        x_divisor <= 0;
-                        y_dividend <= 0;
-                        y_divisor <= 0;
-                        largest_areas <= 0;
-                        largest_labels <= 0;
-                        largest_x_coms <= 0;
-                        largest_y_coms <= 0;
-                        largest_smallest <= 0;
-                        largest_smallest_ind <= 0;
-                    end else begin
-                        resolve_pass <= resolve_pass + 1;
-                    end 
+
+                if (resolve_index >= max_passes) begin
+                    // resolve_index <= 0;
+                    // resolve_pass <= resolve_pass + 1;
+                    // if (resolve_pass == max_passes) begin
+                    state <= PRUNE;
+                    prune_iter <= 0;
+                    com_div_busy <= 0;
+                    x_div_begin <= 0;
+                    y_div_begin <= 0;
+                    x_dividend <= 0;
+                    x_divisor <= 0;
+                    y_dividend <= 0;
+                    y_divisor <= 0;
+                    largest_areas <= 0;
+                    largest_labels <= 0;
+                    largest_x_coms <= 0;
+                    largest_y_coms <= 0;
+                    largest_smallest <= 0;
+                    largest_smallest_ind <= 0;
+                    // end else begin
+                    //     resolve_pass <= resolve_pass + 1;
+                    // end 
                 end else begin
                     resolve_index <= resolve_index + 1;
                 end
