@@ -1,6 +1,6 @@
 <testsuites name="results">
   <testsuite name="all" package="all">
-    <property name="random_seed" value="1731781724" />
-    <testcase name="test_a" classname="test_circularity" file="C:\Users\nicho\OneDrive\Documents\MIT\Classes\6.205\Final Project\ObNoDog\sim\test_circularity.py" lineno="14" time="0.019160032272338867" sim_time_ns="4140.001" ratio_time="216074.84482042733" />
+    <property name="random_seed" value="1732171314" />
+    <testcase name="test_a" classname="test_moore_neighbor_tracing" file="C:\Users\nicho\OneDrive\Documents\MIT\Classes\6.205\Final Project\ObNoDog\sim\test_moore_neighbor_tracing.py" lineno="14" time="24.14992356300354" sim_time_ns="4704390.001" ratio_time="194799.37436352335" />
   </testsuite>
 </testsuites>

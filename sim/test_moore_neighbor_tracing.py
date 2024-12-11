@@ -15,24 +15,14 @@ from make_images import get_image_data
 async def test_a(dut):
     """cocotb test for moore_neighbor_tracing"""
     dut._log.info("Starting...")
-<<<<<<< HEAD
-    masked_arr = get_image_data("images/square.png")
-=======
->>>>>>> origin/main
     cocotb.start_soon(Clock(dut.clk_in, 10, units="ns").start())
 
     dut.rst_in.value = 0
     dut.x_in.value = 0
     dut.y_in.value = 0
-<<<<<<< HEAD
-    dut.valid_in = 0
-    dut.masked_in = 0
-    dut.new_frame_in = 0
-=======
     dut.valid_in.value = 0
     dut.masked_in.value = 0
     dut.new_frame_in.value = 0
->>>>>>> origin/main
     await ClockCycles(dut.clk_in,5)
 
     dut.rst_in.value = 1
@@ -44,27 +34,6 @@ async def test_a(dut):
     # wait
     await ClockCycles(dut.clk_in,10000)
 
-<<<<<<< HEAD
-    # we have a new frame, so add all the pixels
-    dut.new_frame_in <= 1
-    for y in range(180):
-        for x in range(320):
-            await RisingEdge(dut.clk_in)
-            dut.x_in <= x
-            dut.y_in <= y
-            dut.valid_in <= 1
-            dut.masked_in <= masked_arr[y*320 + x]
-            dut.new_frame_in <= 0
-            #await RisingEdge(dut.clk_in)
-            #dut.valid_in <= 0
-            #await RisingEdge(dut.clk_in)
-            dut._log.info(f"STORING PIXEL: ({x},{y})")
-
-    dut.valid_in.value = 0
-    #dut._log.info(f"")
-
-    await ClockCycles(dut.clk_in,30000)
-=======
     masked_arr = get_image_data("images/square.png")
 
     # we have a new frame, so add all the pixels
@@ -228,7 +197,6 @@ async def test_a(dut):
 
 
 
->>>>>>> origin/main
 
 
 def is_runner():

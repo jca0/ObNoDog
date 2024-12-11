@@ -60,4 +60,4 @@ def get_image_data(image_path):
                 image_data.append(0)
     return image_data
 
-print(get_image_data('sim/images/square.png'))
+#print(get_image_data('sim/images/square.png'))
