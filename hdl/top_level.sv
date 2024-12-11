@@ -690,7 +690,6 @@ module top_level
 
 
 
-
   // logic to handle whether addresses should come from moore or ccl
   logic [7:0][15:0] ccl_moore_addr_0;
   logic [7:0][15:0] ccl_moore_addr_1;
