@@ -790,16 +790,16 @@ module top_level
   // FBs to hold Moore data for Moore 0
   xilinx_true_dual_port_read_first_2_clock_ram
     #(.RAM_WIDTH(1),
-    .RAM_DEPTH(320*180),
+    .RAM_DEPTH(320*180) /*,
     .RAM_PERFORMANCE("HIGH_LATENCY"),
     .INIT_FILE("moore_bram_test_circle.mem") 
-    )
+    */)
     moore_fb_00
     (
     // PORT A
     .addra(ccl_moore_addr_0[0]), 
     .clka(clk_pixel),
-    .wea(0),
+    .wea(ccl_pixel_valid),
     .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[0]),
     .ena(1'b1),
     .douta(ccl_moore_pixels_0[0][0]),
@@ -819,16 +819,16 @@ module top_level
 
   xilinx_true_dual_port_read_first_2_clock_ram
     #(.RAM_WIDTH(1),
-    .RAM_DEPTH(320*180), 
+    .RAM_DEPTH(320*180) /*, 
     .RAM_PERFORMANCE("HIGH_LATENCY"),
     .INIT_FILE("moore_bram_test_circle.mem") 
-    )
+    */)
     moore_fb_01
     (
     // PORT A
     .addra(ccl_moore_addr_0[2]), 
     .clka(clk_pixel),
-    .wea(0),
+    .wea(ccl_pixel_valid),
     .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[0]),
     .ena(1'b1),
     .douta(ccl_moore_pixels_0[0][2]),
@@ -848,16 +848,16 @@ module top_level
 
   xilinx_true_dual_port_read_first_2_clock_ram
     #(.RAM_WIDTH(1),
-    .RAM_DEPTH(320*180), 
+    .RAM_DEPTH(320*180) /*, 
     .RAM_PERFORMANCE("HIGH_LATENCY"),
     .INIT_FILE("moore_bram_test_circle.mem") 
-    )
+    */)
     moore_fb_02
     (
     // PORT A
     .addra(ccl_moore_addr_0[4]), 
     .clka(clk_pixel),
-    .wea(0),
+    .wea(ccl_pixel_valid),
     .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[0]),
     .ena(1'b1),
     .douta(ccl_moore_pixels_0[2][2]),
@@ -877,16 +877,16 @@ module top_level
 
   xilinx_true_dual_port_read_first_2_clock_ram
     #(.RAM_WIDTH(1),
-    .RAM_DEPTH(320*180),
+    .RAM_DEPTH(320*180) /*,
     .RAM_PERFORMANCE("HIGH_LATENCY"),
     .INIT_FILE("moore_bram_test_circle.mem") 
-    )
+    */)
     moore_fb_03
     (
     // PORT A
     .addra(ccl_moore_addr_0[6]), 
     .clka(clk_pixel),
-    .wea(0),
+    .wea(ccl_pixel_valid),
     .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[0]),
     .ena(1'b1),
     .douta(ccl_moore_pixels_0[2][0]),
