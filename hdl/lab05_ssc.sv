@@ -6,7 +6,7 @@ module lab05_ssc #(parameter COUNT_TO = 100000)
                                     input wire         rst_in,
                                     input wire [7:0]  lt_in,
                                     input wire [7:0]  ut_in,
-                                    input wire [2:0]  channel_sel_in,
+                                    input wire [7:0]  channel_sel_in,
                                     output logic[6:0]   cat_out,
                                     output logic[7:0]   an_out
                                  );
@@ -16,40 +16,40 @@ module lab05_ssc #(parameter COUNT_TO = 100000)
   logic [6:0]     led_out;
   logic [3:0]     routed_vals;
   logic [6:0]     bto7s_led_out;
-  logic [6:0] symbol_cat [1:0];
-  always_comb begin
-    case(channel_sel_in)
-      3'b000: symbol_cat[0] = 7'b1101111; //g
-      3'b001: symbol_cat[0] = 7'b1010000; //r
-      3'b010: symbol_cat[0] = 7'b1111100; //b
-      3'b011: symbol_cat[0] = 7'b0000000; //null
-      3'b100: symbol_cat[0] = 7'b1101110; //y
-      3'b101: symbol_cat[0] = 7'b1010000; //r (Cr)
-      3'b110: symbol_cat[0] = 7'b1111100; //b (Cb)
-      3'b111: symbol_cat[0] = 7'b0000000; //null
-    endcase
-  end
+  // logic [6:0] symbol_cat [1:0];
+  // always_comb begin
+  //   case(channel_sel_in)
+  //     3'b000: symbol_cat[0] = 7'b1101111; //g
+  //     3'b001: symbol_cat[0] = 7'b1010000; //r
+  //     3'b010: symbol_cat[0] = 7'b1111100; //b
+  //     3'b011: symbol_cat[0] = 7'b0000000; //null
+  //     3'b100: symbol_cat[0] = 7'b1101110; //y
+  //     3'b101: symbol_cat[0] = 7'b1010000; //r (Cr)
+  //     3'b110: symbol_cat[0] = 7'b1111100; //b (Cb)
+  //     3'b111: symbol_cat[0] = 7'b0000000; //null
+  //   endcase
+  // end
 
-  always_comb begin
-    case(channel_sel_in)
-      3'b000: symbol_cat[1] = 7'b0000000; //g
-      3'b001: symbol_cat[1] = 7'b0000000; //r
-      3'b010: symbol_cat[1] = 7'b0000000; //b
-      3'b011: symbol_cat[1] = 7'b0000000; //null
-      3'b100: symbol_cat[1] = 7'b0000000; //y
-      3'b101: symbol_cat[1] = 7'b0111001; //C (Cr)
-      3'b110: symbol_cat[1] = 7'b0111001; //C (Cb)
-      3'b111: symbol_cat[1] = 7'b0000000; //null
-    endcase
-  end
+  // always_comb begin
+  //   case(channel_sel_in)
+  //     3'b000: symbol_cat[1] = 7'b0000000; //g
+  //     3'b001: symbol_cat[1] = 7'b0000000; //r
+  //     3'b010: symbol_cat[1] = 7'b0000000; //b
+  //     3'b011: symbol_cat[1] = 7'b0000000; //null
+  //     3'b100: symbol_cat[1] = 7'b0000000; //y
+  //     3'b101: symbol_cat[1] = 7'b0111001; //C (Cr)
+  //     3'b110: symbol_cat[1] = 7'b0111001; //C (Cb)
+  //     3'b111: symbol_cat[1] = 7'b0000000; //null
+  //   endcase
+  // end
 
   assign cat_out = ~led_out;
   assign an_out = ~segment_state;
 
   always_comb begin
     case(segment_state)
-      8'b0000_0001:   led_out = symbol_cat[0];
-      8'b0000_0010:   led_out = symbol_cat[1];
+      8'b0000_0001:   led_out = bto7s_led_out;
+      8'b0000_0010:   led_out = bto7s_led_out;
       8'b0000_0100:   led_out = 7'b0000000;
       8'b0000_1000:   led_out = bto7s_led_out;
       8'b0001_0000:   led_out = bto7s_led_out;
@@ -62,8 +62,8 @@ module lab05_ssc #(parameter COUNT_TO = 100000)
 
   always_comb begin
     case(segment_state)
-      8'b0000_0001:   routed_vals = 4'b0;
-      8'b0000_0010:   routed_vals = 4'b0;
+      8'b0000_0001:   routed_vals = channel_sel_in[3:0];
+      8'b0000_0010:   routed_vals = channel_sel_in[7:4];
       8'b0000_0100:   routed_vals = 4'b0;
       8'b0000_1000:   routed_vals = lt_in[3:0];
       8'b0001_0000:   routed_vals = lt_in[7:4];
