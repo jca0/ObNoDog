@@ -605,9 +605,10 @@ module top_level
   // special customized version
   lab05_ssc mssc(.clk_in(clk_pixel),
                  .rst_in(sys_rst_pixel),
-                 .lt_in(lower_threshold),
-                 .ut_in(upper_threshold),
-                 .channel_sel_in(channel_sel),
+                 .lt_in((perim_temp[0] > 8'hFF)? 8'hFF : perim_temp[0][7:0]), // changed from lower, upper threshold
+                 .ut_in((area_temp[0] > 8'hFF)? 8'hFF : area_temp[0][7:0]),
+                 //.channel_sel_in((circ_temp[0] > 8'hFF)? 8'hFF : circ_temp[0][7:0]),
+                 .channel_sel_in(max_seen_label),
                  .cat_out(ss_c),
                  .an_out({ss0_an, ss1_an})
   );
@@ -657,6 +658,7 @@ module top_level
   logic [15:0] ccl_pixel_label;
   logic ccl_pixel_valid;
   logic [7:0] ccl_state;
+  logic [7:0] max_seen_label;
 
   ccl #(
     .WIDTH(320),        // Horizontal resolution
@@ -682,7 +684,8 @@ module top_level
   .com_y_out(largest_y_coms),
   .curr_pix_label(ccl_pixel_label),
   .curr_pix_valid(ccl_pixel_valid),
-  .curr_state(ccl_state)
+  .curr_state(ccl_state),
+  .max_seen_label(max_seen_label)
   );
 
 
@@ -702,7 +705,7 @@ module top_level
     //   ccl_moore_addr_1 = 0;
     //   // ccl_moore_addr_2 = 0;
     // end else begin
-    if(ccl_busy_out) begin
+    if(ccl_pixel_valid) begin
       //fb0
       ccl_moore_addr_0[0] = ccl_x_out + ccl_y_out*320;
       ccl_moore_addr_0[2] = ccl_moore_addr_0[0];
@@ -1341,6 +1344,7 @@ xilinx_true_dual_port_read_first_2_clock_ram
 
       // x_com_calc_2 = largest_x_coms[2]; // TODO: we may want to shift this over by << 2 so that it appears on the screen in the right spot
       // y_com_calc_2 = largest_y_coms[2];
+
     end
 
     new_com = ccl_valid_out; // just set this because it works with previous code
@@ -1536,21 +1540,25 @@ xilinx_true_dual_port_read_first_2_clock_ram
     end
 
 
-    if(sw[3] == 0) begin
+    if(sw[4:3] == 2'b00) begin
       circ_temp[0] <= 0;
       area_temp[0] <= 0;
       perim_temp[0] <= 0;
+    end else if (sw[4:3] == 2'b10) begin // TODO: Remove this temp state
+      if(ccl_pixel_valid || ccl_valid_out) begin
+        circ_temp[0] <= largest_labels[0];
+        area_temp[0] <= ccl_pixel_label;
+        perim_temp[0] <= ccl_pixel_valid;
+      end
     end
+
+
 
     // if(circularity_valid_2 && circularity_raw_2 < 200) begin // throw out obviously garbage circularity values --> should be in the 0-100 range (but circle can be a bit bigger)
     //   circularity_2 <= circularity_raw_2;
     //   perim_temp_2 <= perimeter_saved_2;
     // end
 
-
-
-    // TODO: REMOVE THIS
-    // perim_temp[0] <= ccl_state;
   end
 
 
@@ -1606,7 +1614,7 @@ xilinx_true_dual_port_read_first_2_clock_ram
 
   //if any of the draw_outs from any of the sprite modules are true, then set draw_out to be true
   always_comb begin                                                                                    // commenting this out removes all of the upstream label[3] logic
-    if ((draw_classifier_0 && !(perim_temp[0] == 0)) || (draw_classifier_1 && !(perim_temp_1 == 0)) || /*(draw_classifier_2 && !(perim_temp_2 == 0)) ||*/ draw_number[0] || draw_number[1] || draw_number[2] || draw_number[3] || draw_number[4] || draw_number[5] || draw_number[6] || draw_number[7] || draw_number[8] || draw_number[9] || draw_number[10] || draw_number[11]) begin
+    if ((draw_classifier_0 /*&& !(perim_temp_0 == 0))*/ /*|| (draw_classifier_1 && !(perim_temp_1 == 0)*/) || /*(draw_classifier_2 && !(perim_temp_2 == 0)) ||*/ draw_number[0] || draw_number[1] || draw_number[2] || draw_number[3] || draw_number[4] || draw_number[5] || draw_number[6] || draw_number[7] || draw_number[8] || draw_number[9] || draw_number[10] || draw_number[11]) begin
       draw_sprite = 1;
     end else begin
       draw_sprite = 0;
@@ -2200,195 +2208,197 @@ end
   localparam number_img_size = 24; // doesnt change
   logic [11:0] draw_number;
 
+  assign draw_number = 0; // REMOVE IF YOU WANT TO BRING IMG SPRITE TRNASP BACK
+
 
   // logic draw_number_0;
-  image_sprite_transparent_numbers #(
-    .WIDTH(24),
-    .HEIGHT(24),
-    .NUM_IMGS(10)
-  ) sprite_number_0(
-    .pixel_clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .x_in(circ_number_x),
-    .y_in(circ_number_y),
-    .hcount_in(hcount_hdmi),
-    .vcount_in(vcount_hdmi),
-    .number(number[4][0]),
-    .draw_out(draw_number[0])
-  );
+  // image_sprite_transparent_numbers #(
+  //   .WIDTH(24),
+  //   .HEIGHT(24),
+  //   .NUM_IMGS(10)
+  // ) sprite_number_0(
+  //   .pixel_clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .x_in(circ_number_x),
+  //   .y_in(circ_number_y),
+  //   .hcount_in(hcount_hdmi),
+  //   .vcount_in(vcount_hdmi),
+  //   .number(number[4][0]),
+  //   .draw_out(draw_number[0])
+  // );
 
-  // logic draw_number_1;
-  image_sprite_transparent_numbers_1 #(
-    .WIDTH(24),
-    .HEIGHT(24),
-    .NUM_IMGS(10)
-  ) sprite_number_1(
-    .pixel_clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .x_in(circ_number_x + (number_img_size + circ_number_spacing)*1),
-    .y_in(circ_number_y),
-    .hcount_in(hcount_hdmi),
-    .vcount_in(vcount_hdmi),
-    .number(number[4][1]),
-    .draw_out(draw_number[1])
-  );
+  // // logic draw_number_1;
+  // image_sprite_transparent_numbers_1 #(
+  //   .WIDTH(24),
+  //   .HEIGHT(24),
+  //   .NUM_IMGS(10)
+  // ) sprite_number_1(
+  //   .pixel_clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .x_in(circ_number_x + (number_img_size + circ_number_spacing)*1),
+  //   .y_in(circ_number_y),
+  //   .hcount_in(hcount_hdmi),
+  //   .vcount_in(vcount_hdmi),
+  //   .number(number[4][1]),
+  //   .draw_out(draw_number[1])
+  // );
 
-  // logic draw_number_2;
-  image_sprite_transparent_numbers_2 #(
-    .WIDTH(24),
-    .HEIGHT(24),
-    .NUM_IMGS(10)
-  ) sprite_number_2(
-    .pixel_clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .x_in(circ_number_x + (number_img_size + circ_number_spacing)*2),
-    .y_in(circ_number_y),
-    .hcount_in(hcount_hdmi),
-    .vcount_in(vcount_hdmi),
-    .number(number[4][2]),
-    .draw_out(draw_number[2])
-  );
+  // // logic draw_number_2;
+  // image_sprite_transparent_numbers_2 #(
+  //   .WIDTH(24),
+  //   .HEIGHT(24),
+  //   .NUM_IMGS(10)
+  // ) sprite_number_2(
+  //   .pixel_clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .x_in(circ_number_x + (number_img_size + circ_number_spacing)*2),
+  //   .y_in(circ_number_y),
+  //   .hcount_in(hcount_hdmi),
+  //   .vcount_in(vcount_hdmi),
+  //   .number(number[4][2]),
+  //   .draw_out(draw_number[2])
+  // );
 
-  // logic draw_number_3;
-  image_sprite_transparent_numbers_3 #(
-    .WIDTH(24),
-    .HEIGHT(24),
-    .NUM_IMGS(10)
-  ) sprite_number_3(
-    .pixel_clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .x_in(circ_number_x + (number_img_size + circ_number_spacing)*3),
-    .y_in(circ_number_y),
-    .hcount_in(hcount_hdmi),
-    .vcount_in(vcount_hdmi),
-    .number(number[4][3]),
-    .draw_out(draw_number[3])
-  );
-
-
-
-  image_sprite_transparent_numbers_4 #(
-    .WIDTH(24),
-    .HEIGHT(24),
-    .NUM_IMGS(10)
-  ) sprite_number_4(
-    .pixel_clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .x_in(circ_number_x),
-    .y_in(circ_number_y + (number_img_size + circ_number_spacing)*1),
-    .hcount_in(hcount_hdmi),
-    .vcount_in(vcount_hdmi),
-    .number(a_number[4][0]),
-    .draw_out(draw_number[4])
-  );
-
-  image_sprite_transparent_numbers_5 #(
-    .WIDTH(24),
-    .HEIGHT(24),
-    .NUM_IMGS(10)
-  ) sprite_number_5(
-    .pixel_clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .x_in(circ_number_x + (number_img_size + circ_number_spacing)*1),
-    .y_in(circ_number_y + (number_img_size + circ_number_spacing)*1),
-    .hcount_in(hcount_hdmi),
-    .vcount_in(vcount_hdmi),
-    .number(a_number[4][1]),
-    .draw_out(draw_number[5])
-  );
-
-  image_sprite_transparent_numbers_6 #(
-    .WIDTH(24),
-    .HEIGHT(24),
-    .NUM_IMGS(10)
-  ) sprite_number_6(
-    .pixel_clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .x_in(circ_number_x + (number_img_size + circ_number_spacing)*2),
-    .y_in(circ_number_y + (number_img_size + circ_number_spacing)*1),
-    .hcount_in(hcount_hdmi),
-    .vcount_in(vcount_hdmi),
-    .number(a_number[4][2]),
-    .draw_out(draw_number[6])
-  );
-
-  image_sprite_transparent_numbers_7 #(
-    .WIDTH(24),
-    .HEIGHT(24),
-    .NUM_IMGS(10)
-  ) sprite_number_7(
-    .pixel_clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .x_in(circ_number_x + (number_img_size + circ_number_spacing)*3),
-    .y_in(circ_number_y + (number_img_size + circ_number_spacing)*1),
-    .hcount_in(hcount_hdmi),
-    .vcount_in(vcount_hdmi),
-    .number(a_number[4][3]),
-    .draw_out(draw_number[7])
-  );
+  // // logic draw_number_3;
+  // image_sprite_transparent_numbers_3 #(
+  //   .WIDTH(24),
+  //   .HEIGHT(24),
+  //   .NUM_IMGS(10)
+  // ) sprite_number_3(
+  //   .pixel_clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .x_in(circ_number_x + (number_img_size + circ_number_spacing)*3),
+  //   .y_in(circ_number_y),
+  //   .hcount_in(hcount_hdmi),
+  //   .vcount_in(vcount_hdmi),
+  //   .number(number[4][3]),
+  //   .draw_out(draw_number[3])
+  // );
 
 
 
+  // image_sprite_transparent_numbers_4 #(
+  //   .WIDTH(24),
+  //   .HEIGHT(24),
+  //   .NUM_IMGS(10)
+  // ) sprite_number_4(
+  //   .pixel_clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .x_in(circ_number_x),
+  //   .y_in(circ_number_y + (number_img_size + circ_number_spacing)*1),
+  //   .hcount_in(hcount_hdmi),
+  //   .vcount_in(vcount_hdmi),
+  //   .number(a_number[4][0]),
+  //   .draw_out(draw_number[4])
+  // );
 
-  image_sprite_transparent_numbers_8 #(
-    .WIDTH(24),
-    .HEIGHT(24),
-    .NUM_IMGS(10)
-  ) sprite_number_8(
-    .pixel_clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .x_in(circ_number_x),
-    .y_in(circ_number_y + (number_img_size + circ_number_spacing)*2),
-    .hcount_in(hcount_hdmi),
-    .vcount_in(vcount_hdmi),
-    .number(p_number[4][0]),
-    .draw_out(draw_number[8])
-  );
+  // image_sprite_transparent_numbers_5 #(
+  //   .WIDTH(24),
+  //   .HEIGHT(24),
+  //   .NUM_IMGS(10)
+  // ) sprite_number_5(
+  //   .pixel_clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .x_in(circ_number_x + (number_img_size + circ_number_spacing)*1),
+  //   .y_in(circ_number_y + (number_img_size + circ_number_spacing)*1),
+  //   .hcount_in(hcount_hdmi),
+  //   .vcount_in(vcount_hdmi),
+  //   .number(a_number[4][1]),
+  //   .draw_out(draw_number[5])
+  // );
 
-  image_sprite_transparent_numbers_9 #(
-    .WIDTH(24),
-    .HEIGHT(24),
-    .NUM_IMGS(10)
-  ) sprite_number_9(
-    .pixel_clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .x_in(circ_number_x + (number_img_size + circ_number_spacing)*1),
-    .y_in(circ_number_y + (number_img_size + circ_number_spacing)*2),
-    .hcount_in(hcount_hdmi),
-    .vcount_in(vcount_hdmi),
-    .number(p_number[4][1]),
-    .draw_out(draw_number[9])
-  );
+  // image_sprite_transparent_numbers_6 #(
+  //   .WIDTH(24),
+  //   .HEIGHT(24),
+  //   .NUM_IMGS(10)
+  // ) sprite_number_6(
+  //   .pixel_clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .x_in(circ_number_x + (number_img_size + circ_number_spacing)*2),
+  //   .y_in(circ_number_y + (number_img_size + circ_number_spacing)*1),
+  //   .hcount_in(hcount_hdmi),
+  //   .vcount_in(vcount_hdmi),
+  //   .number(a_number[4][2]),
+  //   .draw_out(draw_number[6])
+  // );
 
-  image_sprite_transparent_numbers_10 #(
-    .WIDTH(24),
-    .HEIGHT(24),
-    .NUM_IMGS(10)
-  ) sprite_number_10(
-    .pixel_clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .x_in(circ_number_x + (number_img_size + circ_number_spacing)*2),
-    .y_in(circ_number_y + (number_img_size + circ_number_spacing)*2),
-    .hcount_in(hcount_hdmi),
-    .vcount_in(vcount_hdmi),
-    .number(p_number[4][2]),
-    .draw_out(draw_number[10])
-  );
+  // image_sprite_transparent_numbers_7 #(
+  //   .WIDTH(24),
+  //   .HEIGHT(24),
+  //   .NUM_IMGS(10)
+  // ) sprite_number_7(
+  //   .pixel_clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .x_in(circ_number_x + (number_img_size + circ_number_spacing)*3),
+  //   .y_in(circ_number_y + (number_img_size + circ_number_spacing)*1),
+  //   .hcount_in(hcount_hdmi),
+  //   .vcount_in(vcount_hdmi),
+  //   .number(a_number[4][3]),
+  //   .draw_out(draw_number[7])
+  // );
 
-  image_sprite_transparent_numbers_11 #(
-    .WIDTH(24),
-    .HEIGHT(24),
-    .NUM_IMGS(10)
-  ) sprite_number_11(
-    .pixel_clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .x_in(circ_number_x + (number_img_size + circ_number_spacing)*3),
-    .y_in(circ_number_y + (number_img_size + circ_number_spacing)*2),
-    .hcount_in(hcount_hdmi),
-    .vcount_in(vcount_hdmi),
-    .number(p_number[4][3]),
-    .draw_out(draw_number[11])
-  );
+
+
+
+  // image_sprite_transparent_numbers_8 #(
+  //   .WIDTH(24),
+  //   .HEIGHT(24),
+  //   .NUM_IMGS(10)
+  // ) sprite_number_8(
+  //   .pixel_clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .x_in(circ_number_x),
+  //   .y_in(circ_number_y + (number_img_size + circ_number_spacing)*2),
+  //   .hcount_in(hcount_hdmi),
+  //   .vcount_in(vcount_hdmi),
+  //   .number(p_number[4][0]),
+  //   .draw_out(draw_number[8])
+  // );
+
+  // image_sprite_transparent_numbers_9 #(
+  //   .WIDTH(24),
+  //   .HEIGHT(24),
+  //   .NUM_IMGS(10)
+  // ) sprite_number_9(
+  //   .pixel_clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .x_in(circ_number_x + (number_img_size + circ_number_spacing)*1),
+  //   .y_in(circ_number_y + (number_img_size + circ_number_spacing)*2),
+  //   .hcount_in(hcount_hdmi),
+  //   .vcount_in(vcount_hdmi),
+  //   .number(p_number[4][1]),
+  //   .draw_out(draw_number[9])
+  // );
+
+  // image_sprite_transparent_numbers_10 #(
+  //   .WIDTH(24),
+  //   .HEIGHT(24),
+  //   .NUM_IMGS(10)
+  // ) sprite_number_10(
+  //   .pixel_clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .x_in(circ_number_x + (number_img_size + circ_number_spacing)*2),
+  //   .y_in(circ_number_y + (number_img_size + circ_number_spacing)*2),
+  //   .hcount_in(hcount_hdmi),
+  //   .vcount_in(vcount_hdmi),
+  //   .number(p_number[4][2]),
+  //   .draw_out(draw_number[10])
+  // );
+
+  // image_sprite_transparent_numbers_11 #(
+  //   .WIDTH(24),
+  //   .HEIGHT(24),
+  //   .NUM_IMGS(10)
+  // ) sprite_number_11(
+  //   .pixel_clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .x_in(circ_number_x + (number_img_size + circ_number_spacing)*3),
+  //   .y_in(circ_number_y + (number_img_size + circ_number_spacing)*2),
+  //   .hcount_in(hcount_hdmi),
+  //   .vcount_in(vcount_hdmi),
+  //   .number(p_number[4][3]),
+  //   .draw_out(draw_number[11])
+  // );
 
 
 
