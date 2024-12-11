@@ -1,8 +1,8 @@
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 -------------------------------------------------------------------------------------------------------------------------------------------------
-| Tool Version     : Vivado v.2024.1 (lin64) Build 5076996 Wed May 22 18:36:09 MDT 2024
-| Date             : Thu Nov 28 09:22:55 2024
-| Host             : eecs-digital-07 running 64-bit Ubuntu 24.04.1 LTS
+| Tool Version     : Vivado v.2024.1 (win64) Build 5076996 Wed May 22 18:37:14 MDT 2024
+| Date             : Wed Dec 11 17:31:37 2024
+| Host             : NickAsusRogSrix running 64-bit major release  (build 9200)
 | Command          : report_power -file obj/post_route_power.rpt
 | Design           : top_level
 | Device           : xc7s50csga324-1
@@ -30,14 +30,14 @@ Table of Contents
 ----------
 
 +--------------------------+--------------+
-| Total On-Chip Power (W)  | 0.580        |
+| Total On-Chip Power (W)  | 0.672        |
 | Design Power Budget (W)  | Unspecified* |
 | Power Budget Margin (W)  | NA           |
-| Dynamic (W)              | 0.504        |
-| Device Static (W)        | 0.076        |
+| Dynamic (W)              | 0.597        |
+| Device Static (W)        | 0.075        |
 | Effective TJA (C/W)      | 4.9          |
-| Max Ambient (C)          | 82.1         |
-| Junction Temperature (C) | 27.9         |
+| Max Ambient (C)          | 81.7         |
+| Junction Temperature (C) | 28.3         |
 | Confidence Level         | Low          |
 | Setting File             | ---          |
 | Simulation Activity File | ---          |
@@ -52,23 +52,23 @@ Table of Contents
 +-------------------------+-----------+----------+-----------+-----------------+
 | On-Chip                 | Power (W) | Used     | Available | Utilization (%) |
 +-------------------------+-----------+----------+-----------+-----------------+
-| Clocks                  |     0.021 |       10 |       --- |             --- |
-| Slice Logic             |     0.025 |     9712 |       --- |             --- |
-|   LUT as Logic          |     0.022 |     3219 |     32600 |            9.87 |
-|   CARRY4                |     0.001 |      449 |      8150 |            5.51 |
-|   Register              |     0.001 |     4363 |     65200 |            6.69 |
-|   LUT as Shift Register |    <0.001 |       59 |      9600 |            0.61 |
-|   F7/F8 Muxes           |    <0.001 |       36 |     32600 |            0.11 |
-|   BUFG                  |    <0.001 |        1 |        32 |            3.13 |
-|   Others                |     0.000 |      284 |       --- |             --- |
-| Signals                 |     0.030 |     8410 |       --- |             --- |
-| Block RAM               |     0.069 |     63.5 |        75 |           84.67 |
+| Clocks                  |     0.028 |       10 |       --- |             --- |
+| Slice Logic             |     0.032 |    25111 |       --- |             --- |
+|   LUT as Logic          |     0.030 |     9249 |     32600 |           28.37 |
+|   F7/F8 Muxes           |     0.001 |     3901 |     32600 |           11.97 |
+|   Register              |    <0.001 |    10456 |     65200 |           16.04 |
+|   CARRY4                |    <0.001 |      232 |      8150 |            2.85 |
+|   LUT as Shift Register |    <0.001 |       27 |      9600 |            0.28 |
+|   BUFG                  |    <0.001 |        3 |        32 |            9.38 |
+|   Others                |     0.000 |      106 |       --- |             --- |
+| Signals                 |     0.073 |    16970 |       --- |             --- |
+| Block RAM               |     0.086 |     40.5 |        75 |           54.00 |
 | MMCM                    |     0.105 |        1 |         5 |           20.00 |
 | PLL                     |     0.101 |        1 |         5 |           20.00 |
-| DSPs                    |     0.008 |       24 |       120 |           20.00 |
-| I/O                     |     0.144 |       86 |       210 |           40.95 |
-| Static Power            |     0.076 |          |           |                 |
-| Total                   |     0.580 |          |           |                 |
+| DSPs                    |     0.015 |       37 |       120 |           30.83 |
+| I/O                     |     0.157 |       84 |       210 |           40.00 |
+| Static Power            |     0.075 |          |           |                 |
+| Total                   |     0.672 |          |           |                 |
 +-------------------------+-----------+----------+-----------+-----------------+
 
 
@@ -78,16 +78,16 @@ Table of Contents
 +-----------+-------------+-----------+-------------+------------+-------------+-------------+------------+
 | Source    | Voltage (V) | Total (A) | Dynamic (A) | Static (A) | Powerup (A) | Budget (A)  | Margin (A) |
 +-----------+-------------+-----------+-------------+------------+-------------+-------------+------------+
-| Vccint    |       1.000 |     0.169 |       0.156 |      0.012 |       NA    | Unspecified | NA         |
-| Vccaux    |       1.800 |     0.124 |       0.112 |      0.013 |       NA    | Unspecified | NA         |
-| Vcco33    |       3.300 |     0.044 |       0.043 |      0.001 |       NA    | Unspecified | NA         |
+| Vccint    |       1.000 |     0.246 |       0.235 |      0.012 |       NA    | Unspecified | NA         |
+| Vccaux    |       1.800 |     0.125 |       0.112 |      0.013 |       NA    | Unspecified | NA         |
+| Vcco33    |       3.300 |     0.048 |       0.047 |      0.001 |       NA    | Unspecified | NA         |
 | Vcco25    |       2.500 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
 | Vcco18    |       1.800 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
 | Vcco15    |       1.500 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
 | Vcco135   |       1.350 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
 | Vcco12    |       1.200 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
 | Vccaux_io |       1.800 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
-| Vccbram   |       1.000 |     0.007 |       0.005 |      0.002 |       NA    | Unspecified | NA         |
+| Vccbram   |       1.000 |     0.009 |       0.007 |      0.001 |       NA    | Unspecified | NA         |
 | Vccadc    |       1.800 |     0.020 |       0.000 |      0.020 |       NA    | Unspecified | NA         |
 +-----------+-------------+-----------+-------------+------------+-------------+-------------+------------+
 
@@ -149,64 +149,36 @@ Table of Contents
 3.1 By Hierarchy
 ----------------
 
-+----------------------------------+-----------+
-| Name                             | Power (W) |
-+----------------------------------+-----------+
-| top_level                        |     0.504 |
-|   IOBUF_sda                      |     0.003 |
-|   cdc_fifo                       |     0.004 |
-|     U0                           |     0.004 |
-|       inst_fifo_gen              |     0.004 |
-|   com_m                          |     0.002 |
-|   crw                            |     0.003 |
-|     sccb_c                       |     0.002 |
-|   ds_lbuff                       |     0.006 |
-|     genblk1[0].line_buffer_ram   |     0.003 |
-|   filtern                        |     0.014 |
-|     m_lbuff                      |     0.010 |
-|       genblk1[0].line_buffer_ram |     0.002 |
-|       genblk1[1].line_buffer_ram |     0.002 |
-|       genblk1[2].line_buffer_ram |     0.002 |
-|       genblk1[3].line_buffer_ram |     0.002 |
-|     mconv                        |     0.004 |
-|   frame_buffer                   |     0.012 |
-|     U0                           |     0.012 |
-|       inst_blk_mem_gen           |     0.012 |
-|   genblk1[0].filterm             |     0.005 |
-|     m_lbuff                      |     0.004 |
-|       genblk1[2].line_buffer_ram |     0.001 |
-|   genblk1[1].filterm             |     0.009 |
-|     m_lbuff                      |     0.004 |
-|       genblk1[0].line_buffer_ram |     0.001 |
-|     mconv                        |     0.005 |
-|   genblk1[2].filterm             |     0.010 |
-|     m_lbuff                      |     0.004 |
-|     mconv                        |     0.006 |
-|   genblk1[3].filterm             |     0.011 |
-|     m_lbuff                      |     0.004 |
-|       genblk1[1].line_buffer_ram |     0.001 |
-|       genblk1[3].line_buffer_ram |     0.001 |
-|     mconv                        |     0.007 |
-|   genblk1[4].filterm             |     0.010 |
-|     m_lbuff                      |     0.004 |
-|       genblk1[1].line_buffer_ram |     0.001 |
-|     mconv                        |     0.006 |
-|   genblk1[5].filterm             |     0.010 |
-|     m_lbuff                      |     0.004 |
-|       genblk1[1].line_buffer_ram |     0.001 |
-|       genblk1[3].line_buffer_ram |     0.001 |
-|     mconv                        |     0.006 |
-|   mnt                            |     0.031 |
-|     frame_buffer_1               |     0.007 |
-|     frame_buffer_2               |     0.006 |
-|     frame_buffer_3               |     0.006 |
-|     frame_buffer_4               |     0.006 |
-|   mt                             |     0.003 |
-|   rgbtoycrcb_m                   |     0.009 |
-|   sprite                         |     0.003 |
-|     pixel_BROM                   |     0.003 |
-|   wizard_hdmi                    |     0.105 |
-|   wizard_migcam                  |     0.102 |
-+----------------------------------+-----------+
++-----------------+-----------+
+| Name            | Power (W) |
++-----------------+-----------+
+| top_level       |     0.597 |
+|   IOBUF_sda     |     0.003 |
+|   classifier_0  |     0.003 |
+|     pixel_BROM  |     0.003 |
+|   classifier_1  |     0.003 |
+|     pixel_BROM  |     0.003 |
+|   crw           |     0.003 |
+|     sccb_c      |     0.002 |
+|   frame_buffer  |     0.003 |
+|   mnt_ccl_0     |     0.012 |
+|   mnt_ccl_1     |     0.012 |
+|   moore_fb_00   |     0.005 |
+|   moore_fb_01   |     0.005 |
+|   moore_fb_02   |     0.005 |
+|   moore_fb_03   |     0.005 |
+|   moore_fb_04   |     0.003 |
+|   moore_fb_10   |     0.005 |
+|   moore_fb_11   |     0.005 |
+|   moore_fb_12   |     0.005 |
+|   moore_fb_13   |     0.005 |
+|   moore_fb_14   |     0.003 |
+|   my_ccl        |     0.139 |
+|     fb1_labels  |     0.032 |
+|     fb1_mask    |     0.006 |
+|   rgbtoycrcb_m  |     0.004 |
+|   wizard_hdmi   |     0.105 |
+|   wizard_migcam |     0.102 |
++-----------------+-----------+
 
 
