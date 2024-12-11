@@ -7,7 +7,7 @@
 `define FPATH(X) `"../../data/X`"
 `endif  /* ! SYNTHESIS */
 
-module image_sprite_transparent #(
+module image_sprite_transparent_1 #(
   parameter WIDTH=128, HEIGHT = 128, NUM_IMGS = 4) (
   input wire pixel_clk_in,
   input wire rst_in,
