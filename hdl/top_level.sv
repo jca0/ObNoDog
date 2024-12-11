@@ -117,301 +117,312 @@ module top_level
 
   //----------------BEGIN NEW STUFF FOR LAB 07------------------
 
-  //clock domain cross (from clk_camera to clk_pixel)
-  //switching from camera clock domain to pixel clock domain early
-  //this lets us do convolution on the 74.25 MHz clock rather than the
-  //200 MHz clock domain that the camera lives on.
-  logic empty;
-  logic cdc_valid;
-  logic [15:0] cdc_pixel;
-  logic [10:0] cdc_hcount;
-  logic [9:0] cdc_vcount;
+  // //clock domain cross (from clk_camera to clk_pixel)
+  // //switching from camera clock domain to pixel clock domain early
+  // //this lets us do convolution on the 74.25 MHz clock rather than the
+  // //200 MHz clock domain that the camera lives on.
+  // logic empty;
+  // logic cdc_valid;
+  // logic [15:0] cdc_pixel;
+  // logic [10:0] cdc_hcount;
+  // logic [9:0] cdc_vcount;
 
-  //cdc fifo (AXI IP). Remember to include that IP folder.
-  fifo cdc_fifo
-    (.wr_clk(clk_camera),
-     .full(),
-     .din({camera_hcount, camera_vcount, camera_pixel}),
-     .wr_en(camera_valid),
+  // //cdc fifo (AXI IP). Remember to include that IP folder.
+  // fifo cdc_fifo
+  //   (.wr_clk(clk_camera),
+  //    .full(),
+  //    .din({camera_hcount, camera_vcount, camera_pixel}),
+  //    .wr_en(camera_valid),
 
-     .rd_clk(clk_pixel),
-     .empty(empty),
-     .dout({cdc_hcount, cdc_vcount, cdc_pixel}),
-     .rd_en(1) //always read
-    );
-  assign cdc_valid = ~empty; //watch when empty. Ready immediately if something there
+  //    .rd_clk(clk_pixel),
+  //    .empty(empty),
+  //    .dout({cdc_hcount, cdc_vcount, cdc_pixel}),
+  //    .rd_en(1) //always read
+  //   );
+  // assign cdc_valid = ~empty; //watch when empty. Ready immediately if something there
 
-  //----
-  //Filter 0: 1280x720 convolution of gaussian blur
-  logic [10:0] f0_hcount;  //hcount from filter0 module
-  logic [9:0] f0_vcount; //vcount from filter0 module
-  logic [15:0] f0_pixel; //pixel data from filter0 module
-  logic f0_valid; //valid signals for filter0 module
-  //full resolution filter
-  filter #(.K_SELECT(1),.HRES(1280),.VRES(720))
-    filtern(
-    .clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .data_valid_in(cdc_valid),
-    .pixel_data_in(cdc_pixel),
-    .hcount_in(cdc_hcount),
-    .vcount_in(cdc_vcount),
-    .data_valid_out(f0_valid),
-    .pixel_data_out(f0_pixel),
-    .hcount_out(f0_hcount),
-    .vcount_out(f0_vcount)
-  );
+  // //----
+  // //Filter 0: 1280x720 convolution of gaussian blur
+  // logic [10:0] f0_hcount;  //hcount from filter0 module
+  // logic [9:0] f0_vcount; //vcount from filter0 module
+  // logic [15:0] f0_pixel; //pixel data from filter0 module
+  // logic f0_valid; //valid signals for filter0 module
+  // //full resolution filter
+  // filter #(.K_SELECT(1),.HRES(1280),.VRES(720))
+  //   filtern(
+  //   .clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .data_valid_in(cdc_valid),
+  //   .pixel_data_in(cdc_pixel),
+  //   .hcount_in(cdc_hcount),
+  //   .vcount_in(cdc_vcount),
+  //   .data_valid_out(f0_valid),
+  //   .pixel_data_out(f0_pixel),
+  //   .hcount_out(f0_hcount),
+  //   .vcount_out(f0_vcount)
+  // );
 
-  //----
-  logic [10:0] lb_hcount;  //hcount to filter modules
-  logic [9:0] lb_vcount; //vcount to filter modules
-  logic [15:0] lb_pixel; //pixel data to filter modules
-  logic lb_valid; //valid signals to filter modules
+  // //----
+  // logic [10:0] lb_hcount;  //hcount to filter modules
+  // logic [9:0] lb_vcount; //vcount to filter modules
+  // logic [15:0] lb_pixel; //pixel data to filter modules
+  // logic lb_valid; //valid signals to filter modules
 
-  //selection logic to either go through (btn[1]=1)
-  //or bypass (btn[1]==0) the first filter
-  //in the first part of lab as you develop line buffer, you'll want to bypass
-  //since your filter won't be working, but it would be good to test the
-  //downsampling line buffer below on its own
-  always_ff @(posedge clk_pixel) begin
-    if (btn[1])begin
-      ds_hcount = cdc_hcount;
-      ds_vcount = cdc_vcount;
-      ds_pixel = cdc_pixel;
-      ds_valid = cdc_valid;
-    end else begin
-      ds_hcount = f0_hcount;
-      ds_vcount = f0_vcount;
-      ds_pixel = f0_pixel;
-      ds_valid = f0_valid;
-    end
-  end
+  // //selection logic to either go through (btn[1]=1)
+  // //or bypass (btn[1]==0) the first filter
+  // //in the first part of lab as you develop line buffer, you'll want to bypass
+  // //since your filter won't be working, but it would be good to test the
+  // //downsampling line buffer below on its own
+  // always_ff @(posedge clk_pixel) begin
+  //   if (btn[1])begin
+  //     ds_hcount = cdc_hcount;
+  //     ds_vcount = cdc_vcount;
+  //     ds_pixel = cdc_pixel;
+  //     ds_valid = cdc_valid;
+  //   end else begin
+  //     ds_hcount = f0_hcount;
+  //     ds_vcount = f0_vcount;
+  //     ds_pixel = f0_pixel;
+  //     ds_valid = f0_valid;
+  //   end
+  // end
 
-  //----
-  //A line buffer that, in conjunction with the control signal will down sample
-  //the camera (or f0 filter) values from 1280x720 to 320x180
-  //in reality we could get by without this, but it does make things a little easier
-  //and we've also added it since it gives us a means of testing the line buffer
-  //design outside of the filter.
-  logic [2:0][15:0] lb_buffs; //grab output of down sample line buffer
-  logic ds_control; //controlling when to write (every fourth pixel and line)
-  logic [10:0] ds_hcount;  //hcount to downsample line buffer
-  logic [9:0] ds_vcount; //vcount to downsample line buffer
-  logic [15:0] ds_pixel; //pixel data to downsample line buffer
-  logic ds_valid; //valid signals to downsample line buffer
-  assign ds_control = ds_valid&&(ds_hcount[1:0]==2'b0)&&(ds_vcount[1:0]==2'b0);
-  line_buffer #(.HRES(320),
-                .VRES(180))
-    ds_lbuff (
-    .clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .data_valid_in(ds_control),
-    .pixel_data_in(ds_pixel),
-    .hcount_in(ds_hcount[10:2]),
-    .vcount_in(ds_vcount[9:2]),
-    .data_valid_out(lb_valid),
-    .line_buffer_out(lb_buffs),
-    .hcount_out(lb_hcount),
-    .vcount_out(lb_vcount)
-  );
+  // //----
+  // //A line buffer that, in conjunction with the control signal will down sample
+  // //the camera (or f0 filter) values from 1280x720 to 320x180
+  // //in reality we could get by without this, but it does make things a little easier
+  // //and we've also added it since it gives us a means of testing the line buffer
+  // //design outside of the filter.
+  // logic [2:0][15:0] lb_buffs; //grab output of down sample line buffer
+  // logic ds_control; //controlling when to write (every fourth pixel and line)
+  // logic [10:0] ds_hcount;  //hcount to downsample line buffer
+  // logic [9:0] ds_vcount; //vcount to downsample line buffer
+  // logic [15:0] ds_pixel; //pixel data to downsample line buffer
+  // logic ds_valid; //valid signals to downsample line buffer
+  // assign ds_control = ds_valid&&(ds_hcount[1:0]==2'b0)&&(ds_vcount[1:0]==2'b0);
+  // line_buffer #(.HRES(320),
+  //               .VRES(180))
+  //   ds_lbuff (
+  //   .clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .data_valid_in(ds_control),
+  //   .pixel_data_in(ds_pixel),
+  //   .hcount_in(ds_hcount[10:2]),
+  //   .vcount_in(ds_vcount[9:2]),
+  //   .data_valid_out(lb_valid),
+  //   .line_buffer_out(lb_buffs),
+  //   .hcount_out(lb_hcount),
+  //   .vcount_out(lb_vcount)
+  // );
 
-  assign lb_pixel = lb_buffs[1]; //pass on only the middle one.
+  // assign lb_pixel = lb_buffs[1]; //pass on only the middle one.
 
-  //----
-  //Create six different filters that all exist in parallel
-  //The outputs of all six filters are fed into the unpacked arrays below:
-  logic [10:0] f_hcount [5:0];  //hcount from filter modules
-  logic [9:0] f_vcount [5:0]; //vcount from filter modules
-  logic [15:0] f_pixel [5:0]; //pixel data from filter modules
-  logic f_valid [5:0]; //valid signals for filter modules
+  // //----
+  // //Create six different filters that all exist in parallel
+  // //The outputs of all six filters are fed into the unpacked arrays below:
+  // logic [10:0] f_hcount [5:0];  //hcount from filter modules
+  // logic [9:0] f_vcount [5:0]; //vcount from filter modules
+  // logic [15:0] f_pixel [5:0]; //pixel data from filter modules
+  // logic f_valid [5:0]; //valid signals for filter modules
 
-  //using generate/genvar, create five *Different* instances of the
-  //filter module (you'll write that).  Each filter will implement a different
-  //kernel
-  generate
-    genvar i;
-    for (i=0; i<6; i=i+1)begin
-      filter #(.K_SELECT(i),.HRES(320),.VRES(180))
-        filterm(
-        .clk_in(clk_pixel),
-        .rst_in(sys_rst_pixel),
-        .data_valid_in(lb_valid),
-        .pixel_data_in(lb_pixel),
-        .hcount_in(lb_hcount),
-        .vcount_in(lb_vcount),
-        .data_valid_out(f_valid[i]),
-        .pixel_data_out(f_pixel[i]),
-        .hcount_out(f_hcount[i]),
-        .vcount_out(f_vcount[i])
-      );
-    end
-  endgenerate
+  // //using generate/genvar, create five *Different* instances of the
+  // //filter module (you'll write that).  Each filter will implement a different
+  // //kernel
+  // generate
+  //   genvar i;
+  //   for (i=0; i<6; i=i+1)begin
+  //     filter #(.K_SELECT(i),.HRES(320),.VRES(180))
+  //       filterm(
+  //       .clk_in(clk_pixel),
+  //       .rst_in(sys_rst_pixel),
+  //       .data_valid_in(lb_valid),
+  //       .pixel_data_in(lb_pixel),
+  //       .hcount_in(lb_hcount),
+  //       .vcount_in(lb_vcount),
+  //       .data_valid_out(f_valid[i]),
+  //       .pixel_data_out(f_pixel[i]),
+  //       .hcount_out(f_hcount[i]),
+  //       .vcount_out(f_vcount[i])
+  //     );
+  //   end
+  // endgenerate
 
-  //combine hor and vert signals from filters 4 and 5 for special signal:
-  logic [7:0] fcomb_r, fcomb_g, fcomb_b;
-  assign fcomb_r = (f_pixel[4][15:11]+f_pixel[5][15:11])>>1;
-  assign fcomb_g = (f_pixel[4][10:5]+f_pixel[5][10:5])>>1;
-  assign fcomb_b = (f_pixel[4][4:0]+f_pixel[5][4:0])>>1;
+  // //combine hor and vert signals from filters 4 and 5 for special signal:
+  // logic [7:0] fcomb_r, fcomb_g, fcomb_b;
+  // assign fcomb_r = (f_pixel[4][15:11]+f_pixel[5][15:11])>>1;
+  // assign fcomb_g = (f_pixel[4][10:5]+f_pixel[5][10:5])>>1;
+  // assign fcomb_b = (f_pixel[4][4:0]+f_pixel[5][4:0])>>1;
 
-  //------
-  //Choose which filter to use
-  //based on values of sw[2:0] select which filter output gets handed on to the
-  //next module. We must make sure to route hcount, vcount, pixels and valid signal
-  // for each module.  Could have done this with a for loop as well!  Think
-  // about it!
-  logic [10:0] fmux_hcount; //hcount from filter mux
-  logic [9:0]  fmux_vcount; //vcount from filter mux
-  logic [15:0] fmux_pixel; //pixel data from filter mux
-  logic fmux_valid; //data valid from filter mux
+  // //------
+  // //Choose which filter to use
+  // //based on values of sw[2:0] select which filter output gets handed on to the
+  // //next module. We must make sure to route hcount, vcount, pixels and valid signal
+  // // for each module.  Could have done this with a for loop as well!  Think
+  // // about it!
+  // logic [10:0] fmux_hcount; //hcount from filter mux
+  // logic [9:0]  fmux_vcount; //vcount from filter mux
+  // logic [15:0] fmux_pixel; //pixel data from filter mux
+  // logic fmux_valid; //data valid from filter mux
 
-  //000 Identity Kernel
-  //001 Gaussian Blur
-  //010 Sharpen
-  //011 Ridge Detection
-  //100 Sobel Y-axis Edge Detection
-  //101 Sobel X-axis Edge Detection
-  //110 Total Sobel Edge Detection
-  //111 Output of Line Buffer Directly (Helpful for debugging line buffer in first part)
+  // //000 Identity Kernel
+  // //001 Gaussian Blur
+  // //010 Sharpen
+  // //011 Ridge Detection
+  // //100 Sobel Y-axis Edge Detection
+  // //101 Sobel X-axis Edge Detection
+  // //110 Total Sobel Edge Detection
+  // //111 Output of Line Buffer Directly (Helpful for debugging line buffer in first part)
   
-  //REMOVED sw[2:0]
-  always_ff @(posedge clk_pixel)begin
-    case (3'b001)
-      3'b000: begin
-        fmux_hcount <= f_hcount[0];
-        fmux_vcount <= f_vcount[0];
-        fmux_pixel <= f_pixel[0];
-        fmux_valid <= f_valid[0];
-      end
-      3'b001: begin
-        fmux_hcount <= f_hcount[1];
-        fmux_vcount <= f_vcount[1];
-        fmux_pixel <= f_pixel[1];
-        fmux_valid <= f_valid[1];
-      end
-      3'b010: begin
-        fmux_hcount <= f_hcount[2];
-        fmux_vcount <= f_vcount[2];
-        fmux_pixel <= f_pixel[2];
-        fmux_valid <= f_valid[2];
-      end
-      3'b011: begin
-        fmux_hcount <= f_hcount[3];
-        fmux_vcount <= f_vcount[3];
-        fmux_pixel <= f_pixel[3];
-        fmux_valid <= f_valid[3];
-      end
-      3'b100: begin
-        fmux_hcount <= f_hcount[4];
-        fmux_vcount <= f_vcount[4];
-        fmux_pixel <= f_pixel[4];
-        fmux_valid <= f_valid[4];
-      end
-      3'b101: begin
-        fmux_hcount <= f_hcount[5];
-        fmux_vcount <= f_vcount[5];
-        fmux_pixel <= f_pixel[5];
-        fmux_valid <= f_valid[5];
-      end
-      3'b110: begin
-        fmux_hcount <= f_hcount[4];
-        fmux_vcount <= f_vcount[4];
-        fmux_pixel <= {fcomb_r[4:0],fcomb_g[5:0],fcomb_b[4:0]};
-        fmux_valid <= f_valid[4]&&f_valid[5];
-      end
-      default: begin
-        fmux_hcount <= lb_hcount;
-        fmux_vcount <= lb_vcount;
-        fmux_pixel <= lb_pixel;
-        fmux_valid <= lb_valid;
-      end
-    endcase
-  end
+  // //REMOVED sw[2:0]
+  // always_ff @(posedge clk_pixel)begin
+  //   case (3'b001)
+  //     3'b000: begin
+  //       fmux_hcount <= f_hcount[0];
+  //       fmux_vcount <= f_vcount[0];
+  //       fmux_pixel <= f_pixel[0];
+  //       fmux_valid <= f_valid[0];
+  //     end
+  //     3'b001: begin
+  //       fmux_hcount <= f_hcount[1];
+  //       fmux_vcount <= f_vcount[1];
+  //       fmux_pixel <= f_pixel[1];
+  //       fmux_valid <= f_valid[1];
+  //     end
+  //     3'b010: begin
+  //       fmux_hcount <= f_hcount[2];
+  //       fmux_vcount <= f_vcount[2];
+  //       fmux_pixel <= f_pixel[2];
+  //       fmux_valid <= f_valid[2];
+  //     end
+  //     3'b011: begin
+  //       fmux_hcount <= f_hcount[3];
+  //       fmux_vcount <= f_vcount[3];
+  //       fmux_pixel <= f_pixel[3];
+  //       fmux_valid <= f_valid[3];
+  //     end
+  //     3'b100: begin
+  //       fmux_hcount <= f_hcount[4];
+  //       fmux_vcount <= f_vcount[4];
+  //       fmux_pixel <= f_pixel[4];
+  //       fmux_valid <= f_valid[4];
+  //     end
+  //     3'b101: begin
+  //       fmux_hcount <= f_hcount[5];
+  //       fmux_vcount <= f_vcount[5];
+  //       fmux_pixel <= f_pixel[5];
+  //       fmux_valid <= f_valid[5];
+  //     end
+  //     3'b110: begin
+  //       fmux_hcount <= f_hcount[4];
+  //       fmux_vcount <= f_vcount[4];
+  //       fmux_pixel <= {fcomb_r[4:0],fcomb_g[5:0],fcomb_b[4:0]};
+  //       fmux_valid <= f_valid[4]&&f_valid[5];
+  //     end
+  //     default: begin
+  //       fmux_hcount <= lb_hcount;
+  //       fmux_vcount <= lb_vcount;
+  //       fmux_pixel <= lb_pixel;
+  //       fmux_valid <= lb_valid;
+  //     end
+  //   endcase
+  // end
 
-  localparam FB_DEPTH = 320*180;
-  localparam FB_SIZE = $clog2(FB_DEPTH);
-  logic [FB_SIZE-1:0] addra; //used to specify address to write to in frame buffer
-  logic valid_camera_mem; //used to enable writing pixel data to frame buffer
-  logic [15:0] camera_mem; //used to pass pixel data into frame buffer
-
-  //because the down sampling already happened upstream, there's no need to do here.
-  always_ff @(posedge clk_pixel) begin
-    if(fmux_valid) begin
-      addra <= fmux_hcount + fmux_vcount * 320;
-      camera_mem <= fmux_pixel;
-      valid_camera_mem <= 1;
-    end else begin
-      valid_camera_mem <= 0;
-    end
-  end
-
-
-  // ========== LAB 5 ==========
   // localparam FB_DEPTH = 320*180;
   // localparam FB_SIZE = $clog2(FB_DEPTH);
   // logic [FB_SIZE-1:0] addra; //used to specify address to write to in frame buffer
-
   // logic valid_camera_mem; //used to enable writing pixel data to frame buffer
   // logic [15:0] camera_mem; //used to pass pixel data into frame buffer
 
-
-  // //TO DO in camera part 1: ***DONE***
-  // always_ff @(posedge clk_camera)begin
-  //   //create logic to handle wriiting of camera.
-  //   //we want to down sample the data from the camera by a factor of four in both
-  //   //the x and y dimensions! TO DO
-
-  //   // if the camera pixel is valid and the lower 2 bits of v and h are 0 (divisible by 4)
-  //   if(camera_valid && (camera_hcount[0] == 0 && camera_hcount[1] == 0) && (camera_vcount[0] == 0 && camera_vcount[1] == 0)) begin
-  //     valid_camera_mem <= 1;      // say we have a valid input to memory
-  //     camera_mem <= camera_pixel; // set that input
-  //     addra <= ((1280-camera_hcount) >> 2) + 320*(camera_vcount >> 2);
+  // //because the down sampling already happened upstream, there's no need to do here.
+  // always_ff @(posedge clk_pixel) begin
+  //   if(fmux_valid) begin
+  //     addra <= fmux_hcount + fmux_vcount * 320;
+  //     camera_mem <= fmux_pixel;
+  //     valid_camera_mem <= 1;
   //   end else begin
-  //     valid_camera_mem <= 0;      // we don't have a valid input to memory
+  //     valid_camera_mem <= 0;
   //   end
   // end
-  // ========== LAB 5 ==========
 
 
-  //frame buffer from IP
-  blk_mem_gen_0 frame_buffer (
-    .addra(addra), //pixels are stored using this math
-    .clka(clk_pixel),
-    .wea(valid_camera_mem),
-    .dina(camera_mem),
-    .ena(1'b1),
-    .douta(), //never read from this side
-    .addrb(addrb),//transformed lookup pixel
-    .dinb(16'b0),
-    .clkb(clk_pixel),
-    .web(1'b0),
-    .enb(1'b1),
-    .doutb(frame_buff_raw)
-  );
-  logic [15:0] frame_buff_raw; //data out of frame buffer (565)
-  logic [FB_SIZE-1:0] addrb; //used to lookup address in memory for reading from buffer
-  logic good_addrb; //used to indicate within valid frame for scaling
-  //brought in from lab 5...just do 4X upscale
-  always_ff @(posedge clk_pixel)begin
-    if(!btn[2]) begin // 4x upsampling
-      addrb <= (319-(hcount_hdmi >> 2)) + 320*(vcount_hdmi >> 2);
-      good_addrb <= (hcount_hdmi<1280)&&(vcount_hdmi<720);
-    end else begin //1X scaling from frame buffer
-      addrb <= (319-hcount_hdmi) + 320*vcount_hdmi;
-      good_addrb <= (hcount_hdmi<320) && (vcount_hdmi<180);
-    end
-  end
+  // // ========== LAB 5 ==========
+  // // localparam FB_DEPTH = 320*180;
+  // // localparam FB_SIZE = $clog2(FB_DEPTH);
+  // // logic [FB_SIZE-1:0] addra; //used to specify address to write to in frame buffer
 
-  //--------------------------END NEW STUFF-------------------
+  // // logic valid_camera_mem; //used to enable writing pixel data to frame buffer
+  // // logic [15:0] camera_mem; //used to pass pixel data into frame buffer
 
-  //split fame_buff into 3 8 bit color channels (5:6:5 adjusted accordingly)
-  //remapped frame_buffer outputs with 8 bits for r, g, b
+
+  // // //TO DO in camera part 1: ***DONE***
+  // // always_ff @(posedge clk_camera)begin
+  // //   //create logic to handle wriiting of camera.
+  // //   //we want to down sample the data from the camera by a factor of four in both
+  // //   //the x and y dimensions! TO DO
+
+  // //   // if the camera pixel is valid and the lower 2 bits of v and h are 0 (divisible by 4)
+  // //   if(camera_valid && (camera_hcount[0] == 0 && camera_hcount[1] == 0) && (camera_vcount[0] == 0 && camera_vcount[1] == 0)) begin
+  // //     valid_camera_mem <= 1;      // say we have a valid input to memory
+  // //     camera_mem <= camera_pixel; // set that input
+  // //     addra <= ((1280-camera_hcount) >> 2) + 320*(camera_vcount >> 2);
+  // //   end else begin
+  // //     valid_camera_mem <= 0;      // we don't have a valid input to memory
+  // //   end
+  // // end
+  // // ========== LAB 5 ==========
+
+
+  // //frame buffer from IP
+  // blk_mem_gen_0 frame_buffer (
+  //   .addra(addra), //pixels are stored using this math
+  //   .clka(clk_pixel),
+  //   .wea(valid_camera_mem),
+  //   .dina(camera_mem),
+  //   .ena(1'b1),
+  //   .douta(), //never read from this side
+  //   .addrb(addrb),//transformed lookup pixel
+  //   .dinb(16'b0),
+  //   .clkb(clk_pixel),
+  //   .web(1'b0),
+  //   .enb(1'b1),
+  //   .doutb(frame_buff_raw)
+  // );
+  // logic [15:0] frame_buff_raw; //data out of frame buffer (565)
+  // logic [FB_SIZE-1:0] addrb; //used to lookup address in memory for reading from buffer
+  // logic good_addrb; //used to indicate within valid frame for scaling
+  // //brought in from lab 5...just do 4X upscale
+  // always_ff @(posedge clk_pixel)begin
+  //   if(!btn[2]) begin // 4x upsampling
+  //     addrb <= (319-(hcount_hdmi >> 2)) + 320*(vcount_hdmi >> 2);
+  //     good_addrb <= (hcount_hdmi<1280)&&(vcount_hdmi<720);
+  //   end else begin //1X scaling from frame buffer
+  //     addrb <= (319-hcount_hdmi) + 320*vcount_hdmi;
+  //     good_addrb <= (hcount_hdmi<320) && (vcount_hdmi<180);
+  //   end
+  // end
+
+  // //--------------------------END NEW STUFF-------------------
+
+  // //split fame_buff into 3 8 bit color channels (5:6:5 adjusted accordingly)
+  // //remapped frame_buffer outputs with 8 bits for r, g, b
+  // logic [7:0] fb_red, fb_green, fb_blue;
+  // always_ff @(posedge clk_pixel)begin
+  //   fb_red <= good_addrb?{frame_buff_raw[15:11],3'b0}:8'b0;
+  //   fb_green <= good_addrb?{frame_buff_raw[10:5], 2'b0}:8'b0;
+  //   fb_blue <= good_addrb?{frame_buff_raw[4:0],3'b0}:8'b0;
+  // end
+  // // Pixel Processing pre-HDMI output
+
+
+
+  // 1 BIT FRAME BUFFER FOR SCREEN OUTPUT:
+  // output from camera
   logic [7:0] fb_red, fb_green, fb_blue;
-  always_ff @(posedge clk_pixel)begin
-    fb_red <= good_addrb?{frame_buff_raw[15:11],3'b0}:8'b0;
-    fb_green <= good_addrb?{frame_buff_raw[10:5], 2'b0}:8'b0;
-    fb_blue <= good_addrb?{frame_buff_raw[4:0],3'b0}:8'b0;
+  always_comb begin
+    fb_red = {camera_pixel[15:11], 3'b0};
+    fb_green = {camera_pixel[10:5], 2'b0};
+    fb_blue = {camera_pixel[4:0], 3'b0};
   end
-  // Pixel Processing pre-HDMI output
 
   // RGB to YCrCb
 
@@ -423,7 +434,7 @@ module top_level
   //See lecture 07 for YCrCb discussion.
   //Module has a 3 cycle latency
   rgb_to_ycrcb rgbtoycrcb_m(
-    .clk_in(clk_pixel),
+    .clk_in(clk_camera), // --CHANGED CROM CLK_PIXEL
     .r_in(fb_red),
     .g_in(fb_green),
     .b_in(fb_blue),
@@ -478,21 +489,114 @@ module top_level
   );
 
   //threshold values used to determine what value  passes:
-  assign lower_threshold = 8'b1010_0000; // {sw[11:8],4'b0};
-  assign upper_threshold = 8'b1111_0000; //{sw[15:12],4'b0};
+  // assign lower_threshold = 8'b1010_0000;
+  // assign upper_threshold = 8'b1111_0000;
+  assign lower_threshold = {sw[11:8],4'b0};
+  assign upper_threshold = {sw[15:12],4'b1111};
 
   //Thresholder: Takes in the full selected channedl and
   //based on upper and lower bounds provides a binary mask bit
   // * 1 if selected channel is within the bounds (inclusive)
   // * 0 if selected channel is not within the bounds
-  threshold mt(
-     .clk_in(clk_pixel),
-     .rst_in(sys_rst_pixel),
-     .pixel_in(selected_channel),
-     .lower_bound_in(lower_threshold),
-     .upper_bound_in(upper_threshold),
-     .mask_out(mask) //single bit if pixel within mask.
-  );
+
+  assign mask = (selected_channel > lower_threshold) && (selected_channel <= upper_threshold);
+  // threshold mt(
+  //    .clk_in(clk_pixel),
+  //    .rst_in(sys_rst_pixel),
+  //    .pixel_in(selected_channel),
+  //    .lower_bound_in(lower_threshold),
+  //    .upper_bound_in(upper_threshold),
+  //    .mask_out(mask) //single bit if pixel within mask.
+  // );
+
+
+
+
+
+  // 1 BIT CAMERA MASK
+  localparam FB_DEPTH = 320*180;
+  localparam FB_SIZE = $clog2(FB_DEPTH);
+  logic [FB_SIZE-1:0] addra; //used to specify address to write to in frame buffer
+  logic valid_camera_mem;
+  logic camera_mem;
+
+  localparam CAM_BUFF_WIDTH = 3;
+  logic [CAM_BUFF_WIDTH-1:0][10:0] camera_hcount_buff;
+  logic [CAM_BUFF_WIDTH-1:0][9:0] camera_vcount_buff;
+  logic [CAM_BUFF_WIDTH-1:0] camera_valid_buff;
+
+  always_ff @(posedge clk_camera) begin
+    camera_hcount_buff[0] <= camera_hcount;
+    camera_hcount_buff[1] <= camera_hcount_buff[0];
+    camera_hcount_buff[2] <= camera_hcount_buff[1];
+    // camera_hcount_buff[3] <= camera_hcount_buff[2];
+
+    camera_vcount_buff[0] <= camera_vcount;
+    camera_vcount_buff[1] <= camera_vcount_buff[0];
+    camera_vcount_buff[2] <= camera_vcount_buff[1];
+    // camera_vcount_buff[3] <= camera_vcount_buff[2];
+
+    camera_valid_buff[0] <= camera_valid;
+    camera_valid_buff[1] <= camera_valid_buff[0];
+    camera_valid_buff[2] <= camera_valid_buff[1];
+    // camera_valid_buff[3] <= camera_valid_buff[2]; 
+  end
+
+
+  always_ff @(posedge clk_camera)begin
+    //create logic to handle wriiting of camera.
+    //we want to down sample the data from the camera by a factor of four in both
+    //the x and y dimensions! TO DO
+
+    // if the camera pixel is valid and the lower 2 bits of v and h are 0 (divisible by 4)
+    if(camera_valid_buff[2] && (camera_hcount_buff[2][0] == 0 && camera_hcount_buff[2][1] == 0) && (camera_vcount_buff[2][0] == 0 && camera_vcount_buff[2][1] == 0)) begin
+      valid_camera_mem <= 1;      // say we have a valid input to memory
+      camera_mem <= mask; // set that input
+      addra <= ((1280-camera_hcount_buff[2]) >> 2) + 320*(camera_vcount_buff[2] >> 2);
+    end else begin
+      valid_camera_mem <= 0;      // we don't have a valid input to memory
+    end
+  end
+
+
+
+  xilinx_true_dual_port_read_first_2_clock_ram
+    #(.RAM_WIDTH(1),
+    .RAM_DEPTH(FB_DEPTH))
+    frame_buffer
+    (
+    // PORT A
+    .addra(addra), //pixels are stored using this math
+    .clka(clk_camera),
+    .wea(valid_camera_mem),
+    .dina(camera_mem),
+    .ena(1'b1),
+    .douta(), //never read from this side
+    .rsta(sys_rst_pixel),
+    .regcea(1'b1),
+
+    // PORT B
+    .addrb(addrb),//transformed lookup pixel
+    .dinb(1'b0),
+    .clkb(clk_pixel),
+    .web(1'b0),
+    .enb(1'b1),
+    .doutb(frame_buff_raw),
+    .rstb(sys_rst_pixel),
+    .regceb(1'b1)
+    );
+
+  logic frame_buff_raw;
+  logic [FB_SIZE-1:0] addrb;
+  logic good_addrb;
+
+  always_ff @(posedge clk_pixel)begin
+    addrb <= (319-(hcount_hdmi >> 2)) + 320*(vcount_hdmi >> 2);
+    good_addrb <= (hcount_hdmi<1280)&&(vcount_hdmi<720);
+  end
+
+
+
 
 
   logic [6:0] ss_c;
@@ -501,14 +605,18 @@ module top_level
   // special customized version
   lab05_ssc mssc(.clk_in(clk_pixel),
                  .rst_in(sys_rst_pixel),
-                 .lt_in(lower_threshold),
-                 .ut_in(upper_threshold),
-                 .channel_sel_in(channel_sel),
+                 .lt_in((perim_temp[0] > 8'hFF)? 8'hFF : perim_temp[0][7:0]), // changed from lower, upper threshold
+                 .ut_in((area_temp[0] > 8'hFF)? 8'hFF : area_temp[0][7:0]),
+                 //.channel_sel_in((circ_temp[0] > 8'hFF)? 8'hFF : circ_temp[0][7:0]),
+                 .channel_sel_in(max_seen_label),
                  .cat_out(ss_c),
                  .an_out({ss0_an, ss1_an})
   );
   assign ss0_c = ss_c; //control upper four digit's cathodes!
   assign ss1_c = ss_c; //same as above but for lower four digits!
+
+
+
 
 
 
@@ -536,6 +644,8 @@ module top_level
 
 
 
+
+
   // NOW USING CCL:
   logic ccl_valid_out;
   logic ccl_busy_out;
@@ -548,6 +658,7 @@ module top_level
   logic [15:0] ccl_pixel_label;
   logic ccl_pixel_valid;
   logic [7:0] ccl_state;
+  logic [7:0] max_seen_label;
 
   ccl #(
     .WIDTH(320),        // Horizontal resolution
@@ -559,7 +670,7 @@ module top_level
   .rst_in(sys_rst_pixel),          
   .x_in(hcount_hdmi >> 2),       
   .y_in(vcount_hdmi >> 2), // TODO: if something is fucked up, this shifting could very well be why
-  .mask_in(mask),
+  .mask_in(frame_buff_raw),
   .new_frame_in(hcount_hdmi == 0 && vcount_hdmi == 0 && !moore_busy_0 && !moore_busy_1 /* && !moore_busy_2 */),         
   .valid_in(hcount_hdmi[1:0] == 1 && vcount_hdmi[1:0] == 1), // only give valid once every 4 pixels sure
 
@@ -573,7 +684,8 @@ module top_level
   .com_y_out(largest_y_coms),
   .curr_pix_label(ccl_pixel_label),
   .curr_pix_valid(ccl_pixel_valid),
-  .curr_state(ccl_state)
+  .curr_state(ccl_state),
+  .max_seen_label(max_seen_label)
   );
 
 
@@ -588,79 +700,79 @@ module top_level
   // logic [2:0][2:0] ccl_moore_pixels_2;
 
   always_comb begin
-    if(sys_rst_pixel) begin
-      ccl_moore_addr_0 = 0;
-      // ccl_moore_addr_1 = 0;
-      // ccl_moore_addr_2 = 0;
+    // if(sys_rst_pixel) begin
+    //   ccl_moore_addr_0 = 0;
+    //   ccl_moore_addr_1 = 0;
+    //   // ccl_moore_addr_2 = 0;
+    // end else begin
+    if(ccl_pixel_valid) begin
+      //fb0
+      ccl_moore_addr_0[0] = ccl_x_out + ccl_y_out*320;
+      ccl_moore_addr_0[2] = ccl_moore_addr_0[0];
+      ccl_moore_addr_0[4] = ccl_moore_addr_0[0];
+      ccl_moore_addr_0[6] = ccl_moore_addr_0[0];
+
+      ccl_moore_addr_0[1] = 0;
+      ccl_moore_addr_0[3] = 0;
+      ccl_moore_addr_0[5] = 0;
+      ccl_moore_addr_0[7] = 0;
+
+
+      // // fb1
+      ccl_moore_addr_1[0] = ccl_x_out + ccl_y_out*320;
+      ccl_moore_addr_1[2] = ccl_moore_addr_1[0];
+      ccl_moore_addr_1[4] = ccl_moore_addr_1[0];
+      ccl_moore_addr_1[6] = ccl_moore_addr_1[0];
+
+      ccl_moore_addr_1[1] = 0;
+      ccl_moore_addr_1[3] = 0;
+      ccl_moore_addr_1[5] = 0;
+      ccl_moore_addr_1[7] = 0;
+
+
+      // //fb2
+      // ccl_moore_addr_2[0] = ccl_x_out + ccl_y_out*320;
+      // ccl_moore_addr_2[2] = ccl_moore_addr_2[0];
+      // ccl_moore_addr_2[4] = ccl_moore_addr_2[0];
+      // ccl_moore_addr_2[6] = ccl_moore_addr_2[0];
+
+      // ccl_moore_addr_2[1] = 0;
+      // ccl_moore_addr_2[3] = 0;
+      // ccl_moore_addr_2[5] = 0;
+      // ccl_moore_addr_2[7] = 0;
+
     end else begin
-      if(ccl_busy_out) begin
-        //fb0
-        ccl_moore_addr_0[0] = ccl_x_out + ccl_y_out*320;
-        ccl_moore_addr_0[2] = ccl_moore_addr_0[0];
-        ccl_moore_addr_0[4] = ccl_moore_addr_0[0];
-        ccl_moore_addr_0[6] = ccl_moore_addr_0[0];
-
-        ccl_moore_addr_0[1] = 0;
-        ccl_moore_addr_0[3] = 0;
-        ccl_moore_addr_0[5] = 0;
-        ccl_moore_addr_0[7] = 0;
+      ccl_moore_addr_0[0] = moore_addrs_0[0];
+      ccl_moore_addr_0[1] = moore_addrs_0[1];
+      ccl_moore_addr_0[2] = moore_addrs_0[2];
+      ccl_moore_addr_0[3] = moore_addrs_0[3];
+      ccl_moore_addr_0[4] = moore_addrs_0[4];
+      ccl_moore_addr_0[5] = moore_addrs_0[5];
+      ccl_moore_addr_0[6] = moore_addrs_0[6];
+      ccl_moore_addr_0[7] = moore_addrs_0[7];
 
 
-        // // fb1
-        ccl_moore_addr_1[0] = ccl_x_out + ccl_y_out*320;
-        ccl_moore_addr_1[2] = ccl_moore_addr_1[0];
-        ccl_moore_addr_1[4] = ccl_moore_addr_1[0];
-        ccl_moore_addr_1[6] = ccl_moore_addr_1[0];
-
-        ccl_moore_addr_1[1] = 0;
-        ccl_moore_addr_1[3] = 0;
-        ccl_moore_addr_1[5] = 0;
-        ccl_moore_addr_1[7] = 0;
-
-
-        // //fb2
-        // ccl_moore_addr_2[0] = ccl_x_out + ccl_y_out*320;
-        // ccl_moore_addr_2[2] = ccl_moore_addr_2[0];
-        // ccl_moore_addr_2[4] = ccl_moore_addr_2[0];
-        // ccl_moore_addr_2[6] = ccl_moore_addr_2[0];
-
-        // ccl_moore_addr_2[1] = 0;
-        // ccl_moore_addr_2[3] = 0;
-        // ccl_moore_addr_2[5] = 0;
-        // ccl_moore_addr_2[7] = 0;
-
-      end else begin
-        ccl_moore_addr_0[0] = moore_addrs_0[0];
-        ccl_moore_addr_0[1] = moore_addrs_0[1];
-        ccl_moore_addr_0[2] = moore_addrs_0[2];
-        ccl_moore_addr_0[3] = moore_addrs_0[3];
-        ccl_moore_addr_0[4] = moore_addrs_0[4];
-        ccl_moore_addr_0[5] = moore_addrs_0[5];
-        ccl_moore_addr_0[6] = moore_addrs_0[6];
-        ccl_moore_addr_0[7] = moore_addrs_0[7];
-
-
-        ccl_moore_addr_1[0] = moore_addrs_1[0];
-        ccl_moore_addr_1[1] = moore_addrs_1[1];
-        ccl_moore_addr_1[2] = moore_addrs_1[2];
-        ccl_moore_addr_1[3] = moore_addrs_1[3];
-        ccl_moore_addr_1[4] = moore_addrs_1[4];
-        ccl_moore_addr_1[5] = moore_addrs_1[5];
-        ccl_moore_addr_1[6] = moore_addrs_1[6];
-        ccl_moore_addr_1[7] = moore_addrs_1[7];
+      ccl_moore_addr_1[0] = moore_addrs_1[0];
+      ccl_moore_addr_1[1] = moore_addrs_1[1];
+      ccl_moore_addr_1[2] = moore_addrs_1[2];
+      ccl_moore_addr_1[3] = moore_addrs_1[3];
+      ccl_moore_addr_1[4] = moore_addrs_1[4];
+      ccl_moore_addr_1[5] = moore_addrs_1[5];
+      ccl_moore_addr_1[6] = moore_addrs_1[6];
+      ccl_moore_addr_1[7] = moore_addrs_1[7];
 
 
 
-        // ccl_moore_addr_2[0] = moore_addrs_2[0];
-        // ccl_moore_addr_2[1] = moore_addrs_2[1];
-        // ccl_moore_addr_2[2] = moore_addrs_2[2];
-        // ccl_moore_addr_2[3] = moore_addrs_2[3];
-        // ccl_moore_addr_2[4] = moore_addrs_2[4];
-        // ccl_moore_addr_2[5] = moore_addrs_2[5];
-        // ccl_moore_addr_2[6] = moore_addrs_2[6];
-        // ccl_moore_addr_2[7] = moore_addrs_2[7];
-      end
+      // ccl_moore_addr_2[0] = moore_addrs_2[0];
+      // ccl_moore_addr_2[1] = moore_addrs_2[1];
+      // ccl_moore_addr_2[2] = moore_addrs_2[2];
+      // ccl_moore_addr_2[3] = moore_addrs_2[3];
+      // ccl_moore_addr_2[4] = moore_addrs_2[4];
+      // ccl_moore_addr_2[5] = moore_addrs_2[5];
+      // ccl_moore_addr_2[6] = moore_addrs_2[6];
+      // ccl_moore_addr_2[7] = moore_addrs_2[7];
     end
+    // end
   end
 
 
@@ -1224,14 +1336,15 @@ xilinx_true_dual_port_read_first_2_clock_ram
       area_1 = largest_areas[1];
       // area_2 = largest_areas[2];
 
-      x_com_calc_0 = largest_x_coms[0]; // TODO: we may want to shift this over by << 2 so that it appears on the screen in the right spot
-      y_com_calc_0 = largest_y_coms[0];
+      x_com_calc_0 = largest_x_coms[0] << 2; // TODO: we may want to shift this over by << 2 so that it appears on the screen in the right spot
+      y_com_calc_0 = largest_y_coms[0] << 2;
 
-      x_com_calc_1 = largest_x_coms[1]; // TODO: we may want to shift this over by << 2 so that it appears on the screen in the right spot
-      y_com_calc_1 = largest_y_coms[1];
+      x_com_calc_1 = largest_x_coms[1] << 2; // TODO: we may want to shift this over by << 2 so that it appears on the screen in the right spot
+      y_com_calc_1 = largest_y_coms[1] << 2;
 
       // x_com_calc_2 = largest_x_coms[2]; // TODO: we may want to shift this over by << 2 so that it appears on the screen in the right spot
       // y_com_calc_2 = largest_y_coms[2];
+
     end
 
     new_com = ccl_valid_out; // just set this because it works with previous code
@@ -1395,30 +1508,58 @@ xilinx_true_dual_port_read_first_2_clock_ram
   logic [15:0] area_temp [4:0];
   logic [15:0] perim_temp [4:0];
 
-  logic [15:0] perim_temp_1; //, perim_temp_2;
+  logic [15:0] circ_temp_0, circ_temp_1; //, perim_temp_2;
+  logic [15:0] area_temp_0, area_temp_1; //, perim_temp_2;
+  logic [15:0] perim_temp_0, perim_temp_1; //, perim_temp_2;
 
   always_ff @(posedge clk_pixel) begin
     if(circularity_valid_0 && circularity_raw_0 < 200) begin // throw out obviously garbage circularity values --> should be in the 0-100 range (but circle can be a bit bigger)
       circularity_0 <= circularity_raw_0;
-      circ_temp[0] <= circularity_raw_0;
-      area_temp[0] <= area_saved_0; // area is 16* what it should be because the screen is 4x larger in both directions
-      perim_temp[0] <= perimeter_saved_0;
+      circ_temp_0 <= circularity_raw_0;
+      area_temp_0 <= area_saved_0; // area is 16* what it should be because the screen is 4x larger in both directions
+      perim_temp_0 <= perimeter_saved_0;
+
+      if(sw[4:3] == 2'b01) begin
+        circ_temp[0] <= circularity_raw_0;
+        area_temp[0] <= area_saved_0;
+        perim_temp[0] <= perimeter_saved_0;
+      end
     end
 
     if(circularity_valid_1 && circularity_raw_1 < 200) begin // throw out obviously garbage circularity values --> should be in the 0-100 range (but circle can be a bit bigger)
       circularity_1 <= circularity_raw_1;
+      circ_temp_1 <= circularity_raw_1;
+      area_temp_1 <= area_saved_1;
       perim_temp_1 <= perimeter_saved_1;
+
+      if(sw[4:3] == 2'b11) begin
+        circ_temp[0] <= circularity_raw_1;
+        area_temp[0] <= area_saved_1;
+        perim_temp[0] <= perimeter_saved_1;
+      end
     end
+
+
+    if(sw[4:3] == 2'b00) begin
+      circ_temp[0] <= 0;
+      area_temp[0] <= 0;
+      perim_temp[0] <= 0;
+    end else if (sw[4:3] == 2'b10) begin // TODO: Remove this temp state
+      if(ccl_pixel_valid || ccl_valid_out) begin
+        circ_temp[0] <= largest_labels[0];
+        area_temp[0] <= ccl_pixel_label;
+        perim_temp[0] <= ccl_pixel_valid;
+      end
+    end
+
+
 
     // if(circularity_valid_2 && circularity_raw_2 < 200) begin // throw out obviously garbage circularity values --> should be in the 0-100 range (but circle can be a bit bigger)
     //   circularity_2 <= circularity_raw_2;
     //   perim_temp_2 <= perimeter_saved_2;
     // end
 
-    // TODO: REMOVE THIS
-    perim_temp[0] <= ccl_state;
   end
-
 
 
 
@@ -1473,7 +1614,7 @@ xilinx_true_dual_port_read_first_2_clock_ram
 
   //if any of the draw_outs from any of the sprite modules are true, then set draw_out to be true
   always_comb begin                                                                                    // commenting this out removes all of the upstream label[3] logic
-    if ((draw_classifier_0 && !(perim_temp[0] == 0)) || (draw_classifier_1 && !(perim_temp_1 == 0)) || /*(draw_classifier_2 && !(perim_temp_2 == 0)) ||*/ draw_number[0] || draw_number[1] || draw_number[2] || draw_number[3] || draw_number[4] || draw_number[5] || draw_number[6] || draw_number[7] || draw_number[8] || draw_number[9] || draw_number[10] || draw_number[11]) begin
+    if ((draw_classifier_0 /*&& !(perim_temp_0 == 0))*/ /*|| (draw_classifier_1 && !(perim_temp_1 == 0)*/) || /*(draw_classifier_2 && !(perim_temp_2 == 0)) ||*/ draw_number[0] || draw_number[1] || draw_number[2] || draw_number[3] || draw_number[4] || draw_number[5] || draw_number[6] || draw_number[7] || draw_number[8] || draw_number[9] || draw_number[10] || draw_number[11]) begin
       draw_sprite = 1;
     end else begin
       draw_sprite = 0;
@@ -2061,201 +2202,203 @@ end
 
 
   // for placing the numbers easier
-  logic [15:0] circ_number_x = 6;
-  logic [15:0] circ_number_y = 4;
-  logic [15:0] circ_number_spacing = 4;
-  logic [4:0] number_img_size = 24; // doesnt change
+  localparam circ_number_x = 6;
+  localparam circ_number_y = 4;
+  localparam circ_number_spacing = 4;
+  localparam number_img_size = 24; // doesnt change
   logic [11:0] draw_number;
+
+  assign draw_number = 0; // REMOVE IF YOU WANT TO BRING IMG SPRITE TRNASP BACK
 
 
   // logic draw_number_0;
-  image_sprite_transparent_numbers #(
-    .WIDTH(24),
-    .HEIGHT(24),
-    .NUM_IMGS(10)
-  ) sprite_number_0(
-    .pixel_clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .x_in(circ_number_x),
-    .y_in(circ_number_y),
-    .hcount_in(hcount_hdmi),
-    .vcount_in(vcount_hdmi),
-    .number(number[4][0]),
-    .draw_out(draw_number[0])
-  );
+  // image_sprite_transparent_numbers #(
+  //   .WIDTH(24),
+  //   .HEIGHT(24),
+  //   .NUM_IMGS(10)
+  // ) sprite_number_0(
+  //   .pixel_clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .x_in(circ_number_x),
+  //   .y_in(circ_number_y),
+  //   .hcount_in(hcount_hdmi),
+  //   .vcount_in(vcount_hdmi),
+  //   .number(number[4][0]),
+  //   .draw_out(draw_number[0])
+  // );
 
-  // logic draw_number_1;
-  image_sprite_transparent_numbers_1 #(
-    .WIDTH(24),
-    .HEIGHT(24),
-    .NUM_IMGS(10)
-  ) sprite_number_1(
-    .pixel_clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .x_in(circ_number_x + (number_img_size + circ_number_spacing)*1),
-    .y_in(circ_number_y),
-    .hcount_in(hcount_hdmi),
-    .vcount_in(vcount_hdmi),
-    .number(number[4][1]),
-    .draw_out(draw_number[1])
-  );
+  // // logic draw_number_1;
+  // image_sprite_transparent_numbers_1 #(
+  //   .WIDTH(24),
+  //   .HEIGHT(24),
+  //   .NUM_IMGS(10)
+  // ) sprite_number_1(
+  //   .pixel_clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .x_in(circ_number_x + (number_img_size + circ_number_spacing)*1),
+  //   .y_in(circ_number_y),
+  //   .hcount_in(hcount_hdmi),
+  //   .vcount_in(vcount_hdmi),
+  //   .number(number[4][1]),
+  //   .draw_out(draw_number[1])
+  // );
 
-  // logic draw_number_2;
-  image_sprite_transparent_numbers_2 #(
-    .WIDTH(24),
-    .HEIGHT(24),
-    .NUM_IMGS(10)
-  ) sprite_number_2(
-    .pixel_clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .x_in(circ_number_x + (number_img_size + circ_number_spacing)*2),
-    .y_in(circ_number_y),
-    .hcount_in(hcount_hdmi),
-    .vcount_in(vcount_hdmi),
-    .number(number[4][2]),
-    .draw_out(draw_number[2])
-  );
+  // // logic draw_number_2;
+  // image_sprite_transparent_numbers_2 #(
+  //   .WIDTH(24),
+  //   .HEIGHT(24),
+  //   .NUM_IMGS(10)
+  // ) sprite_number_2(
+  //   .pixel_clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .x_in(circ_number_x + (number_img_size + circ_number_spacing)*2),
+  //   .y_in(circ_number_y),
+  //   .hcount_in(hcount_hdmi),
+  //   .vcount_in(vcount_hdmi),
+  //   .number(number[4][2]),
+  //   .draw_out(draw_number[2])
+  // );
 
-  // logic draw_number_3;
-  image_sprite_transparent_numbers_3 #(
-    .WIDTH(24),
-    .HEIGHT(24),
-    .NUM_IMGS(10)
-  ) sprite_number_3(
-    .pixel_clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .x_in(circ_number_x + (number_img_size + circ_number_spacing)*3),
-    .y_in(circ_number_y),
-    .hcount_in(hcount_hdmi),
-    .vcount_in(vcount_hdmi),
-    .number(number[4][3]),
-    .draw_out(draw_number[3])
-  );
-
-
-
-  image_sprite_transparent_numbers_4 #(
-    .WIDTH(24),
-    .HEIGHT(24),
-    .NUM_IMGS(10)
-  ) sprite_number_4(
-    .pixel_clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .x_in(circ_number_x),
-    .y_in(circ_number_y + (number_img_size + circ_number_spacing)*1),
-    .hcount_in(hcount_hdmi),
-    .vcount_in(vcount_hdmi),
-    .number(a_number[4][0]),
-    .draw_out(draw_number[4])
-  );
-
-  image_sprite_transparent_numbers_5 #(
-    .WIDTH(24),
-    .HEIGHT(24),
-    .NUM_IMGS(10)
-  ) sprite_number_5(
-    .pixel_clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .x_in(circ_number_x + (number_img_size + circ_number_spacing)*1),
-    .y_in(circ_number_y + (number_img_size + circ_number_spacing)*1),
-    .hcount_in(hcount_hdmi),
-    .vcount_in(vcount_hdmi),
-    .number(a_number[4][1]),
-    .draw_out(draw_number[5])
-  );
-
-  image_sprite_transparent_numbers_6 #(
-    .WIDTH(24),
-    .HEIGHT(24),
-    .NUM_IMGS(10)
-  ) sprite_number_6(
-    .pixel_clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .x_in(circ_number_x + (number_img_size + circ_number_spacing)*2),
-    .y_in(circ_number_y + (number_img_size + circ_number_spacing)*1),
-    .hcount_in(hcount_hdmi),
-    .vcount_in(vcount_hdmi),
-    .number(a_number[4][2]),
-    .draw_out(draw_number[6])
-  );
-
-  image_sprite_transparent_numbers_7 #(
-    .WIDTH(24),
-    .HEIGHT(24),
-    .NUM_IMGS(10)
-  ) sprite_number_7(
-    .pixel_clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .x_in(circ_number_x + (number_img_size + circ_number_spacing)*3),
-    .y_in(circ_number_y + (number_img_size + circ_number_spacing)*1),
-    .hcount_in(hcount_hdmi),
-    .vcount_in(vcount_hdmi),
-    .number(a_number[4][3]),
-    .draw_out(draw_number[7])
-  );
+  // // logic draw_number_3;
+  // image_sprite_transparent_numbers_3 #(
+  //   .WIDTH(24),
+  //   .HEIGHT(24),
+  //   .NUM_IMGS(10)
+  // ) sprite_number_3(
+  //   .pixel_clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .x_in(circ_number_x + (number_img_size + circ_number_spacing)*3),
+  //   .y_in(circ_number_y),
+  //   .hcount_in(hcount_hdmi),
+  //   .vcount_in(vcount_hdmi),
+  //   .number(number[4][3]),
+  //   .draw_out(draw_number[3])
+  // );
 
 
 
+  // image_sprite_transparent_numbers_4 #(
+  //   .WIDTH(24),
+  //   .HEIGHT(24),
+  //   .NUM_IMGS(10)
+  // ) sprite_number_4(
+  //   .pixel_clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .x_in(circ_number_x),
+  //   .y_in(circ_number_y + (number_img_size + circ_number_spacing)*1),
+  //   .hcount_in(hcount_hdmi),
+  //   .vcount_in(vcount_hdmi),
+  //   .number(a_number[4][0]),
+  //   .draw_out(draw_number[4])
+  // );
 
-  image_sprite_transparent_numbers_8 #(
-    .WIDTH(24),
-    .HEIGHT(24),
-    .NUM_IMGS(10)
-  ) sprite_number_8(
-    .pixel_clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .x_in(circ_number_x),
-    .y_in(circ_number_y + (number_img_size + circ_number_spacing)*2),
-    .hcount_in(hcount_hdmi),
-    .vcount_in(vcount_hdmi),
-    .number(p_number[4][0]),
-    .draw_out(draw_number[8])
-  );
+  // image_sprite_transparent_numbers_5 #(
+  //   .WIDTH(24),
+  //   .HEIGHT(24),
+  //   .NUM_IMGS(10)
+  // ) sprite_number_5(
+  //   .pixel_clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .x_in(circ_number_x + (number_img_size + circ_number_spacing)*1),
+  //   .y_in(circ_number_y + (number_img_size + circ_number_spacing)*1),
+  //   .hcount_in(hcount_hdmi),
+  //   .vcount_in(vcount_hdmi),
+  //   .number(a_number[4][1]),
+  //   .draw_out(draw_number[5])
+  // );
 
-  image_sprite_transparent_numbers_9 #(
-    .WIDTH(24),
-    .HEIGHT(24),
-    .NUM_IMGS(10)
-  ) sprite_number_9(
-    .pixel_clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .x_in(circ_number_x + (number_img_size + circ_number_spacing)*1),
-    .y_in(circ_number_y + (number_img_size + circ_number_spacing)*2),
-    .hcount_in(hcount_hdmi),
-    .vcount_in(vcount_hdmi),
-    .number(p_number[4][1]),
-    .draw_out(draw_number[9])
-  );
+  // image_sprite_transparent_numbers_6 #(
+  //   .WIDTH(24),
+  //   .HEIGHT(24),
+  //   .NUM_IMGS(10)
+  // ) sprite_number_6(
+  //   .pixel_clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .x_in(circ_number_x + (number_img_size + circ_number_spacing)*2),
+  //   .y_in(circ_number_y + (number_img_size + circ_number_spacing)*1),
+  //   .hcount_in(hcount_hdmi),
+  //   .vcount_in(vcount_hdmi),
+  //   .number(a_number[4][2]),
+  //   .draw_out(draw_number[6])
+  // );
 
-  image_sprite_transparent_numbers_10 #(
-    .WIDTH(24),
-    .HEIGHT(24),
-    .NUM_IMGS(10)
-  ) sprite_number_10(
-    .pixel_clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .x_in(circ_number_x + (number_img_size + circ_number_spacing)*2),
-    .y_in(circ_number_y + (number_img_size + circ_number_spacing)*2),
-    .hcount_in(hcount_hdmi),
-    .vcount_in(vcount_hdmi),
-    .number(p_number[4][2]),
-    .draw_out(draw_number[10])
-  );
+  // image_sprite_transparent_numbers_7 #(
+  //   .WIDTH(24),
+  //   .HEIGHT(24),
+  //   .NUM_IMGS(10)
+  // ) sprite_number_7(
+  //   .pixel_clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .x_in(circ_number_x + (number_img_size + circ_number_spacing)*3),
+  //   .y_in(circ_number_y + (number_img_size + circ_number_spacing)*1),
+  //   .hcount_in(hcount_hdmi),
+  //   .vcount_in(vcount_hdmi),
+  //   .number(a_number[4][3]),
+  //   .draw_out(draw_number[7])
+  // );
 
-  image_sprite_transparent_numbers_11 #(
-    .WIDTH(24),
-    .HEIGHT(24),
-    .NUM_IMGS(10)
-  ) sprite_number_11(
-    .pixel_clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .x_in(circ_number_x + (number_img_size + circ_number_spacing)*3),
-    .y_in(circ_number_y + (number_img_size + circ_number_spacing)*2),
-    .hcount_in(hcount_hdmi),
-    .vcount_in(vcount_hdmi),
-    .number(p_number[4][3]),
-    .draw_out(draw_number[11])
-  );
+
+
+
+  // image_sprite_transparent_numbers_8 #(
+  //   .WIDTH(24),
+  //   .HEIGHT(24),
+  //   .NUM_IMGS(10)
+  // ) sprite_number_8(
+  //   .pixel_clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .x_in(circ_number_x),
+  //   .y_in(circ_number_y + (number_img_size + circ_number_spacing)*2),
+  //   .hcount_in(hcount_hdmi),
+  //   .vcount_in(vcount_hdmi),
+  //   .number(p_number[4][0]),
+  //   .draw_out(draw_number[8])
+  // );
+
+  // image_sprite_transparent_numbers_9 #(
+  //   .WIDTH(24),
+  //   .HEIGHT(24),
+  //   .NUM_IMGS(10)
+  // ) sprite_number_9(
+  //   .pixel_clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .x_in(circ_number_x + (number_img_size + circ_number_spacing)*1),
+  //   .y_in(circ_number_y + (number_img_size + circ_number_spacing)*2),
+  //   .hcount_in(hcount_hdmi),
+  //   .vcount_in(vcount_hdmi),
+  //   .number(p_number[4][1]),
+  //   .draw_out(draw_number[9])
+  // );
+
+  // image_sprite_transparent_numbers_10 #(
+  //   .WIDTH(24),
+  //   .HEIGHT(24),
+  //   .NUM_IMGS(10)
+  // ) sprite_number_10(
+  //   .pixel_clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .x_in(circ_number_x + (number_img_size + circ_number_spacing)*2),
+  //   .y_in(circ_number_y + (number_img_size + circ_number_spacing)*2),
+  //   .hcount_in(hcount_hdmi),
+  //   .vcount_in(vcount_hdmi),
+  //   .number(p_number[4][2]),
+  //   .draw_out(draw_number[10])
+  // );
+
+  // image_sprite_transparent_numbers_11 #(
+  //   .WIDTH(24),
+  //   .HEIGHT(24),
+  //   .NUM_IMGS(10)
+  // ) sprite_number_11(
+  //   .pixel_clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .x_in(circ_number_x + (number_img_size + circ_number_spacing)*3),
+  //   .y_in(circ_number_y + (number_img_size + circ_number_spacing)*2),
+  //   .hcount_in(hcount_hdmi),
+  //   .vcount_in(vcount_hdmi),
+  //   .number(p_number[4][3]),
+  //   .draw_out(draw_number[11])
+  // );
 
 
 
@@ -2343,18 +2486,18 @@ end
 
     // if sw[3], we get the original mask
     if(sw[2]) begin
-      mask_tot = mask_tot || mask;
+      mask_tot = mask_tot || frame_buff_raw; // --changed from mask
     end
   end
 
 
-  // TODO: make the mask that's output to the screen only the pixels that are output by ccl
+  // TODO: EDIT THE MASK SO THAT THE MASK IS RED!!!!!!!
   video_mux mvm(
     .bg_in(display_choice), //choose background
     .target_in(target_choice), //choose target
-    .camera_pixel_in({fb_red, fb_green, fb_blue}), //: needs (PS2)
-    .camera_y_in(y), //luminance : needs (PS6)
-    .channel_in(selected_channel), //current channel being drawn : needs (PS5)
+    .camera_pixel_in((frame_buff_raw == 1) ? 16'hFFFF : 0), //: needs (PS2) // CHANGED FROM {fb_red, fb_green, fb_blue}
+    .camera_y_in((frame_buff_raw == 1) ? 8'hFF : 0), //luminance : needs (PS6)
+    .channel_in(0), //current channel being drawn : needs (PS5)
     .thresholded_pixel_in(mask_tot), //one bit mask signal : needs (PS4)
     .crosshair_in({ch_red, ch_green, ch_blue}), //: needs (PS8)
     .com_sprite_pixel_in({img_red, img_green, img_blue}), //: needs (PS9) maybe?
@@ -2519,9 +2662,9 @@ end
   
   // set the LEDs that do stuff to the corresponding switches
   assign led[2:0] = sw[3:0];
-  assign led[4:3] = 0;
+  assign led[4:3] = sw[4:3];
   assign led[7:5] = sw[7:5];
-  assign led[15:8] = 0;
+  assign led[15:8] = sw[15:8];
 
 endmodule // top_level
 
