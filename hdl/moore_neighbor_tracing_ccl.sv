@@ -27,9 +27,28 @@ module moore_neighbor_tracing_ccl #(
                          
                          output logic [$clog2(WIDTH*HEIGHT)-1:0] perimeter,
                          output logic busy_out,
-                         output logic valid_out);
+                         output logic valid_out,
+                         
+                         output logic [10:0] scan_x_out,
+                         output logic [9:0] scan_y_out);
 	
 
+
+     always_comb begin
+          if(state == TRACING) begin
+               // scan_x_out = scan_x;
+               // scan_y_out = scan_y;
+
+               // scan_x_out = trace_start_x;
+               // scan_y_out = trace_start_y;
+
+               if(perimeter == 201) begin
+                    scan_x_out = scan_x;
+                    scan_y_out = scan_y;
+               end
+               //
+          end
+     end
 
 
 
@@ -52,7 +71,7 @@ module moore_neighbor_tracing_ccl #(
      logic [10:0] trace_start_x;        // where the trace started (return to start --> terminate)
      logic [9:0] trace_start_y;
      logic trace_started;               // has the trace started yet?
-     logic [1:0] read_wait;             // it takes 2 cycles to read from frame buffers, so wait for 2 cycles
+     logic [2:0] read_wait;             // it takes 2 cycles to read from frame buffers, so wait for 2 cycles
      enum {UP, DOWN, LEFT, RIGHT} from; // where we came from in the moore neighbor tracing influences order we check neighbors
 
 
@@ -68,66 +87,66 @@ module moore_neighbor_tracing_ccl #(
      // COMBINATIONAL LOGIC: handle setting frame buffer inputs and address outputs
      always_comb begin
 
-          if(rst_in) begin
-               adj_raw = 0;
-               adj = 0;
+          // if(rst_in) begin
+          //      adj_raw = 0;
+          //      adj = 0;
 
-               addra_1 = 0;   // upleft
-               addrb_1 = 0;   // up
-               addra_2 = 0;   // upright
-               addrb_2 = 0;   // right
-               addra_3 = 0;   // downright
-               addrb_3 = 0;   // down
-               addra_4 = 0;   // downleft
-               addrb_4 = 0;   // left
+          //      addra_1 = 0;   // upleft
+          //      addrb_1 = 0;   // up
+          //      addra_2 = 0;   // upright
+          //      addrb_2 = 0;   // right
+          //      addra_3 = 0;   // downright
+          //      addrb_3 = 0;   // down
+          //      addra_4 = 0;   // downleft
+          //      addrb_4 = 0;   // left
 
-               frame_buff_pixel = 0;
+          //      frame_buff_pixel = 0;
 
-          end else begin
-               // pull all the raw frame buffer neighbor inputs
-               adj_raw[0][0] = pixel_upleft;
-               adj_raw[0][1] = pixel_up;
-               adj_raw[0][2] = pixel_upright;
-               adj_raw[1][2] = pixel_right;
-               adj_raw[2][2] = pixel_downright;
-               adj_raw[2][1] = pixel_down;
-               adj_raw[2][0] = pixel_downleft;
-               adj_raw[1][0] = pixel_right;
-               adj_raw[1][1] = 1; // doesn't matter
+          // end else begin
+          // pull all the raw frame buffer neighbor inputs
+          adj_raw[0][0] = pixel_upleft;      // up left
+          adj_raw[0][1] = pixel_up;          // up
+          adj_raw[0][2] = pixel_upright;     // up right
+          adj_raw[1][2] = pixel_right;       // right
+          adj_raw[2][2] = pixel_downright;   // down right
+          adj_raw[2][1] = pixel_down;        // down
+          adj_raw[2][0] = pixel_downleft;    // down left
+          adj_raw[1][0] = pixel_left;        // left
+          adj_raw[1][1] = 1; // doesn't matter
 
 
 
-               if(state == SEARCHING) begin
-                    
-                    // UPLEFT IS CENTER DURING SEARCHING
-                    addra_1 = scan_x + scan_y * WIDTH; // during searching, we pull values from the center (though we're reading from the upleft port)
-                    frame_buff_pixel = pixel_upleft; // the center during scanning comes from upleft
- 
-               end else if (state == TRACING) begin
+          if(state == SEARCHING) begin
+               
+               // UPLEFT IS CENTER DURING SEARCHING
+               addra_1 = scan_x + scan_y * WIDTH; // during searching, we pull values from the center (though we're reading from the upleft port)
+               frame_buff_pixel = pixel_upleft; // the center during scanning comes from upleft
 
-                    // set output addresses to read from
-                    addra_1 = (scan_x != 0 && scan_y != 0)? (scan_x-1) + (scan_y-1)*WIDTH : 0;                  // up left
-                    addrb_1 = (scan_y != 0)? (scan_x) + (scan_y-1)*WIDTH : 0;                                   // up
-                    addra_2 = (scan_x != WIDTH-1 && scan_y != 0)? (scan_x+1) + (scan_y-1)*WIDTH : 0;          // up right
-                    addrb_2 = (scan_x != WIDTH-1)? (scan_x+1) + (scan_y)*WIDTH : 0;                           // right
-                    addra_3 = (scan_x != WIDTH-1 && scan_y != HEIGHT-1)? (scan_x+1) + (scan_y+1)*WIDTH : 0;   // down right
-                    addrb_3 = (scan_y != HEIGHT-1)? (scan_x) + (scan_y+1)*WIDTH : 0;                          // down
-                    addra_4 = (scan_x != 0 && scan_y != HEIGHT-1)? (scan_x-1) + (scan_y+1)*WIDTH : 0;         // down right
-                    addrb_4 = (scan_x != 0)? (scan_x-1) + (scan_y)*WIDTH : 0;                                 // left
+          end else if (state == TRACING) begin
 
-                    // actual adjacent pixels
-                    adj[0][0] = (scan_x != 0 && scan_y != 0)? adj_raw[0][0] : 0;                              // up left
-                    adj[0][1] = (scan_y != 0)? adj_raw[0][1] : 0;                                             // up
-                    adj[0][2] = (scan_x != WIDTH-1 && scan_y != 0)? adj_raw[0][2] : 0;                        // up right
-                    adj[1][2] = (scan_x != WIDTH-1)? adj_raw[1][2] : 0;                                       // right
-                    adj[2][2] = (scan_x != WIDTH-1 && scan_y != HEIGHT-1)? adj_raw[2][2] : 0;                 // down right
-                    adj[2][1] = (scan_y != HEIGHT-1)? adj_raw[2][1] : 0;                                      // down
-                    adj[2][0] = (scan_x != 0 && scan_y != HEIGHT-1)? adj_raw[2][0] : 0;                       // down right
-                    adj[1][0] = (scan_x != 0)? adj_raw[1][0] : 0;                                             // left
-                    adj[1][1] = adj_raw[1][1]; // doesn't matter
+               // set output addresses to read from
+               addra_1 = (scan_x != 0 && scan_y != 0)? (scan_x-1) + (scan_y-1)*WIDTH : 0;                // up left
+               addrb_1 = (scan_y != 0)? (scan_x) + (scan_y-1)*WIDTH : 0;                                 // up
+               addra_2 = (scan_x != WIDTH-1 && scan_y != 0)? (scan_x+1) + (scan_y-1)*WIDTH : 0;          // up right
+               addrb_2 = (scan_x != WIDTH-1)? (scan_x+1) + (scan_y)*WIDTH : 0;                           // right
+               addra_3 = (scan_x != WIDTH-1 && scan_y != HEIGHT-1)? (scan_x+1) + (scan_y+1)*WIDTH : 0;   // down right
+               addrb_3 = (scan_y != HEIGHT-1)? (scan_x) + (scan_y+1)*WIDTH : 0;                          // down
+               addra_4 = (scan_x != 0 && scan_y != HEIGHT-1)? (scan_x-1) + (scan_y+1)*WIDTH : 0;         // down right
+               addrb_4 = (scan_x != 0)? (scan_x-1) + (scan_y)*WIDTH : 0;                                 // left
 
-               end
+               // actual adjacent pixels
+               adj[0][0] = (scan_x != 0 && scan_y != 0)? adj_raw[0][0] : 0;                              // up left
+               adj[0][1] = (scan_y != 0)? adj_raw[0][1] : 0;                                             // up
+               adj[0][2] = (scan_x != WIDTH-1 && scan_y != 0)? adj_raw[0][2] : 0;                        // up right
+               adj[1][2] = (scan_x != WIDTH-1)? adj_raw[1][2] : 0;                                       // right
+               adj[2][2] = (scan_x != WIDTH-1 && scan_y != HEIGHT-1)? adj_raw[2][2] : 0;                 // down right
+               adj[2][1] = (scan_y != HEIGHT-1)? adj_raw[2][1] : 0;                                      // down
+               adj[2][0] = (scan_x != 0 && scan_y != HEIGHT-1)? adj_raw[2][0] : 0;                       // down right
+               adj[1][0] = (scan_x != 0)? adj_raw[1][0] : 0;                                             // left
+               adj[1][1] = adj_raw[1][1]; // doesn't matter
+
           end
+          // end
      end
 
 
@@ -219,7 +238,7 @@ module moore_neighbor_tracing_ccl #(
 
                          if(trace_started && scan_x == trace_start_x && scan_y == trace_start_y) begin // if we're back to the start
                               state <= OUTPUT;
-                         end else if(read_wait < 2) begin // we need to wait 2 cycles to read from the buffer
+                         end else if(read_wait < 2) begin // we need to wait 2 cycles to read from the buffer // extra cycle just cuz
                               read_wait <= read_wait + 1;
                          end else begin
                               perimeter <= perimeter + 1;

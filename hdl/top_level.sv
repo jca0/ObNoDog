@@ -607,8 +607,8 @@ module top_level
                  .rst_in(sys_rst_pixel),
                  .lt_in((perim_temp[0] > 8'hFF)? 8'hFF : perim_temp[0][7:0]), // changed from lower, upper threshold
                  .ut_in((area_temp[0] > 8'hFF)? 8'hFF : area_temp[0][7:0]),
-                 //.channel_sel_in((circ_temp[0] > 8'hFF)? 8'hFF : circ_temp[0][7:0]),
-                 .channel_sel_in(max_seen_label),
+                 .channel_sel_in((circ_temp[0] > 8'hFF)? 8'hFF : circ_temp[0][7:0]),
+                 //.channel_sel_in(max_seen_label),
                  .cat_out(ss_c),
                  .an_out({ss0_an, ss1_an})
   );
@@ -705,7 +705,7 @@ module top_level
     //   ccl_moore_addr_1 = 0;
     //   // ccl_moore_addr_2 = 0;
     // end else begin
-    if(ccl_pixel_valid) begin
+    if(!moore_busy_0) begin
       //fb0
       ccl_moore_addr_0[0] = ccl_x_out + ccl_y_out*320;
       ccl_moore_addr_0[2] = ccl_moore_addr_0[0];
@@ -718,16 +718,6 @@ module top_level
       ccl_moore_addr_0[7] = 0;
 
 
-      // // fb1
-      ccl_moore_addr_1[0] = ccl_x_out + ccl_y_out*320;
-      ccl_moore_addr_1[2] = ccl_moore_addr_1[0];
-      ccl_moore_addr_1[4] = ccl_moore_addr_1[0];
-      ccl_moore_addr_1[6] = ccl_moore_addr_1[0];
-
-      ccl_moore_addr_1[1] = 0;
-      ccl_moore_addr_1[3] = 0;
-      ccl_moore_addr_1[5] = 0;
-      ccl_moore_addr_1[7] = 0;
 
 
       // //fb2
@@ -752,16 +742,6 @@ module top_level
       ccl_moore_addr_0[7] = moore_addrs_0[7];
 
 
-      ccl_moore_addr_1[0] = moore_addrs_1[0];
-      ccl_moore_addr_1[1] = moore_addrs_1[1];
-      ccl_moore_addr_1[2] = moore_addrs_1[2];
-      ccl_moore_addr_1[3] = moore_addrs_1[3];
-      ccl_moore_addr_1[4] = moore_addrs_1[4];
-      ccl_moore_addr_1[5] = moore_addrs_1[5];
-      ccl_moore_addr_1[6] = moore_addrs_1[6];
-      ccl_moore_addr_1[7] = moore_addrs_1[7];
-
-
 
       // ccl_moore_addr_2[0] = moore_addrs_2[0];
       // ccl_moore_addr_2[1] = moore_addrs_2[1];
@@ -772,6 +752,35 @@ module top_level
       // ccl_moore_addr_2[6] = moore_addrs_2[6];
       // ccl_moore_addr_2[7] = moore_addrs_2[7];
     end
+
+
+
+    if(!moore_busy_1) begin
+
+      // // fb1
+      ccl_moore_addr_1[0] = ccl_x_out + ccl_y_out*320;
+      ccl_moore_addr_1[2] = ccl_moore_addr_1[0];
+      ccl_moore_addr_1[4] = ccl_moore_addr_1[0];
+      ccl_moore_addr_1[6] = ccl_moore_addr_1[0];
+
+      ccl_moore_addr_1[1] = 0;
+      ccl_moore_addr_1[3] = 0;
+      ccl_moore_addr_1[5] = 0;
+      ccl_moore_addr_1[7] = 0;
+
+    end else begin
+
+      
+      ccl_moore_addr_1[0] = moore_addrs_1[0];
+      ccl_moore_addr_1[1] = moore_addrs_1[1];
+      ccl_moore_addr_1[2] = moore_addrs_1[2];
+      ccl_moore_addr_1[3] = moore_addrs_1[3];
+      ccl_moore_addr_1[4] = moore_addrs_1[4];
+      ccl_moore_addr_1[5] = moore_addrs_1[5];
+      ccl_moore_addr_1[6] = moore_addrs_1[6];
+      ccl_moore_addr_1[7] = moore_addrs_1[7];
+
+    end
     // end
   end
 
@@ -781,13 +790,16 @@ module top_level
   // FBs to hold Moore data for Moore 0
   xilinx_true_dual_port_read_first_2_clock_ram
     #(.RAM_WIDTH(1),
-    .RAM_DEPTH(320*180))
+    .RAM_DEPTH(320*180),
+    .RAM_PERFORMANCE("HIGH_LATENCY"),
+    .INIT_FILE("moore_bram_test_circle.mem") 
+    )
     moore_fb_00
     (
     // PORT A
     .addra(ccl_moore_addr_0[0]), 
     .clka(clk_pixel),
-    .wea(ccl_pixel_valid),
+    .wea(0),
     .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[0]),
     .ena(1'b1),
     .douta(ccl_moore_pixels_0[0][0]),
@@ -807,13 +819,16 @@ module top_level
 
   xilinx_true_dual_port_read_first_2_clock_ram
     #(.RAM_WIDTH(1),
-    .RAM_DEPTH(320*180))
+    .RAM_DEPTH(320*180), 
+    .RAM_PERFORMANCE("HIGH_LATENCY"),
+    .INIT_FILE("moore_bram_test_circle.mem") 
+    )
     moore_fb_01
     (
     // PORT A
     .addra(ccl_moore_addr_0[2]), 
     .clka(clk_pixel),
-    .wea(ccl_pixel_valid),
+    .wea(0),
     .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[0]),
     .ena(1'b1),
     .douta(ccl_moore_pixels_0[0][2]),
@@ -833,13 +848,16 @@ module top_level
 
   xilinx_true_dual_port_read_first_2_clock_ram
     #(.RAM_WIDTH(1),
-    .RAM_DEPTH(320*180))
+    .RAM_DEPTH(320*180), 
+    .RAM_PERFORMANCE("HIGH_LATENCY"),
+    .INIT_FILE("moore_bram_test_circle.mem") 
+    )
     moore_fb_02
     (
     // PORT A
     .addra(ccl_moore_addr_0[4]), 
     .clka(clk_pixel),
-    .wea(ccl_pixel_valid),
+    .wea(0),
     .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[0]),
     .ena(1'b1),
     .douta(ccl_moore_pixels_0[2][2]),
@@ -859,13 +877,16 @@ module top_level
 
   xilinx_true_dual_port_read_first_2_clock_ram
     #(.RAM_WIDTH(1),
-    .RAM_DEPTH(320*180))
+    .RAM_DEPTH(320*180),
+    .RAM_PERFORMANCE("HIGH_LATENCY"),
+    .INIT_FILE("moore_bram_test_circle.mem") 
+    )
     moore_fb_03
     (
     // PORT A
     .addra(ccl_moore_addr_0[6]), 
     .clka(clk_pixel),
-    .wea(ccl_pixel_valid),
+    .wea(0),
     .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[0]),
     .ena(1'b1),
     .douta(ccl_moore_pixels_0[2][0]),
@@ -1214,6 +1235,9 @@ xilinx_true_dual_port_read_first_2_clock_ram
   logic [15:0] perimeter_0;
   logic moore_busy_0;
   logic moore_valid_0;
+  logic [10:0] moore_scan_x_0;
+  logic [9:0] moore_scan_y_0;
+
   moore_neighbor_tracing_ccl #(
     .WIDTH(320),
     .HEIGHT(180))
@@ -1241,7 +1265,10 @@ xilinx_true_dual_port_read_first_2_clock_ram
                          
     .perimeter(perimeter_0),
     .busy_out(moore_busy_0),
-    .valid_out(moore_valid_0)
+    .valid_out(moore_valid_0),
+
+    .scan_x_out(moore_scan_x_0),
+    .scan_y_out(moore_scan_y_0)
   );
 
 
@@ -1250,35 +1277,35 @@ xilinx_true_dual_port_read_first_2_clock_ram
   logic [15:0] perimeter_1;
   logic moore_busy_1;
   logic moore_valid_1;
-  moore_neighbor_tracing_ccl #(
-    .WIDTH(320),
-    .HEIGHT(180))
-    mnt_ccl_1
-    (
-    .clk_in(clk_pixel),
-    .rst_in(sys_rst_pixel),
-    .ready_in(ccl_valid_out),
-    .pixel_upleft(ccl_moore_pixels_1[0][0]), // frame buffer direct outputs: neighboring pixels
-    .pixel_up(ccl_moore_pixels_1[0][1]),
-    .pixel_upright(ccl_moore_pixels_1[0][2]),
-    .pixel_right(ccl_moore_pixels_1[1][2]),
-    .pixel_downright(ccl_moore_pixels_1[2][2]),
-    .pixel_down(ccl_moore_pixels_1[2][1]),
-    .pixel_downleft(ccl_moore_pixels_1[2][0]),
-    .pixel_left(ccl_moore_pixels_1[1][0]),
-    .addra_1(moore_addrs_1[0]),
-    .addrb_1(moore_addrs_1[1]),
-    .addra_2(moore_addrs_1[2]),
-    .addrb_2(moore_addrs_1[3]),
-    .addra_3(moore_addrs_1[4]),
-    .addrb_3(moore_addrs_1[5]),
-    .addra_4(moore_addrs_1[6]),
-    .addrb_4(moore_addrs_1[7]),
+  // moore_neighbor_tracing_ccl #(
+  //   .WIDTH(320),
+  //   .HEIGHT(180))
+  //   mnt_ccl_1
+  //   (
+  //   .clk_in(clk_pixel),
+  //   .rst_in(sys_rst_pixel),
+  //   .ready_in(ccl_valid_out),
+  //   .pixel_upleft(ccl_moore_pixels_1[0][0]), // frame buffer direct outputs: neighboring pixels
+  //   .pixel_up(ccl_moore_pixels_1[0][1]),
+  //   .pixel_upright(ccl_moore_pixels_1[0][2]),
+  //   .pixel_right(ccl_moore_pixels_1[1][2]),
+  //   .pixel_downright(ccl_moore_pixels_1[2][2]),
+  //   .pixel_down(ccl_moore_pixels_1[2][1]),
+  //   .pixel_downleft(ccl_moore_pixels_1[2][0]),
+  //   .pixel_left(ccl_moore_pixels_1[1][0]),
+  //   .addra_1(moore_addrs_1[0]),
+  //   .addrb_1(moore_addrs_1[1]),
+  //   .addra_2(moore_addrs_1[2]),
+  //   .addrb_2(moore_addrs_1[3]),
+  //   .addra_3(moore_addrs_1[4]),
+  //   .addrb_3(moore_addrs_1[5]),
+  //   .addra_4(moore_addrs_1[6]),
+  //   .addrb_4(moore_addrs_1[7]),
                          
-    .perimeter(perimeter_1),
-    .busy_out(moore_busy_1),
-    .valid_out(moore_valid_1)
-  );
+  //   .perimeter(perimeter_1),
+  //   .busy_out(moore_busy_1),
+  //   .valid_out(moore_valid_1)
+  // );
 
 
 
@@ -1545,11 +1572,21 @@ xilinx_true_dual_port_read_first_2_clock_ram
       area_temp[0] <= 0;
       perim_temp[0] <= 0;
     end else if (sw[4:3] == 2'b10) begin // TODO: Remove this temp state
-      if(ccl_pixel_valid || ccl_valid_out) begin
-        circ_temp[0] <= largest_labels[0];
-        area_temp[0] <= ccl_pixel_label;
-        perim_temp[0] <= ccl_pixel_valid;
-      end
+      // if(ccl_pixel_valid || ccl_valid_out) begin
+      // area_temp[0] <= ccl_pixel_label;
+      // circ_temp[0] <= largest_labels[0];
+      // perim_temp[0] <= ccl_pixel_valid;
+
+
+      // area_temp[0] <= area_temp_0; //{3'b0, moore_busy_0, 3'b0, ccl_busy_out};
+      // perim_temp[0] <= 8'hCD;
+      // circ_temp[0] <= {3'b0, moore_busy_0, 3'b0, ccl_busy_out};
+
+      area_temp[0] <= {1'b0, moore_scan_x_0[10:4]};
+      perim_temp[0] <= {moore_scan_x_0[3:0], 2'b0, moore_scan_y_0[9:8]};
+      circ_temp[0] <= moore_scan_y_0[7:0];
+
+      // end
     end
 
 
