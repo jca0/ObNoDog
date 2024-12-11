@@ -27,7 +27,8 @@ module ccl #(
     output logic [1:0][15:0]    com_y_out,          // Array of blob centroid y-coordinates
     output logic [15:0]         curr_pix_label,
     output logic                curr_pix_valid,
-    output logic [3:0]          curr_state
+    output logic [3:0]          curr_state,
+    output logic [6:0]          max_seen_label
 
 );
 
@@ -117,6 +118,11 @@ localparam FB_SIZE = $clog2(FB_DEPTH);
 // ===== FIRST_PASS =====
 
 
+always_comb begin
+    max_seen_label = max_passes;
+end
+
+
 always_ff @(posedge clk_in) begin
     if (rst_in) begin
         state <= IDLE;
@@ -201,25 +207,13 @@ always_ff @(posedge clk_in) begin
                             if (read_signal) begin
                                 // READ FROM BRAM
                                 // find min label if any neighbors are labeled
-                                if(w_pixel_label > 0 && 
-                                    (w_pixel_label <= nw_pixel_label || nw_pixel_label == 0) && 
-                                    (w_pixel_label <= n_pixel_label || n_pixel_label == 0) &&
-                                    (w_pixel_label <= ne_pixel_label || ne_pixel_label == 0)) begin
+                                if(w_pixel_label > 0 && (w_pixel_label <= nw_pixel_label || nw_pixel_label == 0) && (w_pixel_label <= n_pixel_label || n_pixel_label == 0) && (w_pixel_label <= ne_pixel_label || ne_pixel_label == 0)) begin
                                     min_label <= w_pixel_label;
-                                end else if(nw_pixel_label > 0 && 
-                                                (nw_pixel_label <= w_pixel_label || w_pixel_label == 0) && 
-                                                (nw_pixel_label <= n_pixel_label || n_pixel_label == 0) && 
-                                                (nw_pixel_label <= ne_pixel_label || ne_pixel_label == 0)) begin
+                                end else if(nw_pixel_label > 0 && (nw_pixel_label <= w_pixel_label || w_pixel_label == 0) && (nw_pixel_label <= n_pixel_label || n_pixel_label == 0) && (nw_pixel_label <= ne_pixel_label || ne_pixel_label == 0)) begin
                                     min_label <= nw_pixel_label;
-                                end else if(n_pixel_label > 0 && 
-                                                (n_pixel_label <= w_pixel_label || w_pixel_label == 0) && 
-                                                (n_pixel_label <= nw_pixel_label || nw_pixel_label == 0) && 
-                                                (n_pixel_label <= ne_pixel_label || ne_pixel_label == 0)) begin
+                                end else if(n_pixel_label > 0 && (n_pixel_label <= w_pixel_label || w_pixel_label == 0) && (n_pixel_label <= nw_pixel_label || nw_pixel_label == 0) && (n_pixel_label <= ne_pixel_label || ne_pixel_label == 0)) begin
                                     min_label <= n_pixel_label;
-                                end else if(ne_pixel_label > 0 && 
-                                                (ne_pixel_label <= w_pixel_label || w_pixel_label == 0) && 
-                                                (ne_pixel_label <= nw_pixel_label || nw_pixel_label == 0) && 
-                                                (ne_pixel_label <= n_pixel_label || n_pixel_label == 0)) begin
+                                end else if(ne_pixel_label > 0 && (ne_pixel_label <= w_pixel_label || w_pixel_label == 0) && (ne_pixel_label <= nw_pixel_label || nw_pixel_label == 0) && (ne_pixel_label <= n_pixel_label || n_pixel_label == 0)) begin
                                     min_label <= ne_pixel_label;
                                 end else begin
                                     min_label <= 6'b111111;
@@ -256,8 +250,7 @@ always_ff @(posedge clk_in) begin
                                     //     equiv_table[ne_pixel_label] <= min_label;
                                     // end
 
-                                    // MUST BE WRONG
-                                    equiv_table[min_label] <= min_label;
+                                    equiv_table[curr_label] <= min_label; // TODO: WHAT THE FUCK IS THIS???????????????????
                                     area_table[min_label] <= area_table[min_label] + 1;
                                     sum_x_table[min_label] <= sum_x_table[min_label] + curr_x;
                                     sum_y_table[min_label] <= sum_y_table[min_label] + curr_y;
@@ -355,8 +348,9 @@ always_ff @(posedge clk_in) begin
                 areas[equiv_table[resolve_index]] <= area_table[equiv_table[resolve_index]];
                 x_sums[equiv_table[resolve_index]] <= sum_x_table[equiv_table[resolve_index]];
                 y_sums[equiv_table[resolve_index]] <= sum_y_table[equiv_table[resolve_index]];
-                if (resolve_index == max_passes - 1) begin
-                    resolve_index <= 0;
+
+                if (resolve_index >= max_passes) begin
+                    // resolve_index <= 0;
                     // resolve_pass <= resolve_pass + 1;
                     // if (resolve_pass == max_passes) begin
                     state <= PRUNE;
