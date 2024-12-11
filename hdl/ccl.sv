@@ -201,13 +201,25 @@ always_ff @(posedge clk_in) begin
                             if (read_signal) begin
                                 // READ FROM BRAM
                                 // find min label if any neighbors are labeled
-                                if(w_pixel_label > 0 && w_pixel_label <= nw_pixel_label && w_pixel_label <= n_pixel_label && w_pixel_label <= ne_pixel_label) begin
+                                if(w_pixel_label > 0 && 
+                                    (w_pixel_label <= nw_pixel_label || nw_pixel_label == 0) && 
+                                    (w_pixel_label <= n_pixel_label || n_pixel_label == 0) &&
+                                    (w_pixel_label <= ne_pixel_label || ne_pixel_label == 0)) begin
                                     min_label <= w_pixel_label;
-                                end else if(nw_pixel_label > 0 && nw_pixel_label <= w_pixel_label && nw_pixel_label <= n_pixel_label && nw_pixel_label <= ne_pixel_label) begin
+                                end else if(nw_pixel_label > 0 && 
+                                                (nw_pixel_label <= w_pixel_label || w_pixel_label == 0) && 
+                                                (nw_pixel_label <= n_pixel_label || n_pixel_label == 0) && 
+                                                (nw_pixel_label <= ne_pixel_label || ne_pixel_label == 0)) begin
                                     min_label <= nw_pixel_label;
-                                end else if(n_pixel_label > 0 && n_pixel_label <= w_pixel_label && n_pixel_label <= nw_pixel_label && n_pixel_label <= ne_pixel_label) begin
+                                end else if(n_pixel_label > 0 && 
+                                                (n_pixel_label <= w_pixel_label || w_pixel_label == 0) && 
+                                                (n_pixel_label <= nw_pixel_label || nw_pixel_label == 0) && 
+                                                (n_pixel_label <= ne_pixel_label || ne_pixel_label == 0)) begin
                                     min_label <= n_pixel_label;
-                                end else if(ne_pixel_label > 0 && ne_pixel_label <= w_pixel_label && ne_pixel_label <= nw_pixel_label && ne_pixel_label <= n_pixel_label) begin
+                                end else if(ne_pixel_label > 0 && 
+                                                (ne_pixel_label <= w_pixel_label || w_pixel_label == 0) && 
+                                                (ne_pixel_label <= nw_pixel_label || nw_pixel_label == 0) && 
+                                                (ne_pixel_label <= n_pixel_label || n_pixel_label == 0)) begin
                                     min_label <= ne_pixel_label;
                                 end else begin
                                     min_label <= 6'b111111;
@@ -244,7 +256,8 @@ always_ff @(posedge clk_in) begin
                                     //     equiv_table[ne_pixel_label] <= min_label;
                                     // end
 
-                                    equiv_table[curr_label] <= min_label;
+                                    // MUST BE WRONG
+                                    equiv_table[min_label] <= min_label;
                                     area_table[min_label] <= area_table[min_label] + 1;
                                     sum_x_table[min_label] <= sum_x_table[min_label] + curr_x;
                                     sum_y_table[min_label] <= sum_y_table[min_label] + curr_y;
@@ -342,9 +355,8 @@ always_ff @(posedge clk_in) begin
                 areas[equiv_table[resolve_index]] <= area_table[equiv_table[resolve_index]];
                 x_sums[equiv_table[resolve_index]] <= sum_x_table[equiv_table[resolve_index]];
                 y_sums[equiv_table[resolve_index]] <= sum_y_table[equiv_table[resolve_index]];
-
-                if (resolve_index >= max_passes) begin
-                    // resolve_index <= 0;
+                if (resolve_index == max_passes - 1) begin
+                    resolve_index <= 0;
                     // resolve_pass <= resolve_pass + 1;
                     // if (resolve_pass == max_passes) begin
                     state <= PRUNE;
