@@ -18,7 +18,6 @@ module ccl #(
 
     output logic                valid_out,          // Valid output signal
     output logic                busy_out,           // Busy output signal
-
     output logic [1:0][15:0]    blob_labels,        // Array of distinct blob labels
     output logic [10:0]         x_out,
     output logic [9:0]          y_out,
@@ -28,7 +27,9 @@ module ccl #(
     output logic [15:0]         curr_pix_label,
     output logic                curr_pix_valid,
     output logic [3:0]          curr_state,
-    output logic [6:0]          max_seen_label
+    output logic [6:0]          curr_label_out,
+    output logic [6:0]          min_label_out,
+    output logic [7:0]          pix_label_out
 
 );
 
@@ -118,9 +119,10 @@ localparam FB_SIZE = $clog2(FB_DEPTH);
 // ===== FIRST_PASS =====
 
 
-always_comb begin
-    max_seen_label = max_passes;
-end
+
+assign curr_label_out = max_passes;
+// assign min_label_out = min_label;
+assign pix_label_out = w_pixel_label[7:0];
 
 
 always_ff @(posedge clk_in) begin
@@ -133,8 +135,7 @@ always_ff @(posedge clk_in) begin
         
         busy_out <= 0;
         valid_out <= 0;
-        blob_labels <= 0;
-        curr_label <= 0;
+        curr_label <= 1;
 
         // initially label maps to itself
         for (int i = 0; i < MAX_LABELS+1; i=i+1) begin
@@ -159,6 +160,7 @@ always_ff @(posedge clk_in) begin
                 area_table <= 0;
                 sum_x_table <= 0;
                 sum_y_table <= 0;
+                areas <= 0;
 
 
 
@@ -172,6 +174,7 @@ always_ff @(posedge clk_in) begin
                 // stores masked frame in a frame buffer
                 if (x_in == WIDTH-1 && y_in == HEIGHT-1) begin
                     state <= FIRST_PASS;
+                    read_signal <= 1;
                     curr_x <= 0;
                     curr_y <= 0;
                     curr_label <= 1;
@@ -195,10 +198,14 @@ always_ff @(posedge clk_in) begin
                 if (bram_wait < 2) begin
                     // read_signal <= 1;
                     bram_wait <= bram_wait + 1;
+                    // if(bram_wait == 2 && mask_a_out)  begin
+                    //     read_signal <= 1;
+                    // end
                 end else begin
                     bram_wait <= 0;
                     if (mask_a_out) begin // IF WE HAVE TO LABEL
 
+                        // READING FROM LABEL BRAMS
                         if(read_neighbor_wait < 6) begin // TODO: think harder about how many cycles we need
                             read_neighbor_wait <= read_neighbor_wait + 1;
                         end else begin // IF WE'VE READ FROM ALL THE BRAMS & HAVE NEIGHBORS
@@ -232,13 +239,14 @@ always_ff @(posedge clk_in) begin
                                 end
                                 
                                 read_signal <= 0; // write next cycle
+                                min_label_out <= min_label;
                             end else begin // when we write to BRAM
                                 // STORE INTO BRAM
                                 // if no neighbors are labeled, assign new label
                                 if (min_label == 6'b111111) begin
                                     // store label of current pixel in BRAM (ADD CODE)
                                     equiv_table[curr_label] <= curr_label;
-                                    area_table[curr_label] <= area_table[curr_label] + 1;
+                                    area_table[curr_label] <= area_table[curr_label] + 1; // UNCOMMENT THIS LATER
                                     sum_x_table[curr_label] <= sum_x_table[curr_label] + curr_x;
                                     sum_y_table[curr_label] <= sum_y_table[curr_label] + curr_y;
 
@@ -249,20 +257,18 @@ always_ff @(posedge clk_in) begin
                                 end else begin
                                     // the minimum label should be set for all neighbors
                                     // Should be handled in resolve equivalences? to deal with area mismatches
-                                    // if (w_pixel_label > 0) begin
-                                    //     equiv_table[w_pixel_label] <= min_label;
-                                    // end
-                                    // if (nw_pixel_label > 0) begin
-                                    //     equiv_table[nw_pixel_label] <= min_label;
-                                    // end
-                                    // if (n_pixel_label > 0) begin
-                                    //     equiv_table[n_pixel_label] <= min_label;
-                                    // end
-                                    // if (ne_pixel_label > 0) begin
-                                    //     equiv_table[ne_pixel_label] <= min_label;
-                                    // end
-
-                                    // equiv_table[curr_label] <= min_label; // TODO: WHAT THE FUCK IS THIS???????????????????
+                                    if (w_pixel_label > 0) begin
+                                        equiv_table[w_pixel_label] <= min_label;
+                                    end
+                                    if (nw_pixel_label > 0) begin
+                                        equiv_table[nw_pixel_label] <= min_label;
+                                    end
+                                    if (n_pixel_label > 0) begin
+                                        equiv_table[n_pixel_label] <= min_label;
+                                    end
+                                    if (ne_pixel_label > 0) begin
+                                        equiv_table[ne_pixel_label] <= min_label;
+                                    end
                                     area_table[min_label] <= area_table[min_label] + 1;
                                     sum_x_table[min_label] <= sum_x_table[min_label] + curr_x;
                                     sum_y_table[min_label] <= sum_y_table[min_label] + curr_y;
@@ -271,6 +277,7 @@ always_ff @(posedge clk_in) begin
                                 read_signal <= 1; // read next cycle 
 
                                 // UPDATE X AND Y
+                                read_neighbor_wait <= 0;
                                 if (curr_x == WIDTH-1) begin
                                     curr_x <= 0;
                                     if (curr_y == HEIGHT-1) begin
@@ -289,9 +296,10 @@ always_ff @(posedge clk_in) begin
                             end
                         end
                     end else begin // mask_a_out
-                        read_signal <= 0;
+                        read_signal <= 1;
 
                         // UPDATE X AND Y
+                        read_neighbor_wait <= 0;
                         if (curr_x == WIDTH-1) begin
                             curr_x <= 0;
                             if (curr_y == HEIGHT-1) begin
@@ -495,7 +503,7 @@ always_ff @(posedge clk_in) begin
 
             TL_FRAME: begin
                 if(read_wait_tl == 2) begin
-                    valid_label_tl <= 1;
+                    valid_label_tl <= 0;
                     read_wait_tl <= 0;
                     if(x_tl == WIDTH-1) begin
                         x_tl <= 0;
@@ -509,7 +517,11 @@ always_ff @(posedge clk_in) begin
                         x_tl <= x_tl + 1;
                     end
                 end else begin
-                    valid_label_tl <= 0;
+                    if(read_wait_tl == 1) begin
+                        valid_label_tl <= 1;
+                    end else begin
+                        valid_label_tl <= 0;
+                    end
                     read_wait_tl <= read_wait_tl + 1;
                 end
                 // read through BRAM based on the value
@@ -613,7 +625,7 @@ always_comb begin
                 end
             end else begin
                 // if we need to store a label to BRAM, decide what label to store
-                if(min_label == 6'b111111) begin
+                if(min_label == 6'b111111) begin // TODO: CHANGE LATER BACK TO 6B
                     store_label = curr_label;   // store a new label
                 end else begin
                     store_label = min_label;    // store the minimum label among neighbors
