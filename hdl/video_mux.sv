@@ -9,6 +9,7 @@ module video_mux (
   input wire [7:0] channel_in, //the channel from selection module
   input wire thresholded_pixel_in, //
   input wire [23:0] com_sprite_pixel_in,
+  input wire draw_sprite,
   input wire crosshair_in,
   output logic [23:0] pixel_out
 );
@@ -41,7 +42,16 @@ module video_mux (
     case (target_in)
       2'b00: l_2 = l_1;
       2'b01: l_2 = crosshair_in? 24'h00FF00:l_1;
-      2'b10: l_2 = (com_sprite_pixel_in >0)?com_sprite_pixel_in:l_1;
+      2'b10: begin
+        //l_2 = (com_sprite_pixel_in >0 && draw_sprite)? 24'h00FF00:l_1;// (com_sprite_pixel_in >0)? com_sprite_pixel_in:l_1;com_sprite_pixel_in:l_1;
+        if(draw_sprite) begin
+          l_2 = 24'h00FF00;
+        end else if (com_sprite_pixel_in > 0) begin
+          l_2 = com_sprite_pixel_in;
+        end else begin
+          l_2 = l_1;
+        end
+      end
       2'b11: l_2 = 24'hFF7700; //test color
     endcase
   end

@@ -238,7 +238,7 @@ always_ff @(posedge clk_in) begin
                                 if (min_label == 6'b111111) begin
                                     // store label of current pixel in BRAM (ADD CODE)
                                     equiv_table[curr_label] <= curr_label;
-                                    area_table[curr_label] <= area_table[curr_label] + 1;
+                                    // area_table[curr_label] <= area_table[curr_label] + 1;
                                     sum_x_table[curr_label] <= sum_x_table[curr_label] + curr_x;
                                     sum_y_table[curr_label] <= sum_y_table[curr_label] + curr_y;
 
@@ -249,20 +249,19 @@ always_ff @(posedge clk_in) begin
                                 end else begin
                                     // the minimum label should be set for all neighbors
                                     // Should be handled in resolve equivalences? to deal with area mismatches
-                                    // if (w_pixel_label > 0) begin
-                                    //     equiv_table[w_pixel_label] <= min_label;
-                                    // end
-                                    // if (nw_pixel_label > 0) begin
-                                    //     equiv_table[nw_pixel_label] <= min_label;
-                                    // end
-                                    // if (n_pixel_label > 0) begin
-                                    //     equiv_table[n_pixel_label] <= min_label;
-                                    // end
-                                    // if (ne_pixel_label > 0) begin
-                                    //     equiv_table[ne_pixel_label] <= min_label;
-                                    // end
+                                    if (w_pixel_label > 0) begin
+                                        equiv_table[w_pixel_label] <= min_label;
+                                    end
+                                    if (nw_pixel_label > 0) begin
+                                        equiv_table[nw_pixel_label] <= min_label;
+                                    end
+                                    if (n_pixel_label > 0) begin
+                                        equiv_table[n_pixel_label] <= min_label;
+                                    end
+                                    if (ne_pixel_label > 0) begin
+                                        equiv_table[ne_pixel_label] <= min_label;
+                                    end
 
-                                    // equiv_table[curr_label] <= min_label; // TODO: WHAT THE FUCK IS THIS???????????????????
                                     area_table[min_label] <= area_table[min_label] + 1;
                                     sum_x_table[min_label] <= sum_x_table[min_label] + curr_x;
                                     sum_y_table[min_label] <= sum_y_table[min_label] + curr_y;

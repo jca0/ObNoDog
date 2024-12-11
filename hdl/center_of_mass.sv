@@ -8,7 +8,7 @@ module center_of_mass (
                          input wire tabulate_in,
                          output logic [10:0] x_out,
                          output logic [9:0] y_out,
-                         output logic [15:0] area_out,
+                         output logic [19:0] area_out,
                          output logic valid_out);
 	 // your code here
      // Accumulators and counters
@@ -58,9 +58,9 @@ module center_of_mass (
     
      always_ff @(posedge clk_in) begin
          if (rst_in) begin
+             area_out <=0 ;
              x_out <= 0;
              y_out <= 0;
-             area_out <= 0;
              valid_out <= 0;
              state <= IDLE;
          end else begin

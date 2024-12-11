@@ -53,9 +53,9 @@ logic [MAX_LABELS:0][23:0] sum_x_table, sum_y_table;
 // ===== PRUNING =====
 logic [MAX_LABELS:0][23:0] x_sums, y_sums; // x sums of positions of all blobs
 logic [1:0][15:0] largest_areas;                    // areas of 3 largest blobs
-logic [1:0][LABEL_WIDTH-1:0] largest_labels;         // labels of 3 largest blobs
-logic [1:0][$clog2(WIDTH)-1:0] largest_x_coms;      // x coms of 3 largest blobs
-logic [1:0][$clog2(HEIGHT)-1:0] largest_y_coms;     // y coms of 3 largest blobs
+logic [1:0][15:0] largest_labels;         // labels of 3 largest blobs
+logic [1:0][15:0] largest_x_coms;      // x coms of 3 largest blobs
+logic [1:0][15:0] largest_y_coms;     // y coms of 3 largest blobs
 logic largest_smallest;                             // is the most recently looked at label greater than some value in our array of largest values
 logic [1:0] largest_smallest_ind;                   // index of replaced value
 
@@ -154,7 +154,7 @@ always_ff @(posedge clk_in) begin
                 largest_x_coms <= 0;
                 largest_y_coms <= 0;
 
-                for (int i = 0; i < 16; i=i+1) begin
+                for (int i = 0; i < MAX_LABELS+1; i=i+1) begin
                     equiv_table[i] <= i;
                 end
                 area_table <= 0;
@@ -181,7 +181,7 @@ always_ff @(posedge clk_in) begin
                     bram_wait <= 0;
                     read_neighbor_wait <= 0;
                     
-                    for (int i = 0; i < 16; i=i+1) begin
+                    for (int i = 0; i < MAX_LABELS+1; i=i+1) begin
                         equiv_table[i] <= i;
                     end
                     area_table <= 0;
@@ -429,7 +429,7 @@ always_ff @(posedge clk_in) begin
                             end else begin
                                 
                                 // if this area is smaller than the 3 largest, we don't care about dividing
-                                if(areas[prune_iter] <= largest_areas[0] && areas[prune_iter] <= largest_areas[1]) begin
+                                if((areas[prune_iter] <= largest_areas[0]) && (areas[prune_iter] <= largest_areas[1])) begin
                                     prune_iter <= prune_iter + 1;           // and continue
 
                                 end else begin
@@ -448,13 +448,13 @@ always_ff @(posedge clk_in) begin
                                         largest_smallest <= 1;
                                         largest_smallest_ind <= 0;
                                         largest_areas[0] <= areas[prune_iter];
-                                        largest_labels[0] <= second_pass_labels[prune_iter];
+                                        largest_labels[0] <= prune_iter;
 
                                     end else if (areas[prune_iter] > largest_areas[1] && largest_areas[1] <= largest_areas[0]) begin
                                         largest_smallest <= 1;
                                         largest_smallest_ind <= 1;
                                         largest_areas[1] <= areas[prune_iter];
-                                        largest_labels[1] <= second_pass_labels[prune_iter];
+                                        largest_labels[1] <= prune_iter;
 
                                     end
                                 end
@@ -602,6 +602,7 @@ always_comb begin
     // end else begin
     if (state == STORE_FRAME) begin
         addra_mask = x_in + y_in * WIDTH; // STORING TO THIS INDEX
+        addra_label = x_in + y_in * WIDTH; // STORING TO THIS INDEX
     end else if (state == FIRST_PASS) begin
         addra_mask = curr_x + curr_y * WIDTH; // get the mask pixel at the center index --> mask_a_out
 
@@ -711,8 +712,8 @@ xilinx_true_dual_port_read_first_2_clock_ram
     // PORT A
     .addra(addra_label), //pixels are stored using this math
     .clka(clk_in),
-    .wea(state == FIRST_PASS && !read_signal),
-    .dina(store_label),
+    .wea((state == FIRST_PASS && !read_signal) || (state == STORE_FRAME)), 
+    .dina((state == FIRST_PASS)? store_label : 0), // if we're in FIRST_PASS, write store_label (actual data). If we're in STORE_FRAME, write 0 (clear)
     .ena(1'b1),
     .douta(label_a_out), //never read from this side
     .rsta(rst_in),

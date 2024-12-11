@@ -600,15 +600,33 @@ module top_level
 
 
   logic [6:0] ss_c;
+
+  logic [1:0][15:0] cap_largest_labels;
+  logic [1:0][15:0] cap_largest_x_coms, cap_largest_y_coms;
+
+  always_comb begin
+    if(ccl_pixel_valid) begin
+      cap_largest_labels[0] = largest_labels[0];
+      cap_largest_labels[1] = largest_labels[1];
+
+      cap_largest_x_coms[0] = largest_x_coms[0];
+      cap_largest_x_coms[1] = largest_x_coms[1];
+      cap_largest_y_coms[0] = largest_y_coms[0];
+      cap_largest_y_coms[1] = largest_y_coms[1];
+    end
+  end
+
   //modified version of seven segment display for showing
   // thresholds and selected channel
   // special customized version
   lab05_ssc mssc(.clk_in(clk_pixel),
                  .rst_in(sys_rst_pixel),
-                 .lt_in((perim_temp[0] > 8'hFF)? 8'hFF : perim_temp[0][7:0]), // changed from lower, upper threshold
-                 .ut_in((area_temp[0] > 8'hFF)? 8'hFF : area_temp[0][7:0]),
+                 //.lt_in((perim_temp[0] > 8'hFF)? 8'hFF : perim_temp[0][7:0]), // changed from lower, upper threshold
+                 .lt_in(cap_largest_x_coms[1][7:0]),
+                 //.ut_in((area_temp[0] > 8'hFF)? 8'hFF : area_temp[0][7:0]),
+                 .ut_in({3'b0, moore_busy_0, 3'b0, ccl_busy_out}),
                  //.channel_sel_in((circ_temp[0] > 8'hFF)? 8'hFF : circ_temp[0][7:0]),
-                 .channel_sel_in(max_seen_label),
+                 .channel_sel_in(cap_largest_x_coms[0][7:0]),
                  .cat_out(ss_c),
                  .an_out({ss0_an, ss1_an})
   );
@@ -658,7 +676,9 @@ module top_level
   logic [15:0] ccl_pixel_label;
   logic ccl_pixel_valid;
   logic [7:0] ccl_state;
-  logic [7:0] max_seen_label;
+  logic [7:0] curr_label_out;
+  logic [7:0] min_label_out;
+  logic [7:0] pix_label_out;
 
   ccl #(
     .WIDTH(320),        // Horizontal resolution
@@ -676,6 +696,7 @@ module top_level
 
   .valid_out(ccl_valid_out),
   .busy_out(ccl_busy_out),
+
   .blob_labels(largest_labels),
   .x_out(ccl_x_out),
   .y_out(ccl_y_out),
@@ -685,7 +706,9 @@ module top_level
   .curr_pix_label(ccl_pixel_label),
   .curr_pix_valid(ccl_pixel_valid),
   .curr_state(ccl_state),
-  .max_seen_label(max_seen_label)
+  .curr_label_out(curr_label_out),
+  .min_label_out(min_label_out),
+  .pix_label_out(pix_label_out)
   );
 
 
@@ -778,220 +801,220 @@ module top_level
 
 
   // FBs to hold Moore data for Moore 0
-  xilinx_true_dual_port_read_first_2_clock_ram
-    #(.RAM_WIDTH(1),
-    .RAM_DEPTH(320*180))
-    moore_fb_00
-    (
-    // PORT A
-    .addra(ccl_moore_addr_0[0]), 
-    .clka(clk_pixel),
-    .wea(ccl_pixel_valid),
-    .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[0]),
-    .ena(1'b1),
-    .douta(ccl_moore_pixels_0[0][0]),
-    .rsta(sys_rst_pixel),
-    .regcea(1'b1),
+//   xilinx_true_dual_port_read_first_2_clock_ram
+//     #(.RAM_WIDTH(1),
+//     .RAM_DEPTH(320*180))
+//     moore_fb_00
+//     (
+//     // PORT A
+//     .addra(ccl_moore_addr_0[0]), 
+//     .clka(clk_pixel),
+//     .wea(ccl_pixel_valid),
+//     .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[0]),
+//     .ena(1'b1),
+//     .douta(ccl_moore_pixels_0[0][0]),
+//     .rsta(sys_rst_pixel),
+//     .regcea(1'b1),
 
-    // PORT B
-    .addrb(ccl_moore_addr_0[1]),
-    .dinb(1'b0),
-    .clkb(clk_pixel),
-    .web(1'b0),
-    .enb(1'b1),
-    .doutb(ccl_moore_pixels_0[0][1]),
-    .rstb(sys_rst_pixel),
-    .regceb(1'b1)
-    );
+//     // PORT B
+//     .addrb(ccl_moore_addr_0[1]),
+//     .dinb(1'b0),
+//     .clkb(clk_pixel),
+//     .web(1'b0),
+//     .enb(1'b1),
+//     .doutb(ccl_moore_pixels_0[0][1]),
+//     .rstb(sys_rst_pixel),
+//     .regceb(1'b1)
+//     );
 
-  xilinx_true_dual_port_read_first_2_clock_ram
-    #(.RAM_WIDTH(1),
-    .RAM_DEPTH(320*180))
-    moore_fb_01
-    (
-    // PORT A
-    .addra(ccl_moore_addr_0[2]), 
-    .clka(clk_pixel),
-    .wea(ccl_pixel_valid),
-    .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[0]),
-    .ena(1'b1),
-    .douta(ccl_moore_pixels_0[0][2]),
-    .rsta(sys_rst_pixel),
-    .regcea(1'b1),
+//   xilinx_true_dual_port_read_first_2_clock_ram
+//     #(.RAM_WIDTH(1),
+//     .RAM_DEPTH(320*180))
+//     moore_fb_01
+//     (
+//     // PORT A
+//     .addra(ccl_moore_addr_0[2]), 
+//     .clka(clk_pixel),
+//     .wea(ccl_pixel_valid),
+//     .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[0]),
+//     .ena(1'b1),
+//     .douta(ccl_moore_pixels_0[0][2]),
+//     .rsta(sys_rst_pixel),
+//     .regcea(1'b1),
 
-    // PORT B
-    .addrb(ccl_moore_addr_0[3]),
-    .dinb(1'b0),
-    .clkb(clk_pixel),
-    .web(1'b0),
-    .enb(1'b1),
-    .doutb(ccl_moore_pixels_0[1][2]),
-    .rstb(sys_rst_pixel),
-    .regceb(1'b1)
-    );
+//     // PORT B
+//     .addrb(ccl_moore_addr_0[3]),
+//     .dinb(1'b0),
+//     .clkb(clk_pixel),
+//     .web(1'b0),
+//     .enb(1'b1),
+//     .doutb(ccl_moore_pixels_0[1][2]),
+//     .rstb(sys_rst_pixel),
+//     .regceb(1'b1)
+//     );
 
-  xilinx_true_dual_port_read_first_2_clock_ram
-    #(.RAM_WIDTH(1),
-    .RAM_DEPTH(320*180))
-    moore_fb_02
-    (
-    // PORT A
-    .addra(ccl_moore_addr_0[4]), 
-    .clka(clk_pixel),
-    .wea(ccl_pixel_valid),
-    .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[0]),
-    .ena(1'b1),
-    .douta(ccl_moore_pixels_0[2][2]),
-    .rsta(sys_rst_pixel),
-    .regcea(1'b1),
+//   xilinx_true_dual_port_read_first_2_clock_ram
+//     #(.RAM_WIDTH(1),
+//     .RAM_DEPTH(320*180))
+//     moore_fb_02
+//     (
+//     // PORT A
+//     .addra(ccl_moore_addr_0[4]), 
+//     .clka(clk_pixel),
+//     .wea(ccl_pixel_valid),
+//     .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[0]),
+//     .ena(1'b1),
+//     .douta(ccl_moore_pixels_0[2][2]),
+//     .rsta(sys_rst_pixel),
+//     .regcea(1'b1),
 
-    // PORT B
-    .addrb(ccl_moore_addr_0[5]),
-    .dinb(1'b0),
-    .clkb(clk_pixel),
-    .web(1'b0),
-    .enb(1'b1),
-    .doutb(ccl_moore_pixels_0[2][1]),
-    .rstb(sys_rst_pixel),
-    .regceb(1'b1)
-    );
+//     // PORT B
+//     .addrb(ccl_moore_addr_0[5]),
+//     .dinb(1'b0),
+//     .clkb(clk_pixel),
+//     .web(1'b0),
+//     .enb(1'b1),
+//     .doutb(ccl_moore_pixels_0[2][1]),
+//     .rstb(sys_rst_pixel),
+//     .regceb(1'b1)
+//     );
 
-  xilinx_true_dual_port_read_first_2_clock_ram
-    #(.RAM_WIDTH(1),
-    .RAM_DEPTH(320*180))
-    moore_fb_03
-    (
-    // PORT A
-    .addra(ccl_moore_addr_0[6]), 
-    .clka(clk_pixel),
-    .wea(ccl_pixel_valid),
-    .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[0]),
-    .ena(1'b1),
-    .douta(ccl_moore_pixels_0[2][0]),
-    .rsta(sys_rst_pixel),
-    .regcea(1'b1),
+//   xilinx_true_dual_port_read_first_2_clock_ram
+//     #(.RAM_WIDTH(1),
+//     .RAM_DEPTH(320*180))
+//     moore_fb_03
+//     (
+//     // PORT A
+//     .addra(ccl_moore_addr_0[6]), 
+//     .clka(clk_pixel),
+//     .wea(ccl_pixel_valid),
+//     .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[0]),
+//     .ena(1'b1),
+//     .douta(ccl_moore_pixels_0[2][0]),
+//     .rsta(sys_rst_pixel),
+//     .regcea(1'b1),
 
-    // PORT B
-    .addrb(ccl_moore_addr_0[7]),
-    .dinb(1'b0),
-    .clkb(clk_pixel),
-    .web(1'b0),
-    .enb(1'b1),
-    .doutb(ccl_moore_pixels_0[1][0]),
-    .rstb(sys_rst_pixel),
-    .regceb(1'b1)
-    );
-
-
+//     // PORT B
+//     .addrb(ccl_moore_addr_0[7]),
+//     .dinb(1'b0),
+//     .clkb(clk_pixel),
+//     .web(1'b0),
+//     .enb(1'b1),
+//     .doutb(ccl_moore_pixels_0[1][0]),
+//     .rstb(sys_rst_pixel),
+//     .regceb(1'b1)
+//     );
 
 
 
 
 
-// MOORE FB 1
-xilinx_true_dual_port_read_first_2_clock_ram
-    #(.RAM_WIDTH(1),
-    .RAM_DEPTH(320*180))
-    moore_fb_10
-    (
-    // PORT A
-    .addra(ccl_moore_addr_1[0]), 
-    .clka(clk_pixel),
-    .wea(ccl_pixel_valid),
-    .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[1]),
-    .ena(1'b1),
-    .douta(ccl_moore_pixels_1[0][0]),
-    .rsta(sys_rst_pixel),
-    .regcea(1'b1),
 
-    // PORT B
-    .addrb(ccl_moore_addr_1[1]),
-    .dinb(1'b0),
-    .clkb(clk_pixel),
-    .web(1'b0),
-    .enb(1'b1),
-    .doutb(ccl_moore_pixels_1[0][1]),
-    .rstb(sys_rst_pixel),
-    .regceb(1'b1)
-    );
 
-  xilinx_true_dual_port_read_first_2_clock_ram
-    #(.RAM_WIDTH(1),
-    .RAM_DEPTH(320*180))
-    moore_fb_11
-    (
-    // PORT A
-    .addra(ccl_moore_addr_1[2]), 
-    .clka(clk_pixel),
-    .wea(ccl_pixel_valid),
-    .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[1]),
-    .ena(1'b1),
-    .douta(ccl_moore_pixels_1[0][2]),
-    .rsta(sys_rst_pixel),
-    .regcea(1'b1),
+// // MOORE FB 1
+// xilinx_true_dual_port_read_first_2_clock_ram
+//     #(.RAM_WIDTH(1),
+//     .RAM_DEPTH(320*180))
+//     moore_fb_10
+//     (
+//     // PORT A
+//     .addra(ccl_moore_addr_1[0]), 
+//     .clka(clk_pixel),
+//     .wea(ccl_pixel_valid),
+//     .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[1]),
+//     .ena(1'b1),
+//     .douta(ccl_moore_pixels_1[0][0]),
+//     .rsta(sys_rst_pixel),
+//     .regcea(1'b1),
 
-    // PORT B
-    .addrb(ccl_moore_addr_1[3]),
-    .dinb(1'b0),
-    .clkb(clk_pixel),
-    .web(1'b0),
-    .enb(1'b1),
-    .doutb(ccl_moore_pixels_1[1][2]),
-    .rstb(sys_rst_pixel),
-    .regceb(1'b1)
-    );
+//     // PORT B
+//     .addrb(ccl_moore_addr_1[1]),
+//     .dinb(1'b0),
+//     .clkb(clk_pixel),
+//     .web(1'b0),
+//     .enb(1'b1),
+//     .doutb(ccl_moore_pixels_1[0][1]),
+//     .rstb(sys_rst_pixel),
+//     .regceb(1'b1)
+//     );
 
-  xilinx_true_dual_port_read_first_2_clock_ram
-    #(.RAM_WIDTH(1),
-    .RAM_DEPTH(320*180))
-    moore_fb_12
-    (
-    // PORT A
-    .addra(ccl_moore_addr_1[4]), 
-    .clka(clk_pixel),
-    .wea(ccl_pixel_valid),
-    .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[1]),
-    .ena(1'b1),
-    .douta(ccl_moore_pixels_1[2][2]),
-    .rsta(sys_rst_pixel),
-    .regcea(1'b1),
+//   xilinx_true_dual_port_read_first_2_clock_ram
+//     #(.RAM_WIDTH(1),
+//     .RAM_DEPTH(320*180))
+//     moore_fb_11
+//     (
+//     // PORT A
+//     .addra(ccl_moore_addr_1[2]), 
+//     .clka(clk_pixel),
+//     .wea(ccl_pixel_valid),
+//     .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[1]),
+//     .ena(1'b1),
+//     .douta(ccl_moore_pixels_1[0][2]),
+//     .rsta(sys_rst_pixel),
+//     .regcea(1'b1),
 
-    // PORT B
-    .addrb(ccl_moore_addr_1[5]),
-    .dinb(1'b0),
-    .clkb(clk_pixel),
-    .web(1'b0),
-    .enb(1'b1),
-    .doutb(ccl_moore_pixels_1[2][1]),
-    .rstb(sys_rst_pixel),
-    .regceb(1'b1)
-    );
+//     // PORT B
+//     .addrb(ccl_moore_addr_1[3]),
+//     .dinb(1'b0),
+//     .clkb(clk_pixel),
+//     .web(1'b0),
+//     .enb(1'b1),
+//     .doutb(ccl_moore_pixels_1[1][2]),
+//     .rstb(sys_rst_pixel),
+//     .regceb(1'b1)
+//     );
 
-  xilinx_true_dual_port_read_first_2_clock_ram
-    #(.RAM_WIDTH(1),
-    .RAM_DEPTH(320*180))
-    moore_fb_13
-    (
-    // PORT A
-    .addra(ccl_moore_addr_1[6]), 
-    .clka(clk_pixel),
-    .wea(ccl_pixel_valid),
-    .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[1]),
-    .ena(1'b1),
-    .douta(ccl_moore_pixels_1[2][0]),
-    .rsta(sys_rst_pixel),
-    .regcea(1'b1),
+//   xilinx_true_dual_port_read_first_2_clock_ram
+//     #(.RAM_WIDTH(1),
+//     .RAM_DEPTH(320*180))
+//     moore_fb_12
+//     (
+//     // PORT A
+//     .addra(ccl_moore_addr_1[4]), 
+//     .clka(clk_pixel),
+//     .wea(ccl_pixel_valid),
+//     .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[1]),
+//     .ena(1'b1),
+//     .douta(ccl_moore_pixels_1[2][2]),
+//     .rsta(sys_rst_pixel),
+//     .regcea(1'b1),
 
-    // PORT B
-    .addrb(ccl_moore_addr_1[7]),
-    .dinb(1'b0),
-    .clkb(clk_pixel),
-    .web(1'b0),
-    .enb(1'b1),
-    .doutb(ccl_moore_pixels_1[1][0]),
-    .rstb(sys_rst_pixel),
-    .regceb(1'b1)
-    );
+//     // PORT B
+//     .addrb(ccl_moore_addr_1[5]),
+//     .dinb(1'b0),
+//     .clkb(clk_pixel),
+//     .web(1'b0),
+//     .enb(1'b1),
+//     .doutb(ccl_moore_pixels_1[2][1]),
+//     .rstb(sys_rst_pixel),
+//     .regceb(1'b1)
+//     );
+
+//   xilinx_true_dual_port_read_first_2_clock_ram
+//     #(.RAM_WIDTH(1),
+//     .RAM_DEPTH(320*180))
+//     moore_fb_13
+//     (
+//     // PORT A
+//     .addra(ccl_moore_addr_1[6]), 
+//     .clka(clk_pixel),
+//     .wea(ccl_pixel_valid),
+//     .dina(ccl_pixel_label > 0 && ccl_pixel_label == largest_labels[1]),
+//     .ena(1'b1),
+//     .douta(ccl_moore_pixels_1[2][0]),
+//     .rsta(sys_rst_pixel),
+//     .regcea(1'b1),
+
+//     // PORT B
+//     .addrb(ccl_moore_addr_1[7]),
+//     .dinb(1'b0),
+//     .clkb(clk_pixel),
+//     .web(1'b0),
+//     .enb(1'b1),
+//     .doutb(ccl_moore_pixels_1[1][0]),
+//     .rstb(sys_rst_pixel),
+//     .regceb(1'b1)
+//     );
 
 
 
@@ -1130,7 +1153,7 @@ xilinx_true_dual_port_read_first_2_clock_ram
     .regcea(1'b1),
 
     // PORT B
-    .addrb(hcount_hdmi + vcount_hdmi*320),
+    .addrb((hcount_hdmi >> 2) + (vcount_hdmi >> 2)*320),
     .dinb(1'b0),
     .clkb(clk_pixel),
     .web(1'b0),
@@ -1158,7 +1181,7 @@ xilinx_true_dual_port_read_first_2_clock_ram
     .regcea(1'b1),
 
     // PORT B
-    .addrb(hcount_hdmi + vcount_hdmi*320),
+    .addrb((hcount_hdmi >> 2) + (vcount_hdmi >> 2)*320),
     .dinb(1'b0),
     .clkb(clk_pixel),
     .web(1'b0),
@@ -1613,7 +1636,7 @@ xilinx_true_dual_port_read_first_2_clock_ram
 
   //if any of the draw_outs from any of the sprite modules are true, then set draw_out to be true
   always_comb begin                                                                                    // commenting this out removes all of the upstream label[3] logic
-    if ((draw_classifier_0 /*&& !(perim_temp_0 == 0))*/ /*|| (draw_classifier_1 && !(perim_temp_1 == 0)*/) || /*(draw_classifier_2 && !(perim_temp_2 == 0)) ||*/ draw_number[0] || draw_number[1] || draw_number[2] || draw_number[3] || draw_number[4] || draw_number[5] || draw_number[6] || draw_number[7] || draw_number[8] || draw_number[9] || draw_number[10] || draw_number[11]) begin
+    if ((draw_classifier_0 /*&& !(perim_temp_0 == 0)*/) || (draw_classifier_1 /*&& !(perim_temp_1 == 0)*/) || /*(draw_classifier_2 && !(perim_temp_2 == 0)) ||*/ draw_number[0] || draw_number[1] || draw_number[2] || draw_number[3] || draw_number[4] || draw_number[5] || draw_number[6] || draw_number[7] || draw_number[8] || draw_number[9] || draw_number[10] || draw_number[11]) begin
       draw_sprite = 1;
     end else begin
       draw_sprite = 0;
